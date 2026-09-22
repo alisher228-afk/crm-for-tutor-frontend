@@ -1,0 +1,154 @@
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import type { AuthResponse } from '@/types'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
+
+export const ACCESS_TOKEN_KEY = 'accessToken'
+export const REFRESH_TOKEN_KEY = 'refreshToken'
+export const USER_ROLE_KEY = 'userRole'
+export const USER_EMAIL_KEY = 'userEmail'
+
+export const getStoredAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY)
+export const getStoredRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY)
+
+export const setStoredTokens = (data: {
+  accessToken: string
+  refreshToken: string
+  role?: string
+  email?: string
+}) => {
+  localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken)
+  localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken)
+  if (data.role) {
+    localStorage.setItem(USER_ROLE_KEY, data.role)
+  }
+  if (data.email) {
+    localStorage.setItem(USER_EMAIL_KEY, data.email)
+  }
+}
+
+export const clearStoredTokens = () => {
+  localStorage.removeItem(ACCESS_TOKEN_KEY)
+  localStorage.removeItem(REFRESH_TOKEN_KEY)
+  localStorage.removeItem(USER_ROLE_KEY)
+  localStorage.removeItem(USER_EMAIL_KEY)
+}
+
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// Request Interceptor: attach Bearer token
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = getStoredAccessToken()
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error),
+)
+
+// Response Interceptor: handle 401 and refresh token queue
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (token: string) => void
+  reject: (error: unknown) => void
+}> = []
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((promise) => {
+    if (error) {
+      promise.reject(error)
+    } else if (token) {
+      promise.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
+interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean
+}
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as CustomAxiosRequestConfig | undefined
+
+    if (!originalRequest) {
+      return Promise.reject(error)
+    }
+
+    const isAuthEndpoint =
+      originalRequest.url?.includes('/api/v1/auth/refresh') ||
+      originalRequest.url?.includes('/api/v1/auth/login')
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      const refreshToken = getStoredRefreshToken()
+
+      if (!refreshToken) {
+        clearStoredTokens()
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
+        return Promise.reject(error)
+      }
+
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        })
+          .then((token) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`
+            }
+            return apiClient(originalRequest)
+          })
+          .catch((err) => Promise.reject(err))
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      try {
+        const response = await axios.post<AuthResponse>(
+          `${API_BASE_URL}/api/v1/auth/refresh`,
+          { refreshToken },
+          { headers: { 'Content-Type': 'application/json' } },
+        )
+
+        const { accessToken, refreshToken: newRefreshToken, role } = response.data
+        setStoredTokens({
+          accessToken,
+          refreshToken: newRefreshToken || refreshToken,
+          role,
+        })
+
+        apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`
+        processQueue(null, accessToken)
+
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`
+        }
+
+        return apiClient(originalRequest)
+      } catch (refreshError) {
+        processQueue(refreshError, null)
+        clearStoredTokens()
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
+        return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
+      }
+    }
+
+    return Promise.reject(error)
+  },
+)
