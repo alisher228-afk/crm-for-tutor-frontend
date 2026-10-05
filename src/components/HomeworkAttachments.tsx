@@ -12,6 +12,7 @@ import {
   Paperclip,
   UploadCloud,
   Download,
+  ExternalLink,
   Trash2,
   File,
   FileImage,
@@ -20,8 +21,11 @@ import {
   FileCode,
   Loader2,
   HardDrive,
+  FolderKanban,
 } from 'lucide-react'
-import type { Attachment } from '@/types'
+import { SelectMaterialDialog } from '@/components/SelectMaterialDialog'
+import { useAttachMaterialToHomework } from '@/hooks/useMaterials'
+import type { Attachment, TeachingMaterial } from '@/types'
 import type { AxiosError } from 'axios'
 
 interface HomeworkAttachmentsProps {
@@ -83,12 +87,34 @@ export function HomeworkAttachments({
 }: HomeworkAttachmentsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [openingId, setOpeningId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const { data: attachments = [], isLoading } = useHomeworkAttachments(homeworkId)
   const uploadMutation = useUploadAttachment(homeworkId)
   const deleteMutation = useDeleteAttachment(homeworkId)
+  const attachMaterialMutation = useAttachMaterialToHomework(homeworkId)
+  const [isSelectMaterialOpen, setIsSelectMaterialOpen] = useState(false)
+
+  const handleSelectMaterials = async (materials: TeachingMaterial[]) => {
+    let successCount = 0
+    for (const mat of materials) {
+      try {
+        await attachMaterialMutation.mutateAsync(mat.id)
+        successCount++
+      } catch (err) {
+        console.error('Failed to attach material:', mat.title, err)
+      }
+    }
+    if (successCount > 0) {
+      toast.success(
+        `Прикреплено материалов из Базы знаний: ${successCount} из ${materials.length}`,
+      )
+    } else {
+      toast.error('Не удалось прикрепить выбранные материалы')
+    }
+  }
 
   const handleFileSelect = async (file: File) => {
     if (!file) return
@@ -157,8 +183,24 @@ export function HomeworkAttachments({
     }
   }
 
+  const handleOpen = async (attachment: Attachment) => {
+    const fileName = attachment.originalFileName || attachment.fileName || attachment.name || 'файл'
+    setOpeningId(attachment.id)
+
+    try {
+      await attachmentsApi.openAttachment(attachment.id)
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message?: string; error?: string }>
+      toast.error(
+        axiosError.response?.data?.message || `Не удалось открыть файл "${fileName}"`,
+      )
+    } finally {
+      setOpeningId(null)
+    }
+  }
+
   const handleDownload = async (attachment: Attachment) => {
-    const fileName = attachment.fileName || attachment.name || 'attachment'
+    const fileName = attachment.originalFileName || attachment.fileName || attachment.name || 'attachment'
     setDownloadingId(attachment.id)
 
     try {
@@ -175,7 +217,7 @@ export function HomeworkAttachments({
   }
 
   const handleDelete = async (attachment: Attachment) => {
-    const fileName = attachment.fileName || attachment.name || 'файл'
+    const fileName = attachment.originalFileName || attachment.fileName || attachment.name || 'файл'
     setDeletingId(attachment.id)
 
     try {
@@ -206,21 +248,39 @@ export function HomeworkAttachments({
         </div>
 
         {!readOnly && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadMutation.isPending}
-            className="h-8 text-xs gap-1.5"
-          >
-            {uploadMutation.isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <UploadCloud className="h-3.5 w-3.5" />
-            )}
-            <span>Загрузить файл</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSelectMaterialOpen(true)}
+              disabled={uploadMutation.isPending || attachMaterialMutation.isPending}
+              className="h-8 text-xs gap-1.5 text-primary border-primary/30 hover:bg-primary/10"
+            >
+              {attachMaterialMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FolderKanban className="h-3.5 w-3.5" />
+              )}
+              <span>Из Базы знаний</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadMutation.isPending || attachMaterialMutation.isPending}
+              className="h-8 text-xs gap-1.5"
+            >
+              {uploadMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <UploadCloud className="h-3.5 w-3.5" />
+              )}
+              <span>Загрузить файл</span>
+            </Button>
+          </div>
         )}
       </div>
 
@@ -276,9 +336,10 @@ export function HomeworkAttachments({
       ) : attachments.length > 0 ? (
         <div className="space-y-2">
           {attachments.map((att) => {
-            const fileName = att.fileName || att.name || 'Безымянный файл'
-            const size = att.fileSize ?? att.size
+            const fileName = att.originalFileName || att.fileName || att.name || 'Безымянный файл'
+            const size = att.sizeBytes ?? att.fileSize ?? att.size
             const dateStr = att.uploadedAt || att.createdAt
+            const isOpening = openingId === att.id
             const isDownloading = downloadingId === att.id
             const isDeleting = deletingId === att.id
 
@@ -287,12 +348,16 @@ export function HomeworkAttachments({
                 key={att.id}
                 className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card/60 hover:bg-muted/40 transition-colors gap-3"
               >
-                {/* File Icon & Info */}
-                <div className="flex items-center gap-3 min-w-0 flex-1">
+                {/* File Icon & Info (clickable to preview/open) */}
+                <div
+                  className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer group/file"
+                  onClick={() => handleOpen(att)}
+                  title="Нажмите, чтобы открыть или просмотреть файл"
+                >
                   {getFileIcon(fileName, att.contentType)}
                   <div className="min-w-0 flex-1">
                     <p
-                      className="text-xs font-medium text-foreground truncate select-all"
+                      className="text-xs font-medium text-foreground truncate group-hover/file:text-primary group-hover/file:underline transition-colors"
                       title={fileName}
                     >
                       {fileName}
@@ -305,14 +370,30 @@ export function HomeworkAttachments({
                   </div>
                 </div>
 
-                {/* Actions: Download & Delete */}
+                {/* Actions: Open, Download & Delete */}
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon-sm"
+                    onClick={() => handleOpen(att)}
+                    disabled={isOpening || isDownloading || isDeleting}
+                    title="Открыть / Просмотреть в новой вкладке"
+                    className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+                  >
+                    {isOpening ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                    ) : (
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => handleDownload(att)}
-                    disabled={isDownloading || isDeleting}
+                    disabled={isOpening || isDownloading || isDeleting}
                     title="Скачать файл"
                     className="text-muted-foreground hover:text-foreground"
                   >
@@ -329,7 +410,7 @@ export function HomeworkAttachments({
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => handleDelete(att)}
-                      disabled={isDeleting || isDownloading}
+                      disabled={isDeleting || isDownloading || isOpening}
                       title="Удалить файл"
                       className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     >
@@ -352,6 +433,14 @@ export function HomeworkAttachments({
             <span>К заданию не прикреплено файлов</span>
           </div>
         )
+      )}
+
+      {!readOnly && (
+        <SelectMaterialDialog
+          open={isSelectMaterialOpen}
+          onOpenChange={setIsSelectMaterialOpen}
+          onSelectMaterials={handleSelectMaterials}
+        />
       )}
     </div>
   )

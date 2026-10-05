@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <!-- Studly CRM Logo Mark (Strict Monochrome + Red Accent) -->
+  <path d="M20.5 8.5H14.5C11.1863 8.5 8.5 11.1863 8.5 14.5C8.5 17.8137 11.1863 20.5 14.5 20.5H17.5C20.8137 20.5 23.5 23.1863 23.5 26.5H11.5" stroke="#18181B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="25.5" cy="8.5" r="2.25" fill="#E11D48"/>
+</svg>

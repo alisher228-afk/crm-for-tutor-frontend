@@ -10,11 +10,12 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { GraduationCap, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import type { AxiosError } from 'axios'
+import { Logo } from '@/components/brand/Logo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -54,19 +55,23 @@ export function LoginPage() {
       const response = await login(trimmedEmail, password)
       toast.success('Авторизация успешна')
 
-      if (response.role === 'TUTOR') {
+      const role = (response.role as string)?.replace(/^ROLE_/, '')
+      if (role === 'TUTOR') {
         navigate('/tutor/students')
-      } else if (response.role === 'STUDENT') {
+      } else if (role === 'STUDENT') {
         navigate('/student')
       } else {
         navigate('/')
       }
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
+      const serverMessage =
+        axiosError.response?.data?.message || axiosError.response?.data?.error
       const errorMessage =
-        axiosError.response?.data?.message ||
-        axiosError.response?.data?.error ||
-        'Не удалось войти. Проверьте правильность email и пароля.'
+        serverMessage ||
+        (axiosError.code === 'ERR_NETWORK' || !axiosError.response
+          ? 'Не удалось связаться с сервером (Network Error). Проверьте бэкенд.'
+          : 'Не удалось войти. Проверьте правильность email и пароля.')
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -74,36 +79,40 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
-      <Card className="w-full max-w-md shadow-lg border-border">
-        <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <GraduationCap className="h-6 w-6" />
-          </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">CRM for Tutor</CardTitle>
-          <CardDescription>
-            Войдите в свой аккаунт для продолжения работы
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
+      <Card className="w-full max-w-md border-border bg-card shadow-soft">
+        <CardHeader className="space-y-3 text-center pb-2">
+          <Link to="/" className="mx-auto flex flex-col items-center gap-1 group cursor-pointer focus-visible:outline-none">
+            <Logo variant="full" size="lg" className="group-hover:opacity-90 transition-opacity" />
+          </Link>
+          <CardDescription className="text-muted-foreground text-sm">
+            Войдите в личный кабинет для управления занятиями и расписанием
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-foreground text-sm font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder="teacher@studly.crm"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
+                className="h-10"
               />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Пароль</Label>
+                <Label htmlFor="password" className="text-foreground text-sm font-medium">Пароль</Label>
               </div>
               <Input
                 id="password"
@@ -113,14 +122,15 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+                className="h-10"
               />
             </div>
           </CardContent>
 
           <CardFooter className="flex flex-col gap-4 mt-2">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full h-10 font-medium" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? 'Вход...' : 'Войти'}
+              {isLoading ? 'Вход...' : 'Войти в аккаунт'}
             </Button>
 
             <div className="text-center text-sm text-muted-foreground space-y-1">
@@ -128,13 +138,13 @@ export function LoginPage() {
                 Вы репетитор и ещё не с нами?{' '}
                 <Link
                   to="/register"
-                  className="font-medium text-foreground underline underline-offset-4 hover:text-primary transition-colors"
+                  className="font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
                 >
                   Зарегистрироваться
                 </Link>
               </p>
               <p className="text-xs text-muted-foreground/80">
-                Ученики регистрируются по ссылке-приглашению от репетитора.
+                Ученики регистрируются по персональной ссылке-приглашению.
               </p>
             </div>
           </CardFooter>

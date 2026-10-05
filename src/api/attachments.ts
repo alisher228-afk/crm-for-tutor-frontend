@@ -16,11 +16,6 @@ export const attachmentsApi = {
     const response = await apiClient.post<Attachment>(
       `/api/v1/homework/${homeworkId}/attachments`,
       formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      },
     )
     return response.data
   },
@@ -53,6 +48,23 @@ export const attachmentsApi = {
     link.click()
     link.remove()
     window.URL.revokeObjectURL(blobUrl)
+  },
+
+  openAttachment: async (id: string): Promise<void> => {
+    const response = await apiClient.get(`/api/v1/attachments/${id}/download?inline=true`, {
+      responseType: 'blob',
+    })
+
+    const contentType = response.headers['content-type']
+    const blob = new Blob([response.data], {
+      type: typeof contentType === 'string' ? contentType : 'application/octet-stream',
+    })
+    const blobUrl = window.URL.createObjectURL(blob)
+    window.open(blobUrl, '_blank')
+    // Give browser time to load blob in new tab before revoking
+    setTimeout(() => {
+      window.URL.revokeObjectURL(blobUrl)
+    }, 60000)
   },
 
   deleteAttachment: async (id: string): Promise<void> => {

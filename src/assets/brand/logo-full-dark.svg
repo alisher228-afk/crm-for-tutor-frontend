@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 172 36" width="172" height="36" fill="none">
+  <!-- Studly CRM Horizontal Logo (Dark Mode) -->
+  <g transform="translate(2, 2)">
+    <path d="M20.5 8.5H14.5C11.1863 8.5 8.5 11.1863 8.5 14.5C8.5 17.8137 11.1863 20.5 14.5 20.5H17.5C20.8137 20.5 23.5 23.1863 23.5 26.5H11.5" stroke="#FAFAFA" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="25.5" cy="8.5" r="2.25" fill="#F43F5E"/>
+  </g>
+  <text x="44" y="24" font-family="'Geist', 'Manrope', -apple-system, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.03em" fill="#FAFAFA">Studly</text>
+  <text x="114" y="24" font-family="'Geist', 'Manrope', -apple-system, sans-serif" font-size="13" font-weight="600" letter-spacing="0.06em" fill="#A1A1AA">CRM</text>
+</svg>

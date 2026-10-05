@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import type { AuthResponse } from '@/types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export const ACCESS_TOKEN_KEY = 'accessToken'
 export const REFRESH_TOKEN_KEY = 'refreshToken'
@@ -20,7 +20,8 @@ export const setStoredTokens = (data: {
   localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken)
   localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken)
   if (data.role) {
-    localStorage.setItem(USER_ROLE_KEY, data.role)
+    const normalizedRole = data.role.replace(/^ROLE_/, '')
+    localStorage.setItem(USER_ROLE_KEY, normalizedRole)
   }
   if (data.email) {
     localStorage.setItem(USER_EMAIL_KEY, data.email)
@@ -36,17 +37,24 @@ export const clearStoredTokens = () => {
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
-// Request Interceptor: attach Bearer token
+// Request Interceptor: attach Bearer token and handle FormData boundary
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getStoredAccessToken()
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    // When sending FormData, delete Content-Type so browser sets multipart/form-data with the correct boundary!
+    if (config.data instanceof FormData && config.headers) {
+      if (typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type')
+        config.headers.delete('content-type')
+      } else {
+        delete config.headers['Content-Type']
+        delete (config.headers as Record<string, unknown>)['content-type']
+      }
     }
     return config
   },

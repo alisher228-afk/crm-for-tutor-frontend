@@ -277,7 +277,7 @@ export function TutorPaymentsPage() {
                       Всего внесено
                     </p>
                     <p className="text-lg font-bold text-foreground">
-                      {studentStats.totalAmount.toLocaleString('ru-RU')} ₽
+                      {studentStats.totalAmount.toLocaleString('ru-RU')}
                     </p>
                   </div>
                 </CardContent>
@@ -376,7 +376,7 @@ export function TutorPaymentsPage() {
                           {/* Amount */}
                           <TableCell className="whitespace-nowrap">
                             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                              +{payment.amount.toLocaleString('ru-RU')} ₽
+                              +{payment.amount.toLocaleString('ru-RU')}
                             </span>
                           </TableCell>
 

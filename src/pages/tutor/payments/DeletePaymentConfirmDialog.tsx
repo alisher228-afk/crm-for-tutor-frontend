@@ -92,7 +92,7 @@ export function DeletePaymentConfirmDialog({
           <p>
             Вы действительно хотите удалить платёж на сумму{' '}
             <span className="font-semibold text-foreground">
-              {formattedAmount} ₽
+              {formattedAmount}
             </span>
             {formattedDate && (
               <>

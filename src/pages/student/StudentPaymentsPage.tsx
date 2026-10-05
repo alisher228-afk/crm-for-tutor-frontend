@@ -44,12 +44,23 @@ function formatPaymentDate(dateStr?: string): string {
 }
 
 export function StudentPaymentsPage() {
-  const { data: payments = [], isLoading: isLoadingPayments, isError: isErrorPayments, refetch: refetchPayments } =
+  const { data: paymentsData, isLoading: isLoadingPayments, isError: isErrorPayments, refetch: refetchPayments } =
     useMyPayments()
 
   const { data: profile, isLoading: isLoadingProfile } = useMyProfile()
 
-  const currentBalance = profile?.balance ?? profile?.lessonBalance ?? 0
+  const payments = useMemo(() => {
+    if (!paymentsData) return []
+    if (Array.isArray(paymentsData)) return paymentsData
+    if (Array.isArray(paymentsData.payments)) return paymentsData.payments
+    return []
+  }, [paymentsData])
+
+  const currentBalance =
+    paymentsData?.lessonBalance ??
+    profile?.balance ??
+    profile?.lessonBalance ??
+    0
 
   const stats = useMemo(() => {
     const totalAmount = payments.reduce((acc, p) => acc + (p.amount || 0), 0)
@@ -112,8 +123,7 @@ export function StudentPaymentsPage() {
                 Всего оплачено
               </p>
               <p className="text-2xl sm:text-3xl font-black text-foreground mt-0.5">
-                {stats.totalAmount.toLocaleString('ru-RU')}{' '}
-                <span className="text-lg font-bold text-muted-foreground">₽</span>
+                {stats.totalAmount.toLocaleString('ru-RU')}
               </p>
             </div>
           </CardContent>
@@ -192,7 +202,7 @@ export function StudentPaymentsPage() {
                       {/* Amount */}
                       <TableCell className="whitespace-nowrap">
                         <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                          +{payment.amount.toLocaleString('ru-RU')} ₽
+                          +{payment.amount.toLocaleString('ru-RU')}
                         </span>
                       </TableCell>
 

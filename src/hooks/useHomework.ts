@@ -5,6 +5,7 @@ import type { HomeworkCreateRequest, HomeworkStatus } from '@/types'
 export const homeworkKeys = {
   all: ['homework'] as const,
   student: (studentId: string) => [...homeworkKeys.all, 'student', studentId] as const,
+  group: (groupName: string) => [...homeworkKeys.all, 'group', groupName] as const,
   detail: (id: string) => [...homeworkKeys.all, 'detail', id] as const,
   my: () => [...homeworkKeys.all, 'my'] as const,
 }
@@ -14,6 +15,14 @@ export function useStudentHomework(studentId: string | null | undefined) {
     queryKey: homeworkKeys.student(studentId || ''),
     queryFn: () => homeworkApi.getHomeworkByStudent(studentId!),
     enabled: !!studentId,
+  })
+}
+
+export function useGroupHomework(groupName: string | null | undefined) {
+  return useQuery({
+    queryKey: homeworkKeys.group(groupName || ''),
+    queryFn: () => homeworkApi.getHomeworkByGroup(groupName!),
+    enabled: !!groupName,
   })
 }
 
@@ -35,6 +44,22 @@ export function useCreateHomework() {
       if (variables.studentId) {
         queryClient.invalidateQueries({
           queryKey: homeworkKeys.student(variables.studentId),
+        })
+      }
+    },
+  })
+}
+
+export function useCreateGroupHomework() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: HomeworkCreateRequest) => homeworkApi.createGroupHomework(data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: homeworkKeys.all })
+      if (variables.groupName) {
+        queryClient.invalidateQueries({
+          queryKey: homeworkKeys.group(variables.groupName),
         })
       }
     },
@@ -89,6 +114,17 @@ export function useSubmitHomework() {
           queryKey: homeworkKeys.student(updated.studentId),
         })
       }
+    },
+  })
+}
+
+export function useDeleteHomework() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => homeworkApi.deleteHomework(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: homeworkKeys.all })
     },
   })
 }

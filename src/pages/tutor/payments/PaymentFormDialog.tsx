@@ -164,10 +164,10 @@ export function PaymentFormDialog({
         const formattedAmount = numAmount.toLocaleString('ru-RU')
         if (balance !== undefined && balance !== null) {
           toast.success(
-            `Оплата на ${formattedAmount} ₽ зафиксирована! Новый баланс ученика: ${balance} ур.`,
+            `Оплата на ${formattedAmount} зафиксирована! Новый баланс ученика: ${balance} ур.`,
           )
         } else {
-          toast.success(`Оплата на ${formattedAmount} ₽ успешно зафиксирована`)
+          toast.success(`Оплата на ${formattedAmount} успешно зафиксирована`)
         }
 
         if (onSelectStudentId && targetStudentId !== studentId) {
@@ -263,23 +263,20 @@ export function PaymentFormDialog({
           {/* Amount input & Quick Buttons */}
           <div className="space-y-1.5">
             <Label htmlFor="payment-amount" className="text-xs font-semibold">
-              Сумма оплаты (₽) *
+              Сумма оплаты *
             </Label>
-            <div className="relative">
+            <div>
               <Input
                 id="payment-amount"
                 type="number"
-                min="1"
-                step="50"
+                min="0"
+                step="any"
                 placeholder="Например, 3000"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
-                className="pr-8 text-base font-semibold"
+                className="text-base font-semibold"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">
-                ₽
-              </span>
             </div>
 
             {/* Quick amount chips */}
@@ -295,7 +292,7 @@ export function PaymentFormDialog({
                       : 'bg-muted/50 hover:bg-muted text-foreground border-border'
                   }`}
                 >
-                  +{val.toLocaleString('ru-RU')} ₽
+                  +{val.toLocaleString('ru-RU')}
                 </button>
               ))}
             </div>

@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Loader2,
   Calendar,
+  Trash2,
 } from 'lucide-react'
 import type { Homework } from '@/types'
 import type { AxiosError } from 'axios'
@@ -29,6 +30,7 @@ interface HomeworkDetailsSheetProps {
   initialHomework?: Homework | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onDelete?: (homework: Homework) => void
 }
 
 const statusConfig: Record<
@@ -75,6 +77,7 @@ export function HomeworkDetailsSheet({
   initialHomework,
   open,
   onOpenChange,
+  onDelete,
 }: HomeworkDetailsSheetProps) {
   const { data: fetchedHomework } = useHomework(homeworkId)
   const homework = fetchedHomework || initialHomework
@@ -115,18 +118,33 @@ export function HomeworkDetailsSheet({
       <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
         <SheetHeader className="p-6 border-b border-border">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${currentStatus.badgeClass}`}
-              >
-                <currentStatus.icon className="h-3.5 w-3.5" />
-                <span>{currentStatus.label}</span>
-              </span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${currentStatus.badgeClass}`}
+                >
+                  <currentStatus.icon className="h-3.5 w-3.5" />
+                  <span>{currentStatus.label}</span>
+                </span>
 
-              {isDeadlinePast && homework.status !== 'REVIEWED' && (
-                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                  Дедлайн просрочен
-                </Badge>
+                {isDeadlinePast && homework.status !== 'REVIEWED' && (
+                  <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                    Дедлайн просрочен
+                  </Badge>
+                )}
+              </div>
+
+              {onDelete && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDelete(homework)}
+                  className="text-xs h-7 text-destructive border-destructive/30 hover:bg-destructive/10 gap-1.5 font-medium"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Удалить задание</span>
+                </Button>
               )}
             </div>
 

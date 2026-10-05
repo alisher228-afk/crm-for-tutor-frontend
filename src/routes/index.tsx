@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
@@ -15,6 +15,9 @@ import {
   TutorLessonsPage,
   TutorPaymentsPage,
   TutorHomeworkPage,
+  TutorMaterialsPage,
+  TutorTestsPage,
+  TutorProfilePage,
 } from '@/pages/tutor'
 
 import { StudentLayout } from '@/layouts/StudentLayout'
@@ -23,8 +26,20 @@ import {
   StudentLessonsPage,
   StudentHomeworkPage,
   StudentPaymentsPage,
+  StudentMaterialsPage,
+  StudentTestsPage,
 } from '@/pages/student'
+import { LandingPage } from '@/pages/landing'
 import { Loader2 } from 'lucide-react'
+
+const DesignPage = lazy(() =>
+  import('@/pages/design/DesignPage').then((m) => ({ default: m.DesignPage }))
+)
+
+const isDevEnv =
+  import.meta.env.DEV ||
+  (typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
 
 function RootRedirect() {
   const { isAuthenticated, role, isLoading } = useAuth()
@@ -38,7 +53,7 @@ function RootRedirect() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <LandingPage />
   }
 
   return <Navigate to={role === 'TUTOR' ? '/tutor/students' : '/student'} replace />
@@ -67,6 +82,25 @@ export function AppRoutes() {
     <Routes>
       {/* Root redirect */}
       <Route path="/" element={<RootRedirect />} />
+      <Route path="/landing" element={<LandingPage />} />
+
+      {/* Dev-only design system showcase */}
+      {isDevEnv && (
+        <Route
+          path="/design"
+          element={
+            <Suspense
+              fallback={
+                <div className="min-h-screen flex items-center justify-center bg-background">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              }
+            >
+              <DesignPage />
+            </Suspense>
+          }
+        />
+      )}
 
       {/* Auth routes */}
       <Route
@@ -113,9 +147,14 @@ export function AppRoutes() {
       >
         <Route index element={<Navigate to="students" replace />} />
         <Route path="students" element={<TutorStudentsPage />} />
+        <Route path="individual" element={<Navigate to="/tutor/students" replace />} />
+        <Route path="groups" element={<Navigate to="/tutor/students?tab=groups" replace />} />
         <Route path="lessons" element={<TutorLessonsPage />} />
         <Route path="payments" element={<TutorPaymentsPage />} />
         <Route path="homework" element={<TutorHomeworkPage />} />
+        <Route path="materials" element={<TutorMaterialsPage />} />
+        <Route path="tests" element={<TutorTestsPage />} />
+        <Route path="profile" element={<TutorProfilePage />} />
       </Route>
 
       {/* Student routes */}
@@ -130,7 +169,9 @@ export function AppRoutes() {
         <Route index element={<StudentProfilePage />} />
         <Route path="lessons" element={<StudentLessonsPage />} />
         <Route path="homework" element={<StudentHomeworkPage />} />
+        <Route path="materials" element={<StudentMaterialsPage />} />
         <Route path="payments" element={<StudentPaymentsPage />} />
+        <Route path="tests" element={<StudentTestsPage />} />
       </Route>
 
       {/* Fallback */}

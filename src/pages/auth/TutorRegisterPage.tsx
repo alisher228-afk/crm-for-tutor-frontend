@@ -13,8 +13,10 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { BookOpen, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import type { AxiosError } from 'axios'
+import { Logo } from '@/components/brand/Logo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function TutorRegisterPage() {
   const navigate = useNavigate()
@@ -67,10 +69,13 @@ export function TutorRegisterPage() {
       }
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
+      const serverMessage =
+        axiosError.response?.data?.message || axiosError.response?.data?.error
       const errorMessage =
-        axiosError.response?.data?.message ||
-        axiosError.response?.data?.error ||
-        'Ошибка при регистрации. Возможно, данный email уже занят.'
+        serverMessage ||
+        (axiosError.code === 'ERR_NETWORK' || !axiosError.response
+          ? 'Не удалось связаться с сервером (Network Error). Проверьте бэкенд.'
+          : 'Ошибка при регистрации. Возможно, данный email уже занят.')
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -78,14 +83,18 @@ export function TutorRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
-      <Card className="w-full max-w-md shadow-lg border-border">
-        <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <BookOpen className="h-6 w-6" />
-          </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Регистрация репетитора</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
+      <Card className="w-full max-w-md border-border bg-card shadow-soft">
+        <CardHeader className="space-y-3 text-center pb-2">
+          <Link to="/" className="mx-auto flex flex-col items-center gap-1 group cursor-pointer focus-visible:outline-none">
+            <Logo variant="full" size="lg" className="group-hover:opacity-90 transition-opacity" />
+          </Link>
+          <CardTitle className="text-xl font-bold tracking-tight">Регистрация репетитора</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm">
             Создайте профиль для управления расписанием, учениками и оплатами
           </CardDescription>
         </CardHeader>

@@ -17,6 +17,7 @@ interface DeleteLessonConfirmDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   lesson: Lesson | null
+  sessionLessons?: Lesson[]
   onSuccess?: () => void
 }
 
@@ -24,6 +25,7 @@ export function DeleteLessonConfirmDialog({
   open,
   onOpenChange,
   lesson,
+  sessionLessons,
   onSuccess,
 }: DeleteLessonConfirmDialogProps) {
   const deleteMutation = useDeleteLesson()
@@ -32,8 +34,13 @@ export function DeleteLessonConfirmDialog({
     if (!lesson?.id) return
 
     try {
-      await deleteMutation.mutateAsync(lesson.id)
-      toast.success('Урок успешно удален')
+      if (sessionLessons && sessionLessons.length > 1) {
+        await Promise.all(sessionLessons.map((l) => deleteMutation.mutateAsync(l.id)))
+        toast.success(`Групповое занятие (${sessionLessons.length} уч.) успешно удалено`)
+      } else {
+        await deleteMutation.mutateAsync(lesson.id)
+        toast.success('Урок успешно удален')
+      }
       onOpenChange(false)
       onSuccess?.()
     } catch (err) {
@@ -44,8 +51,12 @@ export function DeleteLessonConfirmDialog({
     }
   }
 
-  const studentName = lesson?.studentName || 'ученика'
-  const lessonTopic = lesson?.topic ? `по теме "${lesson.topic}"` : ''
+  const isGroup = Boolean(lesson?.groupName?.trim())
+  const studentName =
+    lesson?.studentName ||
+    [lesson?.studentFirstName, lesson?.studentLastName].filter(Boolean).join(' ') ||
+    'ученика'
+  const lessonTopic = lesson?.topic ? ` по теме "${lesson.topic}"` : ''
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -53,11 +64,27 @@ export function DeleteLessonConfirmDialog({
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive">
             <Trash2 className="h-5 w-5" />
-            <DialogTitle>Удалить занятие?</DialogTitle>
+            <DialogTitle>
+              {isGroup ? 'Удалить групповое занятие?' : 'Удалить занятие?'}
+            </DialogTitle>
           </div>
           <DialogDescription className="pt-2">
-            Вы собираетесь удалить урок для {studentName} {lessonTopic}.
-            Это действие нельзя будет отменить.
+            {isGroup ? (
+              <>
+                Вы собираетесь удалить групповой урок для группы{' '}
+                <strong className="text-foreground">{lesson?.groupName}</strong>
+                {sessionLessons && sessionLessons.length > 0 && (
+                  <> ({sessionLessons.length} учеников)</>
+                )}
+                {lessonTopic}. Это занятие будет удалено у всех учеников группы.
+              </>
+            ) : (
+              <>
+                Вы собираетесь удалить урок для{' '}
+                <strong className="text-foreground">{studentName}</strong>
+                {lessonTopic}. Это действие нельзя будет отменить.
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
 

@@ -13,8 +13,10 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { AlertCircle, GraduationCap, Loader2, KeyRound } from 'lucide-react'
+import { AlertCircle, Loader2, KeyRound } from 'lucide-react'
 import type { AxiosError } from 'axios'
+import { Logo } from '@/components/brand/Logo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function StudentRegisterPage() {
   const navigate = useNavigate()
@@ -100,14 +102,18 @@ export function StudentRegisterPage() {
   const hasInitialToken = Boolean(inviteTokenFromUrl)
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
-      <Card className="w-full max-w-md shadow-lg border-border">
-        <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <GraduationCap className="h-6 w-6" />
-          </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Регистрация ученика</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
+      <Card className="w-full max-w-md border-border bg-card shadow-soft">
+        <CardHeader className="space-y-3 text-center pb-2">
+          <Link to="/" className="mx-auto flex flex-col items-center gap-1 group cursor-pointer focus-visible:outline-none">
+            <Logo variant="full" size="lg" className="group-hover:opacity-90 transition-opacity" />
+          </Link>
+          <CardTitle className="text-xl font-bold tracking-tight">Регистрация ученика</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm">
             Присоединяйтесь к платформе по приглашению вашего репетитора
           </CardDescription>
         </CardHeader>

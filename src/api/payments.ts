@@ -4,6 +4,7 @@ import type {
   PaymentCreateRequest,
   PaymentUpdateRequest,
   IncomeAnalytics,
+  StudentPaymentsResponse,
 } from '@/types'
 
 export const paymentsApi = {
@@ -45,8 +46,8 @@ export const paymentsApi = {
   },
 
   // Student self endpoint
-  getMyPayments: async (): Promise<Payment[]> => {
-    const response = await apiClient.get<Payment[]>('/api/v1/me/payments')
+  getMyPayments: async (): Promise<StudentPaymentsResponse> => {
+    const response = await apiClient.get<StudentPaymentsResponse>('/api/v1/me/payments')
     return response.data
   },
 }

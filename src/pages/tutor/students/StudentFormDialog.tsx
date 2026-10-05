@@ -21,6 +21,8 @@ interface StudentFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   initialData?: StudentProfile | null
+  defaultFormat?: 'INDIVIDUAL' | 'GROUP'
+  defaultGroupName?: string
   onSuccess?: (student: StudentProfile) => void
 }
 
@@ -28,8 +30,11 @@ export function StudentFormDialog({
   open,
   onOpenChange,
   initialData,
+  defaultFormat,
+  defaultGroupName,
   onSuccess,
 }: StudentFormDialogProps) {
+
   const isEditing = Boolean(initialData?.id)
 
   const [firstName, setFirstName] = useState('')
@@ -39,6 +44,8 @@ export function StudentFormDialog({
   const [currentLevel, setCurrentLevel] = useState('')
   const [hourlyRate, setHourlyRate] = useState<string>('')
   const [notes, setNotes] = useState('')
+  const [studyFormat, setStudyFormat] = useState<'INDIVIDUAL' | 'GROUP'>('INDIVIDUAL')
+  const [groupName, setGroupName] = useState('')
 
   const createMutation = useCreateStudent()
   const updateMutation = useUpdateStudent()
@@ -60,6 +67,13 @@ export function StudentFormDialog({
           initialData.hourlyRate !== undefined ? String(initialData.hourlyRate) : '',
         )
         setNotes(initialData.notes || '')
+        if (initialData.groupName && initialData.groupName.trim()) {
+          setStudyFormat('GROUP')
+          setGroupName(initialData.groupName.trim())
+        } else {
+          setStudyFormat('INDIVIDUAL')
+          setGroupName('')
+        }
       } else {
         setFirstName('')
         setLastName('')
@@ -68,9 +82,12 @@ export function StudentFormDialog({
         setCurrentLevel('')
         setHourlyRate('')
         setNotes('')
+        setStudyFormat(defaultFormat || (defaultGroupName ? 'GROUP' : 'INDIVIDUAL'))
+        setGroupName(defaultGroupName || '')
       }
     }
-  }, [open, initialData])
+  }, [open, initialData, defaultFormat, defaultGroupName])
+
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -81,6 +98,11 @@ export function StudentFormDialog({
       return
     }
 
+    if (studyFormat === 'GROUP' && !groupName.trim()) {
+      toast.error('Укажите название группы для группового формата')
+      return
+    }
+
     const payload = {
       firstName: trimmedFirstName,
       lastName: lastName.trim() || undefined,
@@ -88,6 +110,7 @@ export function StudentFormDialog({
       telegram: telegram.trim() || undefined,
       currentLevel: currentLevel.trim() || undefined,
       hourlyRate: hourlyRate ? Number(hourlyRate) : undefined,
+      groupName: studyFormat === 'GROUP' && groupName.trim() ? groupName.trim() : '',
       notes: notes.trim() || undefined,
     }
 
@@ -95,7 +118,10 @@ export function StudentFormDialog({
       if (isEditing && initialData?.id) {
         const updated = await updateMutation.mutateAsync({
           id: initialData.id,
-          data: payload,
+          data: {
+            ...payload,
+            status: initialData.status || 'ACTIVE',
+          },
         })
         toast.success('Данные ученика успешно обновлены')
         onOpenChange(false)
@@ -196,18 +222,59 @@ export function StudentFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="hourlyRate">Ставка за урок (₽)</Label>
+              <Label htmlFor="hourlyRate">Ставка за урок</Label>
               <Input
                 id="hourlyRate"
                 type="number"
                 min="0"
-                step="50"
+                step="any"
                 placeholder="1500"
                 value={hourlyRate}
                 onChange={(e) => setHourlyRate(e.target.value)}
                 disabled={isPending}
               />
             </div>
+          </div>
+
+          {/* Format & Group */}
+          <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
+            <Label className="text-xs font-semibold">Формат занятий</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant={studyFormat === 'INDIVIDUAL' ? 'default' : 'outline'}
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => setStudyFormat('INDIVIDUAL')}
+              >
+                Индивидуально
+              </Button>
+              <Button
+                type="button"
+                variant={studyFormat === 'GROUP' ? 'default' : 'outline'}
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => setStudyFormat('GROUP')}
+              >
+                В группе
+              </Button>
+            </div>
+
+            {studyFormat === 'GROUP' && (
+              <div className="space-y-1.5 pt-1.5">
+                <Label htmlFor="groupName" className="text-xs">
+                  Название группы <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="groupName"
+                  placeholder="Например: Группа A / Английский B1"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  disabled={isPending}
+                  required={studyFormat === 'GROUP'}
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">

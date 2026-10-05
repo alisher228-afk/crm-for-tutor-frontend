@@ -81,3 +81,16 @@ export function useMyLessons(params?: GetLessonsParams) {
   })
 }
 
+export function useCancelMyLesson() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      lessonsApi.cancelMyLesson(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: lessonKeys.all })
+      queryClient.invalidateQueries({ queryKey: lessonKeys.my() })
+    },
+  })
+}
+

@@ -6,6 +6,8 @@ export const studentKeys = {
   all: ['students'] as const,
   lists: () => [...studentKeys.all, 'list'] as const,
   list: (params?: GetStudentsParams) => [...studentKeys.lists(), params] as const,
+  groups: () => [...studentKeys.all, 'groups'] as const,
+  groupStudents: (groupName: string) => [...studentKeys.all, 'group', groupName] as const,
   details: () => [...studentKeys.all, 'detail'] as const,
   detail: (id: string) => [...studentKeys.details(), id] as const,
 }
@@ -17,6 +19,21 @@ export function useStudents(params?: GetStudentsParams) {
   })
 }
 
+export function useStudentGroups() {
+  return useQuery({
+    queryKey: studentKeys.groups(),
+    queryFn: () => studentsApi.getGroups(),
+  })
+}
+
+export function useStudentsByGroup(groupName: string | null | undefined) {
+  return useQuery({
+    queryKey: studentKeys.groupStudents(groupName || ''),
+    queryFn: () => studentsApi.getStudentsByGroup(groupName!),
+    enabled: !!groupName,
+  })
+}
+
 export function useStudent(id: string | null | undefined) {
   return useQuery({
     queryKey: studentKeys.detail(id || ''),
@@ -24,6 +41,7 @@ export function useStudent(id: string | null | undefined) {
     enabled: !!id,
   })
 }
+
 
 export function useCreateStudent() {
   const queryClient = useQueryClient()

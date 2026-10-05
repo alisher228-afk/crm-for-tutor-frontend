@@ -40,7 +40,10 @@ import {
   Banknote,
   Clock,
   Sparkles,
+  Users,
+  BrainCircuit,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import type { StudentProfile } from '@/types'
 import type { AxiosError } from 'axios'
 
@@ -48,8 +51,9 @@ interface StudentDetailsSheetProps {
   studentId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onEdit: (student: StudentProfile) => void
-  onArchive: (student: StudentProfile) => void
+  onEdit?: (student: StudentProfile) => void
+  onArchive?: (student: StudentProfile) => void
+  onMoveGroup?: (student: StudentProfile) => void
 }
 
 export function StudentDetailsSheet({
@@ -58,8 +62,10 @@ export function StudentDetailsSheet({
   onOpenChange,
   onEdit,
   onArchive,
+  onMoveGroup,
 }: StudentDetailsSheetProps) {
   const { data: student, isLoading } = useStudent(studentId)
+  const navigate = useNavigate()
 
   const inviteMutation = useGenerateInvite()
   const telegramCodeMutation = useGenerateTelegramCode()
@@ -160,6 +166,16 @@ export function StudentDetailsSheet({
                           ? 'В архиве'
                           : student?.status || 'Активен'}
                     </Badge>
+                    {student?.groupName ? (
+                      <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20 flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {student.groupName}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs text-muted-foreground flex items-center gap-1">
+                        Индивидуально
+                      </Badge>
+                    )}
                     {student?.telegramLinked && (
                       <Badge variant="outline" className="text-[10px] text-sky-600 border-sky-200 bg-sky-50 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-400">
                         Telegram привязан
@@ -190,14 +206,17 @@ export function StudentDetailsSheet({
                       <Layers className="h-3 w-3" /> Баланс
                     </p>
                     <p
-                      className={`text-lg font-bold mt-0.5 ${
+                      className={`text-lg font-bold mt-0.5 tabular-nums ${
                         (student.balance ?? 0) < 0
-                          ? 'text-destructive'
+                          ? 'text-red-600 dark:text-red-400 font-black'
                           : (student.balance ?? 0) === 0
-                            ? 'text-amber-600'
+                            ? 'text-amber-600 dark:text-amber-400'
                             : 'text-foreground'
                       }`}
                     >
+                      {(student.balance ?? 0) < 0 && (
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-accent mr-1 align-middle" />
+                      )}
                       {student.balance ?? 0} ур.
                     </p>
                   </CardContent>
@@ -209,7 +228,7 @@ export function StudentDetailsSheet({
                       <Banknote className="h-3 w-3" /> Ставка
                     </p>
                     <p className="text-lg font-bold mt-0.5 text-foreground">
-                      {student.hourlyRate ? `${student.hourlyRate} ₽` : '—'}
+                      {student.hourlyRate ? `${student.hourlyRate.toLocaleString('ru-RU')}` : '—'}
                     </p>
                   </CardContent>
                 </Card>
@@ -258,6 +277,22 @@ export function StudentDetailsSheet({
                   <span>Привязать TG</span>
                 </Button>
               </div>
+
+              {/* Assign Personal Test Button */}
+              {student && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onOpenChange(false)
+                    navigate(`/tutor/tests?create=true&targetType=INDIVIDUAL&studentId=${student.id}`)
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 text-xs h-8 text-foreground hover:bg-muted"
+                >
+                  <BrainCircuit className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>Назначить персональный тест</span>
+                </Button>
+              )}
 
               {/* Contact Information */}
               <div className="space-y-3">
@@ -359,20 +394,33 @@ export function StudentDetailsSheet({
           )}
 
           {/* Footer Actions */}
-          {student && (
+          {student && (onMoveGroup || onEdit || onArchive) && (
             <div className="p-4 border-t border-border flex items-center gap-2 bg-muted/20">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  onEdit(student)
-                }}
-              >
-                <Edit2 className="mr-2 h-4 w-4" />
-                Редактировать
-              </Button>
+              {onMoveGroup && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => onMoveGroup(student)}
+                >
+                  <Users className="mr-2 h-4 w-4 text-primary" />
+                  {student.groupName ? 'Сменить группу' : 'В группу'}
+                </Button>
+              )}
 
-              {student.status !== 'ARCHIVED' && (
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    onEdit(student)
+                  }}
+                >
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Редактировать
+                </Button>
+              )}
+
+              {onArchive && student.status !== 'ARCHIVED' && (
                 <Button
                   variant="outline"
                   className="text-destructive hover:bg-destructive/10 hover:border-destructive/30"

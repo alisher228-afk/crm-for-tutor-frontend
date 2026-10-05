@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
-import { buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Video,
   CheckCircle2,
@@ -8,11 +8,15 @@ import {
   ExternalLink,
   Clock,
   FileText,
+  CalendarX2,
+  AlertCircle,
+  MessageSquare,
 } from 'lucide-react'
 import type { Lesson } from '@/types'
 
 interface StudentLessonCardProps {
   lesson: Lesson
+  onCancelLesson?: (lesson: Lesson) => void
 }
 
 const statusConfig: Record<
@@ -22,25 +26,25 @@ const statusConfig: Record<
   SCHEDULED: {
     label: 'Запланирован',
     badgeClass:
-      'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900',
+      'bg-muted text-foreground border border-border font-medium',
     icon: CalendarClock,
   },
   COMPLETED: {
     label: 'Проведен',
     badgeClass:
-      'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
+      'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-medium',
     icon: CheckCircle2,
   },
   CANCELLED_BY_TUTOR: {
     label: 'Отменен (репетитор)',
     badgeClass:
-      'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-900',
+      'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20 font-medium',
     icon: XCircle,
   },
   CANCELLED_BY_STUDENT: {
     label: 'Отменен вами',
     badgeClass:
-      'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-900',
+      'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-medium',
     icon: XCircle,
   },
 }
@@ -59,10 +63,22 @@ function getDurationMinutes(start: string, end: string): number {
   return Math.round((e - s) / (1000 * 60))
 }
 
-export function StudentLessonCard({ lesson }: StudentLessonCardProps) {
+export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardProps) {
   const startFormatted = formatTime(lesson.startTime)
   const endFormatted = formatTime(lesson.endTime)
   const duration = getDurationMinutes(lesson.startTime, lesson.endTime)
+
+  const lessonDate = new Date(lesson.startTime)
+  const isFutureScheduled =
+    lesson.status === 'SCHEDULED' &&
+    !isNaN(lessonDate.getTime()) &&
+    lessonDate.getTime() > Date.now()
+
+  const hoursUntilLesson = !isNaN(lessonDate.getTime())
+    ? (lessonDate.getTime() - Date.now()) / (1000 * 60 * 60)
+    : 0
+
+  const isLateCancellation = hoursUntilLesson < 12
 
   const currentStatus = statusConfig[lesson.status] || {
     label: lesson.status,
@@ -71,14 +87,35 @@ export function StudentLessonCard({ lesson }: StudentLessonCardProps) {
   }
   const StatusIcon = currentStatus.icon
 
+  const isToday = (() => {
+    if (!lesson.startTime) return false
+    const d = new Date(lesson.startTime)
+    const now = new Date()
+    return (
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate()
+    )
+  })()
+
   return (
-    <Card className="border-border hover:shadow-xs transition-shadow">
+    <Card
+      className={`border transition-all relative overflow-hidden ${
+        isToday
+          ? 'border-border border-l-[3px] border-l-red-accent hover:shadow-xs'
+          : 'border-border hover:shadow-xs'
+      }`}
+    >
       <CardContent className="p-4 space-y-3">
         {/* Top bar: Time, duration and status badge */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-muted text-foreground">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-muted text-foreground tabular-nums">
+              {isToday ? (
+                <span className="h-1.5 w-1.5 rounded-full bg-red-accent" />
+              ) : (
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
               {startFormatted} — {endFormatted}
             </span>
             {duration > 0 && (
@@ -103,9 +140,9 @@ export function StudentLessonCard({ lesson }: StudentLessonCardProps) {
           </h3>
         </div>
 
-        {/* Meeting URL button (if available and lesson is scheduled) */}
-        {lesson.meetingUrl && (
-          <div className="pt-1">
+        {/* Actions bar (meeting button & cancel button) */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          {lesson.meetingUrl && lesson.status === 'SCHEDULED' ? (
             <a
               href={
                 lesson.meetingUrl.startsWith('http')
@@ -115,15 +152,54 @@ export function StudentLessonCard({ lesson }: StudentLessonCardProps) {
               target="_blank"
               rel="noreferrer"
               className={buttonVariants({
+                variant: 'success',
                 size: 'sm',
                 className:
-                  'gap-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center',
+                  'gap-2 text-xs font-semibold inline-flex items-center text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-xs cursor-pointer',
               })}
             >
-              <Video className="h-3.5 w-3.5" />
-              <span>Подключиться к занятию</span>
-              <ExternalLink className="h-3 w-3 opacity-70" />
+              <Video className="h-3.5 w-3.5 text-white shrink-0" />
+              <span className="text-white">Подключиться к занятию</span>
+              <ExternalLink className="h-3 w-3 text-white/80 shrink-0" />
             </a>
+          ) : (
+            <div />
+          )}
+
+          {isFutureScheduled && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onCancelLesson?.(lesson)}
+              className={`h-8 text-xs gap-1.5 ml-auto ${
+                isLateCancellation
+                  ? 'text-amber-700 dark:text-amber-400 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                  : 'text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+              }`}
+            >
+              {isLateCancellation ? (
+                <>
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span>Отмена через преподавателя</span>
+                </>
+              ) : (
+                <>
+                  <CalendarX2 className="h-3.5 w-3.5" />
+                  <span>Отменить занятие</span>
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+
+        {/* Cancellation reason note */}
+        {lesson.cancellationReason && (
+          <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <p className="line-clamp-2">
+              <span className="font-semibold">Причина отмены: </span>
+              {lesson.cancellationReason}
+            </p>
           </div>
         )}
 

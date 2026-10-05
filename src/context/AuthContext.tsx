@@ -42,10 +42,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
+  const normalizeRole = (r?: string | null): UserRole | null => {
+    if (!r) return null
+    const clean = r.replace(/^ROLE_/, '')
+    return clean === 'TUTOR' || clean === 'STUDENT' ? clean : null
+  }
+
   useEffect(() => {
     const storedAccess = getStoredAccessToken()
     const storedRefresh = getStoredRefreshToken()
-    const storedRole = localStorage.getItem(USER_ROLE_KEY) as UserRole | null
+    const storedRole = normalizeRole(localStorage.getItem(USER_ROLE_KEY))
     const storedEmail = localStorage.getItem(USER_EMAIL_KEY)
 
     if (storedAccess && storedRefresh && storedRole) {
@@ -61,18 +67,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const handleAuthSuccess = (res: AuthResponse, email: string) => {
+    const normalizedRole = normalizeRole(res.role) || 'TUTOR'
     setStoredTokens({
       accessToken: res.accessToken,
       refreshToken: res.refreshToken,
-      role: res.role,
+      role: normalizedRole,
       email,
     })
     setAccessToken(res.accessToken)
     setRefreshToken(res.refreshToken)
-    setRole(res.role)
+    setRole(normalizedRole)
     setUser({
       email,
-      role: res.role,
+      role: normalizedRole,
     })
   }
 

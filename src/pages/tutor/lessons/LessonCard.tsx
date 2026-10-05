@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -20,14 +21,43 @@ import {
   XCircle,
   ExternalLink,
   Loader2,
+  Users,
+  AlertTriangle,
+  ChevronRight,
 } from 'lucide-react'
 import type { Lesson, LessonStatus } from '@/types'
 import type { AxiosError } from 'axios'
 
+function getStudentNoun(count: number): string {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod100 >= 11 && mod100 <= 19) return 'учеников'
+  if (mod10 === 1) return 'ученик'
+  if (mod10 >= 2 && mod10 <= 4) return 'ученика'
+  return 'учеников'
+}
+
+export interface LessonCardStudent {
+  id: string
+  name: string
+  firstName?: string
+  lastName?: string
+  phone?: string
+  telegram?: string
+  currentLevel?: string
+  lessonBalance?: number
+}
+
 interface LessonCardProps {
   lesson: Lesson
+  sessionLessons?: Lesson[]
+  students?: LessonCardStudent[]
+  hasConflict?: boolean
+  conflictingNames?: string[]
   onEdit: (lesson: Lesson) => void
-  onDelete: (lesson: Lesson) => void
+  onDelete: (lesson: Lesson, sessionLessons?: Lesson[]) => void
+  onViewGroupStudents?: (groupName: string, students: LessonCardStudent[]) => void
+  onSelectStudent?: (studentId: string) => void
 }
 
 const statusConfig: Record<
@@ -37,25 +67,25 @@ const statusConfig: Record<
   SCHEDULED: {
     label: 'Запланирован',
     badgeClass:
-      'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900',
+      'bg-muted text-foreground border-border font-medium',
     icon: CalendarClock,
   },
   COMPLETED: {
     label: 'Проведен',
     badgeClass:
-      'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
+      'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20 font-medium',
     icon: CheckCircle2,
   },
   CANCELLED_BY_TUTOR: {
     label: 'Отменен (тьютор)',
     badgeClass:
-      'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-900',
+      'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20 font-medium',
     icon: XCircle,
   },
   CANCELLED_BY_STUDENT: {
     label: 'Отменен (ученик)',
     badgeClass:
-      'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-900',
+      'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20 font-medium',
     icon: XCircle,
   },
 }
@@ -74,7 +104,17 @@ function getDurationMinutes(start: string, end: string): number {
   return Math.round((e - s) / (1000 * 60))
 }
 
-export function LessonCard({ lesson, onEdit, onDelete }: LessonCardProps) {
+export function LessonCard({
+  lesson,
+  sessionLessons,
+  students,
+  hasConflict,
+  conflictingNames,
+  onEdit,
+  onDelete,
+  onViewGroupStudents,
+  onSelectStudent,
+}: LessonCardProps) {
   const updateStatusMutation = useUpdateLessonStatus()
 
   const startFormatted = formatTime(lesson.startTime)
@@ -87,17 +127,42 @@ export function LessonCard({ lesson, onEdit, onDelete }: LessonCardProps) {
     icon: CalendarClock,
   }
 
-  const studentName = lesson.studentName || 'Ученик'
-  const studentInitial = studentName.charAt(0).toUpperCase() || 'У'
+  const isGroup = Boolean(lesson.groupName?.trim())
+
+  const studentFullName =
+    lesson.studentName?.trim() ||
+    [lesson.studentFirstName, lesson.studentLastName].filter(Boolean).join(' ').trim() ||
+    ''
+
+  const displayTitle = isGroup
+    ? lesson.groupName!.trim()
+    : studentFullName || 'Индивидуальный ученик'
+
+  const studentInitial = studentFullName
+    ? studentFullName.charAt(0).toUpperCase()
+    : 'У'
+
+  const displayStudents = students || []
 
   const handleStatusChange = async (status: LessonStatus) => {
     if (status === lesson.status) return
 
     try {
-      await updateStatusMutation.mutateAsync({ id: lesson.id, status })
-      toast.success(
-        `Статус занятия изменен на "${statusConfig[status]?.label || status}"`,
-      )
+      if (sessionLessons && sessionLessons.length > 1) {
+        await Promise.all(
+          sessionLessons.map((l) =>
+            updateStatusMutation.mutateAsync({ id: l.id, status }),
+          ),
+        )
+        toast.success(
+          `Статус занятия изменен на "${statusConfig[status]?.label || status}" для всей группы`,
+        )
+      } else {
+        await updateStatusMutation.mutateAsync({ id: lesson.id, status })
+        toast.success(
+          `Статус занятия изменен на "${statusConfig[status]?.label || status}"`,
+        )
+      }
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
@@ -106,36 +171,159 @@ export function LessonCard({ lesson, onEdit, onDelete }: LessonCardProps) {
     }
   }
 
+  const isToday = (() => {
+    if (!lesson.startTime) return false
+    const d = new Date(lesson.startTime)
+    const now = new Date()
+    return (
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate()
+    )
+  })()
+
   return (
-    <Card className="border-border hover:shadow-sm transition-shadow">
+    <Card
+      className={`border transition-all relative overflow-hidden ${
+        hasConflict
+          ? 'border-amber-400/60 bg-amber-500/5'
+          : isToday
+          ? 'border-border border-l-[3px] border-l-red-accent hover:shadow-xs'
+          : 'border-border hover:shadow-xs'
+      }`}
+    >
       <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Left: Time & Student */}
+        {/* Left: Time & Student / Group */}
         <div className="flex items-start sm:items-center gap-4 min-w-0">
           {/* Time Badge Box */}
-          <div className="flex flex-col items-center justify-center rounded-xl bg-muted/60 border border-border px-3 py-2 text-center shrink-0 w-24">
-            <span className="text-sm font-bold text-foreground tracking-tight">
+          <div
+            className={`flex flex-col items-center justify-center rounded-lg px-3 py-2 text-center shrink-0 w-24 border transition-colors relative ${
+              hasConflict
+                ? 'border-amber-400/60 bg-amber-500/10 text-amber-900 dark:text-amber-200'
+                : isToday
+                ? 'bg-muted/80 border-border text-foreground'
+                : 'bg-muted/50 border-border text-foreground'
+            }`}
+          >
+            {isToday && (
+              <span
+                className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-red-accent"
+                title="Занятие на сегодня"
+              />
+            )}
+            <span className="text-sm font-bold tracking-tight tabular-nums">
               {startFormatted}
             </span>
-            <span className="text-[11px] text-muted-foreground">{endFormatted}</span>
+            <span className="text-[11px] text-muted-foreground tabular-nums">{endFormatted}</span>
             {duration > 0 && (
-              <span className="text-[10px] text-muted-foreground/80 mt-0.5 font-medium">
+              <span className="text-[10px] text-muted-foreground/80 mt-0.5 font-medium tabular-nums">
                 {duration} мин.
               </span>
             )}
           </div>
 
-          {/* Student & Topic */}
+          {/* Student / Group & Topic */}
           <div className="space-y-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Avatar size="sm">
-                <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-semibold">
-                  {studentInitial}
+                <AvatarFallback
+                  className={
+                    isGroup
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[11px] font-semibold'
+                      : 'bg-primary/10 text-primary text-[11px] font-semibold'
+                  }
+                >
+                  {isGroup ? <Users className="h-3.5 w-3.5" /> : studentInitial}
                 </AvatarFallback>
               </Avatar>
-              <span className="font-semibold text-sm text-foreground truncate">
-                {studentName}
-              </span>
+
+              {!isGroup && lesson.studentId && onSelectStudent ? (
+                <button
+                  type="button"
+                  onClick={() => onSelectStudent(lesson.studentId)}
+                  className="font-semibold text-sm text-foreground truncate hover:text-primary hover:underline cursor-pointer text-left"
+                  title="Открыть карточку ученика"
+                >
+                  {displayTitle}
+                </button>
+              ) : (
+                <span className="font-semibold text-sm text-foreground truncate">
+                  {displayTitle}
+                </span>
+              )}
+
+              {isGroup ? (
+                <button
+                  type="button"
+                  onClick={() => onViewGroupStudents?.(lesson.groupName!, displayStudents)}
+                  className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                  title="Посмотреть полный список учеников"
+                >
+                  <Users className="h-3 w-3" />
+                  <span>
+                    {displayStudents.length > 0
+                      ? `${displayStudents.length} ${getStudentNoun(displayStudents.length)}`
+                      : 'Группа'}
+                  </span>
+                  <ChevronRight className="h-3 w-3 opacity-60" />
+                </button>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] text-muted-foreground font-normal px-1.5 py-0"
+                >
+                  Индивидуально
+                </Badge>
+              )}
+
+              {/* Time Conflict Soft Warning Badge */}
+              {hasConflict && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1 px-1.5 py-0"
+                  title={
+                    conflictingNames?.length
+                      ? `Пересекается с: ${conflictingNames.join(', ')}`
+                      : 'Пересечение по времени с другим уроком'
+                  }
+                >
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  Накладка
+                </Badge>
+              )}
             </div>
+
+            {/* In a group lesson: show student chips preview */}
+            {isGroup && displayStudents.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                {displayStudents.slice(0, 3).map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => {
+                      if (onSelectStudent && st.id) {
+                        onSelectStudent(st.id)
+                      } else {
+                        onViewGroupStudents?.(lesson.groupName!, displayStudents)
+                      }
+                    }}
+                    className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-muted hover:bg-muted/80 text-foreground font-medium border border-border/60 transition-colors cursor-pointer"
+                    title={`Ученик: ${st.name}. Нажмите, чтобы открыть информацию`}
+                  >
+                    {st.name}
+                  </button>
+                ))}
+                {displayStudents.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => onViewGroupStudents?.(lesson.groupName!, displayStudents)}
+                    className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
+                  >
+                    +{displayStudents.length - 3} ещё...
+                  </button>
+                )}
+              </div>
+            )}
 
             {lesson.topic ? (
               <p className="text-sm text-foreground font-medium truncate">
@@ -144,6 +332,12 @@ export function LessonCard({ lesson, onEdit, onDelete }: LessonCardProps) {
             ) : (
               <p className="text-xs text-muted-foreground italic">
                 Тема занятия не указана
+              </p>
+            )}
+
+            {lesson.cancellationReason && (
+              <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                Причина отмены: {lesson.cancellationReason}
               </p>
             )}
 
@@ -235,8 +429,8 @@ export function LessonCard({ lesson, onEdit, onDelete }: LessonCardProps) {
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => onDelete(lesson)}
-              title="Удалить урок"
+              onClick={() => onDelete(lesson, sessionLessons)}
+              title={isGroup ? 'Удалить групповое занятие' : 'Удалить урок'}
               className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
             >
               <Trash2 className="h-4 w-4" />

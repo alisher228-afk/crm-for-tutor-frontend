@@ -61,4 +61,11 @@ export const lessonsApi = {
     })
     return response.data
   },
+
+  cancelMyLesson: async (id: string, reason?: string): Promise<Lesson> => {
+    const response = await apiClient.patch<Lesson>(`/api/v1/me/lessons/${id}/cancel`, {
+      reason,
+    })
+    return response.data
+  },
 }

@@ -11,16 +11,34 @@ export const homeworkApi = {
     return response.data
   },
 
+  createGroupHomework: async (data: HomeworkCreateRequest): Promise<Homework[]> => {
+    const response = await apiClient.post<Homework[]>('/api/v1/homework/group', data)
+    return response.data
+  },
+
   getHomeworkById: async (id: string): Promise<Homework> => {
     const response = await apiClient.get<Homework>(`/api/v1/homework/${id}`)
     return response.data
   },
 
   getHomeworkByStudent: async (studentId: string): Promise<Homework[]> => {
-    const response = await apiClient.get<Homework[]>(
+    const response = await apiClient.get<any>(
       `/api/v1/homework/student/${studentId}`,
     )
-    return response.data
+    if (Array.isArray(response.data)) {
+      return response.data
+    }
+    return response.data?.content || []
+  },
+
+  getHomeworkByGroup: async (groupName: string): Promise<Homework[]> => {
+    const response = await apiClient.get<any>('/api/v1/homework/group', {
+      params: { groupName },
+    })
+    if (Array.isArray(response.data)) {
+      return response.data
+    }
+    return response.data?.content || []
   },
 
   updateHomeworkStatus: async (
@@ -37,10 +55,17 @@ export const homeworkApi = {
     return response.data
   },
 
+  deleteHomework: async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/homework/${id}`)
+  },
+
   // Student self endpoints
   getMyHomework: async (): Promise<Homework[]> => {
-    const response = await apiClient.get<Homework[]>('/api/v1/me/homework')
-    return response.data
+    const response = await apiClient.get<any>('/api/v1/me/homework')
+    if (Array.isArray(response.data)) {
+      return response.data
+    }
+    return response.data?.content || []
   },
 
   submitHomework: async (

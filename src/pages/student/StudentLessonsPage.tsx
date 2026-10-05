@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import { useMyLessons } from '@/hooks/useLessons'
 import { StudentLessonCard } from './lessons/StudentLessonCard'
+import { CancelLessonDialog } from './lessons/CancelLessonDialog'
 import {
   Calendar as CalendarIcon,
   CalendarDays,
@@ -47,6 +48,10 @@ export function StudentLessonsPage() {
     d.setDate(d.getDate() + 14)
     return formatDateToInput(d)
   })
+
+  // Cancel dialog state
+  const [cancellingLesson, setCancellingLesson] = useState<Lesson | null>(null)
+  const [isCancelOpen, setIsCancelOpen] = useState(false)
 
   // Compute date range based on periodMode
   const dateRange = useMemo(() => {
@@ -277,7 +282,14 @@ export function StudentLessonsPage() {
                 {/* Day Lessons Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {dayLessons.map((lesson) => (
-                    <StudentLessonCard key={lesson.id} lesson={lesson} />
+                    <StudentLessonCard
+                      key={lesson.id}
+                      lesson={lesson}
+                      onCancelLesson={(l) => {
+                        setCancellingLesson(l)
+                        setIsCancelOpen(true)
+                      }}
+                    />
                   ))}
                 </div>
               </div>
@@ -310,6 +322,14 @@ export function StudentLessonsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Cancel Lesson Dialog */}
+      <CancelLessonDialog
+        open={isCancelOpen}
+        onOpenChange={setIsCancelOpen}
+        lesson={cancellingLesson}
+        onSuccess={() => refetch()}
+      />
     </div>
   )
 }

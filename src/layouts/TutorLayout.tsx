@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { useUserProfile } from '@/hooks/useProfile'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Sheet,
@@ -16,64 +16,90 @@ import {
   Calendar,
   DollarSign,
   BookCheck,
+  FolderKanban,
   LogOut,
-  GraduationCap,
   Menu,
+  HelpCircle,
+  UserCircle,
 } from 'lucide-react'
+import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog'
+import { Logo } from '@/components/brand/Logo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 const navItems = [
   { to: '/tutor/students', label: 'Ученики', icon: Users },
-  { to: '/tutor/lessons', label: 'Расписание', icon: Calendar },
+  { to: '/tutor/lessons', label: 'Расписание', icon: Calendar, badge: 'Live' },
   { to: '/tutor/payments', label: 'Финансы', icon: DollarSign },
-  { to: '/tutor/homework', label: 'Домашние задания', icon: BookCheck },
+  { to: '/tutor/homework', label: 'Домашние задания', icon: BookCheck, count: '3' },
+  { to: '/tutor/materials', label: 'База знаний', icon: FolderKanban },
+  { to: '/tutor/tests', label: 'Тесты', icon: HelpCircle },
+  { to: '/tutor/profile', label: 'Профиль', icon: UserCircle },
 ]
 
 export function TutorLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
 
-  const handleLogout = () => {
+  const handleConfirmLogout = () => {
     setMobileOpen(false)
     logout()
     navigate('/login')
   }
 
-  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'T'
+  const { data: profile } = useUserProfile()
+
+  const tutorFullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ')
+  const displayName = tutorFullName || user?.email || 'Репетитор'
+  const userInitial = (profile?.firstName || tutorFullName || user?.email || 'T').charAt(0).toUpperCase()
 
   const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
-    <div className="flex h-full flex-col justify-between p-4">
+    <div className="flex h-full flex-col justify-between p-4 bg-sidebar text-sidebar-foreground">
       <div className="space-y-6">
         {/* Brand */}
-        <div className="flex items-center gap-3 px-2 py-1">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <GraduationCap className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="font-bold text-base leading-none">CRM for Tutor</div>
-            <div className="text-xs text-muted-foreground mt-1">Панель репетитора</div>
-          </div>
+        <div className="flex items-center justify-between px-2 py-1">
+          <Logo variant="full" size="md" />
+          <ThemeToggle className="text-muted-foreground hover:text-foreground" />
         </div>
 
-        {/* User Card */}
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
-          <Avatar size="default">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {userInitial}
-            </AvatarFallback>
-          </Avatar>
+        {/* User Card linking to profile */}
+        <NavLink
+          to="/tutor/profile"
+          onClick={onNavigate}
+          className="flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar-accent/40 p-2.5 hover:bg-sidebar-accent/80 transition-colors group cursor-pointer"
+        >
+          <div className="relative">
+            <Avatar size="default">
+              <AvatarFallback className="bg-muted text-foreground font-semibold text-xs border border-border group-hover:border-primary">
+                {userInitial}
+              </AvatarFallback>
+            </Avatar>
+            <span className="absolute bottom-0 right-0 h-2 w-2 bg-emerald-500 ring-2 ring-sidebar" />
+          </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-foreground">
-              {user?.email || 'Репетитор'}
+            <p className="truncate text-xs font-semibold text-sidebar-foreground group-hover:text-primary transition-colors">
+              {displayName}
             </p>
-            <Badge variant="outline" className="mt-0.5 text-[10px] px-1.5 py-0">
-              Репетитор
-            </Badge>
+            {tutorFullName && user?.email && (
+              <p className="truncate text-[10px] text-muted-foreground font-mono">
+                {user.email}
+              </p>
+            )}
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex h-1.5 w-1.5 bg-red-accent"></span>
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider">
+                В сети • Преподаватель
+              </span>
+            </div>
           </div>
-        </div>
+        </NavLink>
 
-        {/* Navigation */}
-        <nav className="space-y-1">
+        {/* Navigation with sharp active indicator line & micro-badges */}
+        <nav className="space-y-0.5">
           {navItems.map((item) => {
             const Icon = item.icon
             return (
@@ -82,15 +108,40 @@ export function TutorLayout() {
                 to={item.to}
                 onClick={onNavigate}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  `group relative flex items-center justify-between rounded-none px-3 py-2 text-sm font-medium transition-all duration-150 ease-out ${
                     isActive
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      ? 'bg-sidebar-accent text-sidebar-foreground font-semibold'
+                      : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
                   }`
                 }
               >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
+                {({ isActive }) => (
+                  <>
+                    {/* Precision red active indicator line on left edge */}
+                    {isActive && (
+                      <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-red-accent" />
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                      <span>{item.label}</span>
+                    </div>
+
+                    {/* Micro details on menu items */}
+                    {item.badge && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground px-1.5 py-0.2 rounded-none border border-border/80 bg-muted/40">
+                        <span className="h-1 w-1 bg-red-accent" />
+                        {item.badge}
+                      </span>
+                    )}
+
+                    {item.count && (
+                      <span className="inline-flex items-center justify-center px-1.5 py-0.2 rounded-none border border-red-500/20 text-[10px] font-mono font-semibold bg-red-soft text-red-foreground">
+                        {item.count}
+                      </span>
+                    )}
+                  </>
+                )}
               </NavLink>
             )
           })}
@@ -98,13 +149,13 @@ export function TutorLayout() {
       </div>
 
       {/* Logout button at bottom */}
-      <div className="pt-4 border-t border-border">
+      <div className="pt-4 border-t border-sidebar-border">
         <Button
           variant="outline"
           className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30"
-          onClick={handleLogout}
+          onClick={() => setLogoutConfirmOpen(true)}
         >
-          <LogOut className="mr-2 h-4 w-4" />
+          <LogOut className="mr-2 h-4 w-4" strokeWidth={1.75} />
           Выйти из аккаунта
         </Button>
       </div>
@@ -113,46 +164,49 @@ export function TutorLayout() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card/40 shrink-0 sticky top-0 h-screen">
+      {/* Desktop Sidebar (256px / w-64) */}
+      <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar shrink-0 sticky top-0 h-screen">
         <SidebarContent />
       </aside>
 
       {/* Mobile Top Bar */}
-      <div className="md:hidden border-b border-border bg-card/60 backdrop-blur sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <GraduationCap className="h-5 w-5" />
-          </div>
-          <span className="font-bold text-sm">CRM for Tutor</span>
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-            Tutor
-          </Badge>
+      <div className="md:hidden border-b border-border bg-card/90 backdrop-blur sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Logo variant="full" size="sm" />
         </div>
 
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger
-            render={
-              <Button variant="ghost" size="icon-sm" aria-label="Открыть меню" />
-            }
-          >
-            <Menu className="h-5 w-5" />
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Навигация</SheetTitle>
-            </SheetHeader>
-            <SidebarContent onNavigate={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger
+              render={
+                <Button variant="ghost" size="icon-sm" aria-label="Открыть меню" />
+              }
+            >
+              <Menu className="h-5 w-5" strokeWidth={1.75} />
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-72">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Навигация</SheetTitle>
+              </SheetHeader>
+              <SidebarContent onNavigate={() => setMobileOpen(false)} />
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content (max-w 1280px) */}
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-[1280px] mx-auto">
           <Outlet />
         </div>
       </main>
+
+      <LogoutConfirmDialog
+        open={logoutConfirmOpen}
+        onOpenChange={setLogoutConfirmOpen}
+        onConfirm={handleConfirmLogout}
+      />
     </div>
   )
 }

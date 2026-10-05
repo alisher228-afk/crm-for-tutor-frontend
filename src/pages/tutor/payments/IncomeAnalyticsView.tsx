@@ -211,25 +211,23 @@ export function IncomeAnalyticsView() {
         <div className="space-y-4">
           {/* Big Hero Stat Card */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="md:col-span-2 border-border bg-gradient-to-br from-card to-muted/30">
+            <Card className="md:col-span-2 border-border bg-card relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-foreground/10" />
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <TrendingUp className="h-4 w-4 text-foreground" />
                     Доход за {monthLabel} {selectedYear}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-medium">
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-medium">
                     Зафиксировано
                   </span>
                 </div>
               </CardHeader>
               <CardContent className="pt-2 pb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl font-black tracking-tight text-foreground">
+                  <span className="text-4xl sm:text-5xl font-black tracking-tight text-foreground tabular-nums">
                     {totalIncome.toLocaleString('ru-RU')}
-                  </span>
-                  <span className="text-2xl sm:text-3xl font-bold text-muted-foreground">
-                    ₽
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -255,11 +253,6 @@ export function IncomeAnalyticsView() {
                       ? averageCheck.toLocaleString('ru-RU')
                       : '—'}
                   </span>
-                  {averageCheck !== null && (
-                    <span className="text-sm font-medium text-muted-foreground">
-                      ₽
-                    </span>
-                  )}
                 </div>
                 <CardDescription className="text-xs mt-2">
                   {paymentsCount && paymentsCount > 0

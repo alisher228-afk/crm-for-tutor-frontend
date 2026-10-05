@@ -4,6 +4,7 @@ import type {
   StudentCreateRequest,
   StudentUpdateRequest,
   StudentPageResponse,
+  StudentGroup,
   InviteTokenResponse,
   TelegramLinkCodeResponse,
 } from '@/types'
@@ -12,6 +13,8 @@ export interface GetStudentsParams {
   page?: number
   size?: number
   search?: string
+  format?: 'ALL' | 'INDIVIDUAL' | 'GROUP'
+  groupName?: string
 }
 
 export const studentsApi = {
@@ -21,10 +24,25 @@ export const studentsApi = {
         page: params?.page ?? 0,
         size: params?.size ?? 10,
         search: params?.search || undefined,
+        format: params?.format || undefined,
+        groupName: params?.groupName || undefined,
       },
     })
     return response.data
   },
+
+  getGroups: async (): Promise<StudentGroup[]> => {
+    const response = await apiClient.get<StudentGroup[]>('/api/v1/students/groups')
+    return response.data
+  },
+
+  getStudentsByGroup: async (groupName: string): Promise<StudentProfile[]> => {
+    const response = await apiClient.get<StudentProfile[]>(
+      `/api/v1/students/groups/${encodeURIComponent(groupName)}/students`,
+    )
+    return response.data
+  },
+
 
   getStudentById: async (id: string): Promise<StudentProfile> => {
     const response = await apiClient.get<StudentProfile>(`/api/v1/students/${id}`)

@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/context/AuthContext'
 import { useMyProfile } from '@/hooks/useStudents'
+import { ChangePasswordCard } from '@/components/profile/ChangePasswordCard'
 import {
   Sparkles,
   Calendar,
@@ -256,7 +257,7 @@ export function StudentProfilePage() {
                   <p className="text-xs text-muted-foreground">Ставка занятия</p>
                   <p className="font-medium text-foreground text-xs sm:text-sm">
                     {profile.hourlyRate
-                      ? `${profile.hourlyRate.toLocaleString('ru-RU')} ₽ / урок`
+                      ? `${profile.hourlyRate.toLocaleString('ru-RU')} / урок`
                       : 'Индивидуально'}
                   </p>
                 </div>
@@ -276,18 +277,31 @@ export function StudentProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
-            <div className="space-y-0.5">
-              <p className="font-medium text-foreground">{profile.tutorName || 'Репетитор'}</p>
-              {profile.tutorEmail && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5" />
-                  <span>{profile.tutorEmail}</span>
-                </p>
-              )}
+            <div className="space-y-1">
+              <p className="font-semibold text-base text-foreground">
+                {profile.tutorName || 'Репетитор'}
+              </p>
+              <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                {profile.tutorEmail && (
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-primary" />
+                    <span>{profile.tutorEmail}</span>
+                  </span>
+                )}
+                {profile.tutorPhone && (
+                  <span className="flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5 text-primary" />
+                    <span>{profile.tutorPhone}</span>
+                  </span>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Security & Password Change */}
+      <ChangePasswordCard />
 
       {/* Quick Navigation Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

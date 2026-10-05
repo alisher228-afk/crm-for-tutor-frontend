@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Send,
   Sparkles,
+  Paperclip,
 } from 'lucide-react'
 import type { Homework } from '@/types'
 
@@ -311,6 +312,13 @@ export function StudentHomeworkPage() {
                         <span className="flex items-center gap-1">
                           <MessageSquare className="h-3 w-3" />
                           <span>Ваш комментарий</span>
+                        </span>
+                      )}
+
+                      {hw.attachments && hw.attachments.length > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Paperclip className="h-3 w-3" />
+                          <span>Вложений: {hw.attachments.length}</span>
                         </span>
                       )}
                     </div>
