@@ -87,4 +87,12 @@ export const studentsApi = {
     const response = await apiClient.get<StudentProfile>('/api/v1/me/profile')
     return response.data
   },
+
+  generateMyTelegramCode: async (): Promise<{ linkCode: string; botUsername?: string }> => {
+    const response = await apiClient.post<any>('/api/v1/me/telegram-code')
+    return {
+      linkCode: response.data.linkCode || response.data.code || '',
+      botUsername: response.data.botUsername || 'studly_tutor_bot',
+    }
+  },
 }

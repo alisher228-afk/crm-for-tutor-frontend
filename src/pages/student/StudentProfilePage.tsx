@@ -1,11 +1,21 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useAuth } from '@/context/AuthContext'
 import { useMyProfile } from '@/hooks/useStudents'
+import { studentsApi } from '@/api/students'
+import { toast } from 'sonner'
 import { ChangePasswordCard } from '@/components/profile/ChangePasswordCard'
 import {
   Sparkles,
@@ -21,11 +31,45 @@ import {
   CheckCircle2,
   Info,
   ShieldCheck,
+  Bot,
+  Copy,
+  Check,
 } from 'lucide-react'
 
 export function StudentProfilePage() {
   const { user } = useAuth()
   const { data: profile, isLoading, isError, refetch } = useMyProfile()
+
+  const [telegramModalOpen, setTelegramModalOpen] = useState(false)
+  const [telegramCode, setTelegramCode] = useState('')
+  const [botUsername, setBotUsername] = useState('studly_tutor_bot')
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false)
+  const [hasCopiedCode, setHasCopiedCode] = useState(false)
+
+  const handleOpenTelegramModal = async () => {
+    setIsGeneratingCode(true)
+    try {
+      const data = await studentsApi.generateMyTelegramCode()
+      setTelegramCode(data.linkCode)
+      if (data.botUsername) {
+        setBotUsername(data.botUsername)
+      }
+      setTelegramModalOpen(true)
+    } catch (e) {
+      toast.error('Не удалось сгенерировать код привязки Telegram')
+    } finally {
+      setIsGeneratingCode(false)
+    }
+  }
+
+  const handleCopyCode = () => {
+    if (telegramCode) {
+      navigator.clipboard.writeText(telegramCode)
+      setHasCopiedCode(true)
+      toast.success('Код скопирован')
+      setTimeout(() => setHasCopiedCode(false), 2000)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -120,6 +164,31 @@ export function StudentProfilePage() {
           Ваш профиль, информация об обучении и баланс занятий
         </p>
       </div>
+
+      {/* Telegram Connection Banner */}
+      {!profile.telegramLinked && (
+        <div className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-sky-500/20 text-sky-600 dark:text-sky-400">
+              <Send className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-foreground">Подключите Telegram-бота для напоминаний</h4>
+              <p className="text-xs text-muted-foreground">
+                Бот напомнит об уроке за 30 минут, пришлет ссылку на созвон и откроет кабинет в 1 клик
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleOpenTelegramModal}
+            disabled={isGeneratingCode}
+            className="shrink-0 bg-sky-600 hover:bg-sky-700 text-white font-medium"
+          >
+            {isGeneratingCode ? 'Генерация...' : 'Подключить Telegram'}
+          </Button>
+        </div>
+      )}
 
       {/* Hero Grid: Balance Card & Profile Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -225,13 +294,23 @@ export function StudentProfilePage() {
                       </span>
                     )}
                   </p>
-                  <p className="font-medium text-foreground text-xs sm:text-sm">
-                    {profile.telegram
-                      ? profile.telegram.startsWith('@')
-                        ? profile.telegram
-                        : `@${profile.telegram}`
-                      : 'Не привязан'}
-                  </p>
+                  {profile.telegramLinked ? (
+                    <p className="font-medium text-foreground text-xs sm:text-sm">
+                      {profile.telegram
+                        ? profile.telegram.startsWith('@')
+                          ? profile.telegram
+                          : `@${profile.telegram}`
+                        : 'Привязан к боту'}
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleOpenTelegramModal}
+                      className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 mt-0.5 cursor-pointer"
+                    >
+                      <Send className="h-3 w-3" /> Подключить бота
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -362,6 +441,69 @@ export function StudentProfilePage() {
           изменить контактные данные или пополнить баланс уроков, свяжитесь с вашим преподавателем.
         </p>
       </div>
+
+      {/* Telegram Link Code Modal */}
+      <Dialog open={telegramModalOpen} onOpenChange={setTelegramModalOpen}>
+        <DialogContent className="sm:max-w-md text-center">
+          <DialogHeader className="text-center sm:text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400 mb-2">
+              <Bot className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-xl">Подключение Telegram-бота</DialogTitle>
+            <DialogDescription>
+              Получайте напоминания об уроках и открывайте личный кабинет в 1 клик
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3">
+            <Button
+              type="button"
+              className="w-full bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center gap-2 h-11 text-sm font-semibold"
+              onClick={() => {
+                const cleanBot = botUsername.replace(/^@/, '')
+                window.open(`https://t.me/${cleanBot}?start=${telegramCode}`, '_blank')
+              }}
+            >
+              <Send className="h-4 w-4" />
+              Открыть бота в Telegram (автопривязка)
+            </Button>
+
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-border"></div>
+              <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase font-medium">или вручную по коду</span>
+              <div className="flex-grow border-t border-border"></div>
+            </div>
+
+            <div className="p-4 bg-muted/60 border border-border rounded-xl flex items-center justify-center gap-4">
+              <span className="text-3xl font-mono font-bold tracking-widest text-foreground">
+                {telegramCode || '------'}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyCode}
+                className="h-9 px-3"
+              >
+                {hasCopiedCode ? (
+                  <Check className="h-4 w-4 text-emerald-500 mr-1" />
+                ) : (
+                  <Copy className="h-4 w-4 mr-1" />
+                )}
+                <span>{hasCopiedCode ? 'Скопировано' : 'Копировать'}</span>
+              </Button>
+            </div>
+
+            <div className="rounded-lg bg-muted/30 p-3 text-left text-xs text-muted-foreground space-y-1">
+              <p className="font-semibold text-foreground">Инструкция для ручного ввода:</p>
+              <ol className="list-decimal pl-4 space-y-0.5">
+                <li>Перейдите в бота <strong>@{botUsername.replace(/^@/, '')}</strong></li>
+                <li>Нажмите <strong>Start</strong> и отправьте этот 6-значный код</li>
+                <li>Срок действия кода: <strong>24 часа</strong></li>
+              </ol>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
