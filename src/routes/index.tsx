@@ -42,7 +42,7 @@ const isDevEnv =
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
 
 function RootRedirect() {
-  const { isAuthenticated, role, isLoading } = useAuth()
+  const { isAuthenticated, role, isLoading, isTelegramWebApp } = useAuth()
 
   if (isLoading) {
     return (
@@ -53,6 +53,9 @@ function RootRedirect() {
   }
 
   if (!isAuthenticated) {
+    if (isTelegramWebApp) {
+      return <Navigate to="/login" replace />
+    }
     return <LandingPage />
   }
 

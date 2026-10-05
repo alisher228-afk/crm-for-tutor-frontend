@@ -15,6 +15,7 @@ import {
   USER_EMAIL_KEY,
 } from '@/api/client'
 import type { User, UserRole, AuthResponse } from '@/types'
+import type { TelegramUser } from '@/types/telegram'
 
 export interface AuthContextType {
   user: User | null
@@ -23,7 +24,11 @@ export interface AuthContextType {
   refreshToken: string | null
   isAuthenticated: boolean
   isLoading: boolean
+  isTelegramWebApp: boolean
+  telegramUser: TelegramUser | null
+  telegramLinkRequired: boolean
   login: (email: string, password: string) => Promise<AuthResponse>
+  loginWithTelegram: (linkCode?: string) => Promise<AuthResponse>
   registerTutor: (email: string, password: string) => Promise<AuthResponse>
   registerStudent: (
     inviteToken: string,
@@ -41,6 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isTelegramWebApp, setIsTelegramWebApp] = useState<boolean>(false)
+  const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null)
+  const [telegramLinkRequired, setTelegramLinkRequired] = useState<boolean>(false)
 
   const normalizeRole = (r?: string | null): UserRole | null => {
     if (!r) return null
@@ -48,26 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return clean === 'TUTOR' || clean === 'STUDENT' ? clean : null
   }
 
-  useEffect(() => {
-    const storedAccess = getStoredAccessToken()
-    const storedRefresh = getStoredRefreshToken()
-    const storedRole = normalizeRole(localStorage.getItem(USER_ROLE_KEY))
-    const storedEmail = localStorage.getItem(USER_EMAIL_KEY)
-
-    if (storedAccess && storedRefresh && storedRole) {
-      setAccessToken(storedAccess)
-      setRefreshToken(storedRefresh)
-      setRole(storedRole)
-      setUser({
-        email: storedEmail || '',
-        role: storedRole,
-      })
-    }
-    setIsLoading(false)
-  }, [])
-
   const handleAuthSuccess = (res: AuthResponse, email: string) => {
-    const normalizedRole = normalizeRole(res.role) || 'TUTOR'
+    const normalizedRole = normalizeRole(res.role) || 'STUDENT'
     setStoredTokens({
       accessToken: res.accessToken,
       refreshToken: res.refreshToken,
@@ -81,11 +71,82 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       role: normalizedRole,
     })
+    setTelegramLinkRequired(false)
   }
+
+  useEffect(() => {
+    const initAuth = async () => {
+      const storedAccess = getStoredAccessToken()
+      const storedRefresh = getStoredRefreshToken()
+      const storedRole = normalizeRole(localStorage.getItem(USER_ROLE_KEY))
+      const storedEmail = localStorage.getItem(USER_EMAIL_KEY)
+
+      // Initialize Telegram WebApp SDK if available
+      const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined
+      const isTg = !!(tg && tg.initData)
+      setIsTelegramWebApp(isTg)
+
+      if (tg) {
+        try {
+          tg.ready()
+          tg.expand()
+          if (tg.initDataUnsafe?.user) {
+            setTelegramUser(tg.initDataUnsafe.user)
+          }
+        } catch (e) {
+          console.error('Error initializing Telegram WebApp SDK', e)
+        }
+      }
+
+      if (storedAccess && storedRefresh && storedRole) {
+        setAccessToken(storedAccess)
+        setRefreshToken(storedRefresh)
+        setRole(storedRole)
+        setUser({
+          email: storedEmail || '',
+          role: storedRole,
+        })
+        setIsLoading(false)
+        return
+      }
+
+      // If opened in Telegram Mini App without stored tokens, attempt auto-login
+      if (isTg && tg.initData) {
+        try {
+          const startParam = tg.initDataUnsafe?.start_param
+          const res = await authApi.loginWithTelegramWebApp({
+            initData: tg.initData,
+            linkCode: startParam,
+          })
+          handleAuthSuccess(res, `tg_${tg.initDataUnsafe?.user?.id || 'student'}`)
+        } catch (err) {
+          console.log('Telegram auto-login not yet linked or requires link code', err)
+          setTelegramLinkRequired(true)
+        }
+      }
+
+      setIsLoading(false)
+    }
+
+    initAuth()
+  }, [])
 
   const login = async (email: string, password: string): Promise<AuthResponse> => {
     const res = await authApi.login({ email, password })
     handleAuthSuccess(res, email)
+    return res
+  }
+
+  const loginWithTelegram = async (linkCode?: string): Promise<AuthResponse> => {
+    const tg = window.Telegram?.WebApp
+    if (!tg?.initData) {
+      throw new Error('Данные Telegram WebApp не найдены')
+    }
+    const res = await authApi.loginWithTelegramWebApp({
+      initData: tg.initData,
+      linkCode,
+    })
+    handleAuthSuccess(res, `tg_${tg.initDataUnsafe?.user?.id || 'student'}`)
     return res
   }
 
@@ -118,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRefreshToken(null)
     setRole(null)
     setUser(null)
+    setTelegramLinkRequired(false)
   }
 
   return (
@@ -129,7 +191,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshToken,
         isAuthenticated: !!accessToken,
         isLoading,
+        isTelegramWebApp,
+        telegramUser,
+        telegramLinkRequired,
         login,
+        loginWithTelegram,
         registerTutor,
         registerStudent,
         logout,

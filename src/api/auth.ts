@@ -27,4 +27,9 @@ export const authApi = {
     const response = await apiClient.post<AuthResponse>('/api/v1/auth/refresh', data)
     return response.data
   },
+
+  loginWithTelegramWebApp: async (data: { initData: string; linkCode?: string }): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/api/v1/auth/telegram-webapp', data)
+    return response.data
+  },
 }
