@@ -94,14 +94,20 @@ apiClient.interceptors.response.use(
 
     const isAuthEndpoint =
       originalRequest.url?.includes('/api/v1/auth/refresh') ||
-      originalRequest.url?.includes('/api/v1/auth/login')
+      originalRequest.url?.includes('/api/v1/auth/login') ||
+      originalRequest.url?.includes('/api/v1/auth/register') ||
+      originalRequest.url?.includes('/api/v1/auth/telegram-webapp')
 
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+    const status = error.response?.status
+    const isAuthError = status === 401 || (status === 403 && !!getStoredRefreshToken())
+
+    if (isAuthError && !originalRequest._retry && !isAuthEndpoint) {
       const refreshToken = getStoredRefreshToken()
 
       if (!refreshToken) {
         clearStoredTokens()
-        if (window.location.pathname !== '/login') {
+        const isTg = typeof window !== 'undefined' && !!window.Telegram?.WebApp?.initData
+        if (!isTg && window.location.pathname !== '/login') {
           window.location.href = '/login'
         }
         return Promise.reject(error)
@@ -124,8 +130,11 @@ apiClient.interceptors.response.use(
       isRefreshing = true
 
       try {
+        const cleanBaseUrl = (API_BASE_URL || '').replace(/\/+$/, '')
+        const refreshUrl = cleanBaseUrl ? `${cleanBaseUrl}/api/v1/auth/refresh` : '/api/v1/auth/refresh'
+
         const response = await axios.post<AuthResponse>(
-          `${API_BASE_URL}/api/v1/auth/refresh`,
+          refreshUrl,
           { refreshToken },
           { headers: { 'Content-Type': 'application/json' } },
         )
@@ -148,7 +157,8 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null)
         clearStoredTokens()
-        if (window.location.pathname !== '/login') {
+        const isTg = typeof window !== 'undefined' && !!window.Telegram?.WebApp?.initData
+        if (!isTg && window.location.pathname !== '/login') {
           window.location.href = '/login'
         }
         return Promise.reject(refreshError)
