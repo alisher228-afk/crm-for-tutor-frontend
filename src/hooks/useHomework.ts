@@ -8,6 +8,7 @@ export const homeworkKeys = {
   group: (groupName: string) => [...homeworkKeys.all, 'group', groupName] as const,
   detail: (id: string) => [...homeworkKeys.all, 'detail', id] as const,
   my: () => [...homeworkKeys.all, 'my'] as const,
+  tutorStats: () => [...homeworkKeys.all, 'stats'] as const,
 }
 
 export function useStudentHomework(studentId: string | null | undefined) {
@@ -126,6 +127,13 @@ export function useDeleteHomework() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: homeworkKeys.all })
     },
+  })
+}
+
+export function useTutorHomeworkStats() {
+  return useQuery({
+    queryKey: homeworkKeys.tutorStats(),
+    queryFn: () => homeworkApi.getTutorHomeworkStats(),
   })
 }
 

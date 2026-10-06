@@ -3,6 +3,7 @@ import type {
   Homework,
   HomeworkCreateRequest,
   HomeworkStatus,
+  HomeworkStatsResponse,
 } from '@/types'
 
 export const homeworkApi = {
@@ -57,6 +58,11 @@ export const homeworkApi = {
 
   deleteHomework: async (id: string): Promise<void> => {
     await apiClient.delete(`/api/v1/homework/${id}`)
+  },
+
+  getTutorHomeworkStats: async (): Promise<HomeworkStatsResponse> => {
+    const response = await apiClient.get<HomeworkStatsResponse>('/api/v1/homework/stats')
+    return response.data
   },
 
   // Student self endpoints

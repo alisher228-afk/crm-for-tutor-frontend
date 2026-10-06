@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useUserProfile } from '@/hooks/useProfile'
+import { useTutorHomeworkStats } from '@/hooks/useHomework'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -26,15 +27,13 @@ import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog'
 import { Logo } from '@/components/brand/Logo'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
-const navItems = [
-  { to: '/tutor/students', label: 'Ученики', icon: Users },
-  { to: '/tutor/lessons', label: 'Расписание', icon: Calendar, badge: 'Live' },
-  { to: '/tutor/payments', label: 'Финансы', icon: DollarSign },
-  { to: '/tutor/homework', label: 'Домашние задания', icon: BookCheck, count: '3' },
-  { to: '/tutor/materials', label: 'База знаний', icon: FolderKanban },
-  { to: '/tutor/tests', label: 'Тесты', icon: HelpCircle },
-  { to: '/tutor/profile', label: 'Профиль', icon: UserCircle },
-]
+interface NavItem {
+  to: string
+  label: string
+  icon: typeof Users
+  badge?: string
+  count?: string
+}
 
 export function TutorLayout() {
   const { user, logout } = useAuth()
@@ -49,6 +48,23 @@ export function TutorLayout() {
   }
 
   const { data: profile } = useUserProfile()
+  const { data: stats } = useTutorHomeworkStats()
+  const submittedCount = stats?.submittedCount ?? 0
+
+  const navItems: NavItem[] = [
+    { to: '/tutor/students', label: 'Ученики', icon: Users },
+    { to: '/tutor/lessons', label: 'Расписание', icon: Calendar },
+    { to: '/tutor/payments', label: 'Финансы', icon: DollarSign },
+    {
+      to: '/tutor/homework',
+      label: 'Домашние задания',
+      icon: BookCheck,
+      count: submittedCount > 0 ? String(submittedCount) : undefined,
+    },
+    { to: '/tutor/materials', label: 'База знаний', icon: FolderKanban },
+    { to: '/tutor/tests', label: 'Тесты', icon: HelpCircle },
+    { to: '/tutor/profile', label: 'Профиль', icon: UserCircle },
+  ]
 
   const tutorFullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ')
   const displayName = tutorFullName || user?.email || 'Репетитор'

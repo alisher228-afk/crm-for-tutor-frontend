@@ -261,6 +261,13 @@ export interface HomeworkStatusPatchRequest {
   status: HomeworkStatus
 }
 
+export interface HomeworkStatsResponse {
+  totalCount: number
+  assignedCount: number
+  submittedCount: number
+  reviewedCount: number
+}
+
 export interface Attachment {
   id: string
   homeworkId?: string

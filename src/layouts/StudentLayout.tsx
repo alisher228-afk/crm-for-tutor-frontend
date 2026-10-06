@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useMyProfile } from '@/hooks/useStudents'
+import { useMyHomework } from '@/hooks/useHomework'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -25,14 +26,13 @@ import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog'
 import { Logo } from '@/components/brand/Logo'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
-const studentNavItems = [
-  { to: '/student', end: true, label: 'Мой профиль', icon: UserCircle },
-  { to: '/student/lessons', end: false, label: 'Расписание', icon: Calendar },
-  { to: '/student/homework', end: false, label: 'Домашка', icon: BookOpen, count: '1' },
-  { to: '/student/tests', end: false, label: 'Тесты и квизы', icon: BrainCircuit },
-  { to: '/student/materials', end: false, label: 'Материалы', icon: Library },
-  { to: '/student/payments', end: false, label: 'Оплаты и баланс', icon: Receipt },
-]
+interface StudentNavItem {
+  to: string
+  end?: boolean
+  label: string
+  icon: typeof UserCircle
+  count?: string
+}
 
 export function StudentLayout() {
   const { user, logout } = useAuth()
@@ -47,6 +47,24 @@ export function StudentLayout() {
   }
 
   const { data: profile } = useMyProfile()
+  const { data: myHomework = [] } = useMyHomework()
+  const pendingCount = (myHomework || []).filter((h) => h.status === 'ASSIGNED').length
+
+  const studentNavItems: StudentNavItem[] = [
+    { to: '/student', end: true, label: 'Мой профиль', icon: UserCircle },
+    { to: '/student/lessons', end: false, label: 'Расписание', icon: Calendar },
+    {
+      to: '/student/homework',
+      end: false,
+      label: 'Домашка',
+      icon: BookOpen,
+      count: pendingCount > 0 ? String(pendingCount) : undefined,
+    },
+    { to: '/student/tests', end: false, label: 'Тесты и квизы', icon: BrainCircuit },
+    { to: '/student/materials', end: false, label: 'Материалы', icon: Library },
+    { to: '/student/payments', end: false, label: 'Оплаты и баланс', icon: Receipt },
+  ]
+
   const studentFullName =
     profile?.name ||
     [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') ||
