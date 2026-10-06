@@ -20,6 +20,7 @@ import {
   User,
   Users,
 } from 'lucide-react'
+import { formatDateToLocalIso } from '@/lib/dateUtils'
 import type { Lesson, StudentProfile } from '@/types'
 
 type PeriodMode = 'this_week' | 'next_week' | 'custom'
@@ -48,7 +49,7 @@ function getMonday(d: Date): Date {
 }
 
 function formatDateToIso(d: Date): string {
-  return d.toISOString()
+  return formatDateToLocalIso(d)
 }
 
 function formatDateToInput(d: Date): string {

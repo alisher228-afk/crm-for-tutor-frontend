@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCreateTest, useUpdateTest } from '@/hooks/useTests'
 import { useStudentGroups, useStudents } from '@/hooks/useStudents'
+import { toBackendDateTime } from '@/lib/dateUtils'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -307,7 +308,7 @@ export function TestFormDialog({
       description: description.trim() || undefined,
       type,
       timeLimitMinutes: timeLimitMinutes ? Number(timeLimitMinutes) : undefined,
-      deadline: deadline ? new Date(deadline).toISOString() : undefined,
+      deadline: deadline ? toBackendDateTime(deadline) : undefined,
       externalUrl: finalExternalUrl,
       questionsJson: finalQuestionsJson,
       targetType,

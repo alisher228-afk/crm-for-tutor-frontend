@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useStudents } from '@/hooks/useStudents'
 import { useCreateLesson, useUpdateLesson, useLessons } from '@/hooks/useLessons'
+import { toBackendDateTime, formatDateToLocalIso, toLocalInputDateTime } from '@/lib/dateUtils'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -34,19 +35,6 @@ interface LessonFormDialogProps {
   initialData?: Lesson | null
   existingLessons?: Lesson[]
   onSuccess?: (lesson: Lesson) => void
-}
-
-function toLocalInputDateTime(isoOrDate?: string | Date): string {
-  const d = isoOrDate ? new Date(isoOrDate) : new Date()
-  if (isNaN(d.getTime())) return ''
-  // Format as YYYY-MM-DDTHH:mm using local timezone
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const yyyy = d.getFullYear()
-  const mm = pad(d.getMonth() + 1)
-  const dd = pad(d.getDate())
-  const hh = pad(d.getHours())
-  const min = pad(d.getMinutes())
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}`
 }
 
 function getDefaultStartTime(): string {
@@ -273,7 +261,7 @@ export function LessonFormDialog({
     from.setHours(0, 0, 0, 0)
     const to = new Date(d)
     to.setHours(23, 59, 59, 999)
-    return { from: from.toISOString(), to: to.toISOString() }
+    return { from: formatDateToLocalIso(from), to: formatDateToLocalIso(to) }
   }, [open, startTime])
 
   const { data: fetchedLessons } = useLessons(existingLessons ? undefined : conflictDateRange)
@@ -344,9 +332,13 @@ export function LessonFormDialog({
       return
     }
 
-    // Convert local datetime-local format to ISO-8601 string for backend
-    const startIso = new Date(startTime).toISOString()
-    const endIso = new Date(endTime).toISOString()
+    const startIso = toBackendDateTime(startTime)
+    const endIso = toBackendDateTime(endTime)
+
+    if (!startIso || !endIso) {
+      toast.error('Некорректный формат времени')
+      return
+    }
 
     const payload = {
       studentId: format === 'INDIVIDUAL' ? studentId : undefined,

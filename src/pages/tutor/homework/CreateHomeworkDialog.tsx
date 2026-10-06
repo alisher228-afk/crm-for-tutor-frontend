@@ -16,6 +16,7 @@ import { useCreateHomework, useCreateGroupHomework } from '@/hooks/useHomework'
 import { attachmentsApi } from '@/api/attachments'
 import { materialsApi } from '@/api/materials'
 import { SelectMaterialDialog } from '@/components/SelectMaterialDialog'
+import { toBackendDateTime } from '@/lib/dateUtils'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -131,13 +132,7 @@ export function CreateHomeworkDialog({
       return
     }
 
-    let deadlineIso: string | undefined
-    if (deadline) {
-      const d = new Date(deadline)
-      if (!isNaN(d.getTime())) {
-        deadlineIso = d.toISOString()
-      }
-    }
+    const deadlineIso = deadline ? toBackendDateTime(deadline) : undefined
 
     try {
       if (isGroup) {
