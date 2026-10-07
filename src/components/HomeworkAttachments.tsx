@@ -7,6 +7,7 @@ import {
   useDeleteAttachment,
 } from '@/hooks/useAttachments'
 import { attachmentsApi } from '@/api/attachments'
+import { FileViewerDialog } from '@/components/FileViewerDialog'
 import { toast } from 'sonner'
 import {
   Paperclip,
@@ -90,6 +91,22 @@ export function HomeworkAttachments({
   const [openingId, setOpeningId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // In-app file viewer state
+  const [viewerState, setViewerState] = useState<{
+    open: boolean
+    title: string
+    fileName?: string
+    contentType?: string
+    blobUrl?: string | null
+    apiPath?: string
+    isLoading: boolean
+    onDownload?: () => void
+  }>({
+    open: false,
+    title: '',
+    isLoading: false,
+  })
 
   const { data: attachments = [], isLoading } = useHomeworkAttachments(homeworkId)
   const uploadMutation = useUploadAttachment(homeworkId)
@@ -185,11 +202,33 @@ export function HomeworkAttachments({
 
   const handleOpen = async (attachment: Attachment) => {
     const fileName = attachment.originalFileName || attachment.fileName || attachment.name || 'файл'
+    const apiPath = `/api/v1/attachments/${attachment.id}/download`
+
     setOpeningId(attachment.id)
+    setViewerState({
+      open: true,
+      title: fileName,
+      fileName,
+      contentType: attachment.contentType || '',
+      blobUrl: null,
+      apiPath,
+      isLoading: true,
+      onDownload: () => handleDownload(attachment),
+    })
 
     try {
-      await attachmentsApi.openAttachment(attachment.id)
+      const { blobUrl, contentType } = await attachmentsApi.fetchAttachmentBlob(attachment.id)
+      setViewerState((prev) => ({
+        ...prev,
+        blobUrl,
+        contentType: contentType || prev.contentType,
+        isLoading: false,
+      }))
     } catch (err) {
+      setViewerState((prev) => ({
+        ...prev,
+        isLoading: false,
+      }))
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
         axiosError.response?.data?.message || `Не удалось открыть файл "${fileName}"`,
@@ -442,6 +481,21 @@ export function HomeworkAttachments({
           onSelectMaterials={handleSelectMaterials}
         />
       )}
+
+      {/* In-App File Viewer Dialog (prevents Telegram WebView navigation lock) */}
+      <FileViewerDialog
+        open={viewerState.open}
+        onOpenChange={(open) =>
+          setViewerState((prev) => ({ ...prev, open }))
+        }
+        title={viewerState.title}
+        fileName={viewerState.fileName}
+        contentType={viewerState.contentType}
+        blobUrl={viewerState.blobUrl}
+        apiPath={viewerState.apiPath}
+        isLoading={viewerState.isLoading}
+        onDownload={viewerState.onDownload}
+      />
     </div>
   )
 }

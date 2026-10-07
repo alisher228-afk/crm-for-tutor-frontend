@@ -1,4 +1,5 @@
 import { apiClient } from './client'
+import { triggerFileDownload, isTelegramWebApp } from '@/lib/fileUtils'
 import type {
   TeachingMaterial,
   MaterialCreatePayload,
@@ -49,6 +50,29 @@ export const materialsApi = {
     await apiClient.delete(`/api/v1/materials/${id}`)
   },
 
+  fetchMaterialBlob: async (
+    id: string,
+  ): Promise<{ blob: Blob; blobUrl: string; contentType: string; fileName?: string }> => {
+    const response = await apiClient.get(`/api/v1/materials/${id}/download?inline=true`, {
+      responseType: 'blob',
+    })
+    const rawContentType = response.headers['content-type']
+    const contentType = typeof rawContentType === 'string' ? rawContentType : 'application/octet-stream'
+
+    let fileName: string | undefined
+    const disposition = response.headers['content-disposition']
+    if (typeof disposition === 'string' && disposition.includes('filename=')) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (match && match[1]) {
+        fileName = match[1].replace(/['"]/g, '').trim()
+      }
+    }
+
+    const blob = new Blob([response.data], { type: contentType })
+    const blobUrl = window.URL.createObjectURL(blob)
+    return { blob, blobUrl, contentType, fileName }
+  },
+
   openMaterial: async (id: string): Promise<void> => {
     const response = await apiClient.get(`/api/v1/materials/${id}/download?inline=true`, {
       responseType: 'blob',
@@ -64,7 +88,13 @@ export const materialsApi = {
   },
 
   downloadMaterial: async (id: string, fallbackFileName = 'material'): Promise<void> => {
-    const response = await apiClient.get(`/api/v1/materials/${id}/download`, {
+    const apiPath = `/api/v1/materials/${id}/download`
+    if (isTelegramWebApp() && window.Telegram?.WebApp?.openLink) {
+      await triggerFileDownload({ fileName: fallbackFileName, apiPath })
+      return
+    }
+
+    const response = await apiClient.get(apiPath, {
       responseType: 'blob',
     })
 
@@ -81,14 +111,7 @@ export const materialsApi = {
     const blob = new Blob([response.data], {
       type: typeof contentType === 'string' ? contentType : 'application/octet-stream',
     })
-    const blobUrl = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = blobUrl
-    link.setAttribute('download', fileName)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(blobUrl)
+    await triggerFileDownload({ blob, fileName, apiPath })
   },
 
   attachToHomework: async (homeworkId: string, materialId: string): Promise<Attachment> => {
@@ -113,6 +136,29 @@ export const materialsApi = {
     return response.data
   },
 
+  fetchMyMaterialBlob: async (
+    id: string,
+  ): Promise<{ blob: Blob; blobUrl: string; contentType: string; fileName?: string }> => {
+    const response = await apiClient.get(`/api/v1/me/materials/${id}/download?inline=true`, {
+      responseType: 'blob',
+    })
+    const rawContentType = response.headers['content-type']
+    const contentType = typeof rawContentType === 'string' ? rawContentType : 'application/octet-stream'
+
+    let fileName: string | undefined
+    const disposition = response.headers['content-disposition']
+    if (typeof disposition === 'string' && disposition.includes('filename=')) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (match && match[1]) {
+        fileName = match[1].replace(/['"]/g, '').trim()
+      }
+    }
+
+    const blob = new Blob([response.data], { type: contentType })
+    const blobUrl = window.URL.createObjectURL(blob)
+    return { blob, blobUrl, contentType, fileName }
+  },
+
   openMyMaterial: async (id: string): Promise<void> => {
     const response = await apiClient.get(`/api/v1/me/materials/${id}/download?inline=true`, {
       responseType: 'blob',
@@ -128,7 +174,13 @@ export const materialsApi = {
   },
 
   downloadMyMaterial: async (id: string, fallbackFileName = 'material'): Promise<void> => {
-    const response = await apiClient.get(`/api/v1/me/materials/${id}/download`, {
+    const apiPath = `/api/v1/me/materials/${id}/download`
+    if (isTelegramWebApp() && window.Telegram?.WebApp?.openLink) {
+      await triggerFileDownload({ fileName: fallbackFileName, apiPath })
+      return
+    }
+
+    const response = await apiClient.get(apiPath, {
       responseType: 'blob',
     })
 
@@ -145,13 +197,6 @@ export const materialsApi = {
     const blob = new Blob([response.data], {
       type: typeof contentType === 'string' ? contentType : 'application/octet-stream',
     })
-    const blobUrl = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = blobUrl
-    link.setAttribute('download', fileName)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(blobUrl)
+    await triggerFileDownload({ blob, fileName, apiPath })
   },
 }

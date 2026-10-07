@@ -7,6 +7,7 @@ import {
   useDeleteMaterial,
 } from '@/hooks/useMaterials'
 import { materialsApi } from '@/api/materials'
+import { FileViewerDialog } from '@/components/FileViewerDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -118,6 +119,22 @@ export function TutorMaterialsPage() {
 
   // Loading indicator for preview/download
   const [busyActionId, setBusyActionId] = useState<string | null>(null)
+
+  // In-app file viewer state
+  const [viewerState, setViewerState] = useState<{
+    open: boolean
+    title: string
+    fileName?: string
+    contentType?: string
+    blobUrl?: string | null
+    apiPath?: string
+    isLoading: boolean
+    onDownload?: () => void
+  }>({
+    open: false,
+    title: '',
+    isLoading: false,
+  })
 
   // API hooks
   const { data: materials = [], isLoading } = useMaterials({
@@ -275,16 +292,37 @@ export function TutorMaterialsPage() {
   // Open / Download Handlers
   // -------------------------------------------------------------
   const handleOpenPreview = async (m: TeachingMaterial) => {
-    setBusyActionId(m.id)
+    const apiPath = `/api/v1/materials/${m.id}/download`
+    const fileName = m.originalFileName || m.fileName || `${m.title}.pdf`
+
+    setViewerState({
+      open: true,
+      title: m.title,
+      fileName,
+      contentType: m.contentType || '',
+      blobUrl: null,
+      apiPath,
+      isLoading: true,
+      onDownload: () => handleDownload(m),
+    })
+
     try {
-      await materialsApi.openMaterial(m.id)
+      const { blobUrl, contentType } = await materialsApi.fetchMaterialBlob(m.id)
+      setViewerState((prev) => ({
+        ...prev,
+        blobUrl,
+        contentType: contentType || prev.contentType,
+        isLoading: false,
+      }))
     } catch (err) {
+      setViewerState((prev) => ({
+        ...prev,
+        isLoading: false,
+      }))
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || `Не удалось открыть файл "${m.title}"`,
+        axiosError.response?.data?.message || `Не удалось загрузить файл "${m.title}"`,
       )
-    } finally {
-      setBusyActionId(null)
     }
   }
 
@@ -829,6 +867,21 @@ export function TutorMaterialsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* In-App File Viewer Dialog (prevents Telegram WebView navigation lock) */}
+      <FileViewerDialog
+        open={viewerState.open}
+        onOpenChange={(open) =>
+          setViewerState((prev) => ({ ...prev, open }))
+        }
+        title={viewerState.title}
+        fileName={viewerState.fileName}
+        contentType={viewerState.contentType}
+        blobUrl={viewerState.blobUrl}
+        apiPath={viewerState.apiPath}
+        isLoading={viewerState.isLoading}
+        onDownload={viewerState.onDownload}
+      />
     </div>
   )
 }

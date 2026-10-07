@@ -74,9 +74,11 @@ export function TutorLayout() {
     <div className="flex h-full flex-col justify-between p-4 bg-sidebar text-sidebar-foreground">
       <div className="space-y-6">
         {/* Brand */}
-        <div className="flex items-center justify-between px-2 py-1">
+        <div className="flex items-center justify-between px-2 py-1 pr-8">
           <Logo variant="full" size="md" />
-          <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+          {!onNavigate && (
+            <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+          )}
         </div>
 
         {/* User Card linking to profile */}
@@ -164,8 +166,14 @@ export function TutorLayout() {
         </nav>
       </div>
 
-      {/* Logout button at bottom */}
-      <div className="pt-4 border-t border-sidebar-border">
+      {/* Logout button at bottom (with theme toggle on mobile) */}
+      <div className="pt-4 border-t border-sidebar-border space-y-3">
+        {onNavigate && (
+          <div className="flex items-center justify-between px-2.5 py-1.5 text-xs text-muted-foreground border border-sidebar-border/60 rounded-md bg-sidebar-accent/20">
+            <span>Тема оформления</span>
+            <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+          </div>
+        )}
         <Button
           variant="outline"
           className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30"
@@ -189,6 +197,10 @@ export function TutorLayout() {
       <div className="md:hidden border-b border-border bg-card/90 backdrop-blur sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Logo variant="full" size="sm" />
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-none border border-border bg-muted/40 text-[10px] text-muted-foreground font-mono">
+            <span className="h-1.5 w-1.5 bg-red-accent" />
+            Репетитор
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -201,7 +213,7 @@ export function TutorLayout() {
             >
               <Menu className="h-5 w-5" strokeWidth={1.75} />
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-72">
+            <SheetContent side="right" className="p-0 w-72">
               <SheetHeader className="sr-only">
                 <SheetTitle>Навигация</SheetTitle>
               </SheetHeader>

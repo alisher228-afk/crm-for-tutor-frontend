@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMyMaterials, useMyMaterialCategories } from '@/hooks/useMaterials'
 import { materialsApi } from '@/api/materials'
+import { FileViewerDialog } from '@/components/FileViewerDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -80,6 +81,22 @@ export function StudentMaterialsPage() {
   const [openingId, setOpeningId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
+  // In-app file viewer state
+  const [viewerState, setViewerState] = useState<{
+    open: boolean
+    title: string
+    fileName?: string
+    contentType?: string
+    blobUrl?: string | null
+    apiPath?: string
+    isLoading: boolean
+    onDownload?: () => void
+  }>({
+    open: false,
+    title: '',
+    isLoading: false,
+  })
+
   const {
     data: materials = [],
     isLoading,
@@ -93,10 +110,34 @@ export function StudentMaterialsPage() {
   const { data: categories = [] } = useMyMaterialCategories()
 
   const handleOpen = async (material: TeachingMaterial) => {
+    const apiPath = `/api/v1/me/materials/${material.id}/download`
+    const fileName = material.originalFileName || material.fileName || `${material.title}.pdf`
+
+    setOpeningId(material.id)
+    setViewerState({
+      open: true,
+      title: material.title,
+      fileName,
+      contentType: material.contentType || '',
+      blobUrl: null,
+      apiPath,
+      isLoading: true,
+      onDownload: () => handleDownload(material),
+    })
+
     try {
-      setOpeningId(material.id)
-      await materialsApi.openMyMaterial(material.id)
+      const { blobUrl, contentType } = await materialsApi.fetchMyMaterialBlob(material.id)
+      setViewerState((prev) => ({
+        ...prev,
+        blobUrl,
+        contentType: contentType || prev.contentType,
+        isLoading: false,
+      }))
     } catch {
+      setViewerState((prev) => ({
+        ...prev,
+        isLoading: false,
+      }))
       toast.error('Не удалось открыть файл. Попробуйте скачать его.')
     } finally {
       setOpeningId(null)
@@ -358,6 +399,21 @@ export function StudentMaterialsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* In-App File Viewer Dialog (prevents Telegram WebView navigation lock) */}
+      <FileViewerDialog
+        open={viewerState.open}
+        onOpenChange={(open) =>
+          setViewerState((prev) => ({ ...prev, open }))
+        }
+        title={viewerState.title}
+        fileName={viewerState.fileName}
+        contentType={viewerState.contentType}
+        blobUrl={viewerState.blobUrl}
+        apiPath={viewerState.apiPath}
+        isLoading={viewerState.isLoading}
+        onDownload={viewerState.onDownload}
+      />
     </div>
   )
 }

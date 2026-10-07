@@ -1,4 +1,5 @@
 import { apiClient } from './client'
+import { triggerFileDownload, isTelegramWebApp } from '@/lib/fileUtils'
 import type { Attachment } from '@/types'
 
 export const attachmentsApi = {
@@ -20,8 +21,37 @@ export const attachmentsApi = {
     return response.data
   },
 
+  fetchAttachmentBlob: async (
+    id: string,
+  ): Promise<{ blob: Blob; blobUrl: string; contentType: string; fileName?: string }> => {
+    const response = await apiClient.get(`/api/v1/attachments/${id}/download?inline=true`, {
+      responseType: 'blob',
+    })
+    const rawContentType = response.headers['content-type']
+    const contentType = typeof rawContentType === 'string' ? rawContentType : 'application/octet-stream'
+
+    let fileName: string | undefined
+    const disposition = response.headers['content-disposition']
+    if (typeof disposition === 'string' && disposition.includes('filename=')) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (match && match[1]) {
+        fileName = match[1].replace(/['"]/g, '').trim()
+      }
+    }
+
+    const blob = new Blob([response.data], { type: contentType })
+    const blobUrl = window.URL.createObjectURL(blob)
+    return { blob, blobUrl, contentType, fileName }
+  },
+
   downloadAttachment: async (id: string, fallbackFileName = 'download'): Promise<void> => {
-    const response = await apiClient.get(`/api/v1/attachments/${id}/download`, {
+    const apiPath = `/api/v1/attachments/${id}/download`
+    if (isTelegramWebApp() && window.Telegram?.WebApp?.openLink) {
+      await triggerFileDownload({ fileName: fallbackFileName, apiPath })
+      return
+    }
+
+    const response = await apiClient.get(apiPath, {
       responseType: 'blob',
     })
 
@@ -40,14 +70,7 @@ export const attachmentsApi = {
     const blob = new Blob([response.data], {
       type: typeof contentType === 'string' ? contentType : 'application/octet-stream',
     })
-    const blobUrl = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = blobUrl
-    link.setAttribute('download', fileName)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(blobUrl)
+    await triggerFileDownload({ blob, fileName, apiPath })
   },
 
   openAttachment: async (id: string): Promise<void> => {
