@@ -26,6 +26,8 @@ import {
 import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog'
 import { Logo } from '@/components/brand/Logo'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { LanguageToggle } from '@/components/LanguageToggle'
+import { useLanguage } from '@/i18n'
 
 interface NavItem {
   to: string
@@ -37,6 +39,7 @@ interface NavItem {
 
 export function TutorLayout() {
   const { user, logout } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
@@ -52,32 +55,35 @@ export function TutorLayout() {
   const submittedCount = stats?.submittedCount ?? 0
 
   const navItems: NavItem[] = [
-    { to: '/tutor/students', label: 'Ученики', icon: Users },
-    { to: '/tutor/lessons', label: 'Расписание', icon: Calendar },
-    { to: '/tutor/payments', label: 'Финансы', icon: DollarSign },
+    { to: '/tutor/students', label: t('nav.students'), icon: Users },
+    { to: '/tutor/lessons', label: t('nav.schedule'), icon: Calendar },
+    { to: '/tutor/payments', label: t('nav.finance'), icon: DollarSign },
     {
       to: '/tutor/homework',
-      label: 'Домашние задания',
+      label: t('nav.homework'),
       icon: BookCheck,
       count: submittedCount > 0 ? String(submittedCount) : undefined,
     },
-    { to: '/tutor/materials', label: 'База знаний', icon: FolderKanban },
-    { to: '/tutor/tests', label: 'Тесты', icon: HelpCircle },
-    { to: '/tutor/profile', label: 'Профиль', icon: UserCircle },
+    { to: '/tutor/materials', label: t('nav.knowledge_base'), icon: FolderKanban },
+    { to: '/tutor/tests', label: t('nav.tests'), icon: HelpCircle },
+    { to: '/tutor/profile', label: t('nav.profile'), icon: UserCircle },
   ]
 
   const tutorFullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ')
-  const displayName = tutorFullName || user?.email || 'Репетитор'
+  const displayName = tutorFullName || user?.email || t('nav.role_tutor')
   const userInitial = (profile?.firstName || tutorFullName || user?.email || 'T').charAt(0).toUpperCase()
 
   const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <div className="flex h-full flex-col justify-between p-4 bg-sidebar text-sidebar-foreground">
       <div className="space-y-6">
         {/* Brand */}
-        <div className="flex items-center justify-between px-2 py-1 pr-8">
+        <div className="flex items-center justify-between px-2 py-1">
           <Logo variant="full" size="md" />
           {!onNavigate && (
-            <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+            <div className="flex items-center gap-0.5">
+              <LanguageToggle />
+              <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+            </div>
           )}
         </div>
 
@@ -169,9 +175,15 @@ export function TutorLayout() {
       {/* Logout button at bottom (with theme toggle on mobile) */}
       <div className="pt-4 border-t border-sidebar-border space-y-3">
         {onNavigate && (
-          <div className="flex items-center justify-between px-2.5 py-1.5 text-xs text-muted-foreground border border-sidebar-border/60 rounded-md bg-sidebar-accent/20">
-            <span>Тема оформления</span>
-            <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-2.5 py-1.5 text-xs text-muted-foreground border border-sidebar-border/60 rounded-md bg-sidebar-accent/20">
+              <span>{t('language.title')}</span>
+              <LanguageToggle />
+            </div>
+            <div className="flex items-center justify-between px-2.5 py-1.5 text-xs text-muted-foreground border border-sidebar-border/60 rounded-md bg-sidebar-accent/20">
+              <span>{t('nav.theme')}</span>
+              <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+            </div>
           </div>
         )}
         <Button
@@ -180,7 +192,7 @@ export function TutorLayout() {
           onClick={() => setLogoutConfirmOpen(true)}
         >
           <LogOut className="mr-2 h-4 w-4" strokeWidth={1.75} />
-          Выйти из аккаунта
+          {t('nav.logout')}
         </Button>
       </div>
     </div>
@@ -199,23 +211,24 @@ export function TutorLayout() {
           <Logo variant="full" size="sm" />
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-none border border-border bg-muted/40 text-[10px] text-muted-foreground font-mono">
             <span className="h-1.5 w-1.5 bg-red-accent" />
-            Репетитор
+            {t('nav.role_tutor')}
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
+          <LanguageToggle />
           <ThemeToggle />
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger
               render={
-                <Button variant="ghost" size="icon-sm" aria-label="Открыть меню" />
+                <Button variant="ghost" size="icon-sm" aria-label={t('nav.open_menu')} />
               }
             >
               <Menu className="h-5 w-5" strokeWidth={1.75} />
             </SheetTrigger>
             <SheetContent side="right" className="p-0 w-72">
               <SheetHeader className="sr-only">
-                <SheetTitle>Навигация</SheetTitle>
+                <SheetTitle>{t('nav.navigation')}</SheetTitle>
               </SheetHeader>
               <SidebarContent onNavigate={() => setMobileOpen(false)} />
             </SheetContent>

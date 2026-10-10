@@ -17,6 +17,8 @@ import { useMyProfile } from '@/hooks/useStudents'
 import { studentsApi } from '@/api/students'
 import { toast } from 'sonner'
 import { ChangePasswordCard } from '@/components/profile/ChangePasswordCard'
+import { LanguageSettingsCard } from '@/components/profile/LanguageSettingsCard'
+import { useLanguage } from '@/i18n'
 import {
   Sparkles,
   Calendar,
@@ -38,6 +40,7 @@ import {
 
 export function StudentProfilePage() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const { data: profile, isLoading, isError, refetch } = useMyProfile()
 
   const [telegramModalOpen, setTelegramModalOpen] = useState(false)
@@ -93,9 +96,9 @@ export function StudentProfilePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Личный кабинет</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('profile.student_title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Информация о вашем профиле и балансе занятий
+            {t('profile.student_subtitle')}
           </p>
         </div>
 
@@ -104,14 +107,14 @@ export function StudentProfilePage() {
             <AlertCircle className="h-10 w-10 text-destructive" />
             <div className="space-y-1">
               <p className="font-semibold text-foreground text-lg">
-                Не удалось загрузить данные профиля
+                {t('profile.load_error_title')}
               </p>
               <p className="text-sm text-muted-foreground max-w-md">
-                Возможно, профиль ещё формируется или возникли временные неполадки с соединением
+                {t('profile.load_error_desc')}
               </p>
             </div>
             <Button variant="outline" onClick={() => refetch()}>
-              Повторить попытку
+              {t('profile.retry')}
             </Button>
           </CardContent>
         </Card>
@@ -124,7 +127,7 @@ export function StudentProfilePage() {
     profile.name ||
     [profile.firstName, profile.lastName].filter(Boolean).join(' ') ||
     user?.email ||
-    'Ученик'
+    t('profile.student_title')
 
   const userInitial = fullName.charAt(0).toUpperCase() || 'У'
 
@@ -159,9 +162,9 @@ export function StudentProfilePage() {
     <div className="space-y-6">
       {/* Top Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Личный кабинет</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('profile.student_title')}</h1>
         <p className="text-muted-foreground text-sm">
-          Ваш профиль, информация об обучении и баланс занятий
+          {t('profile.student_subtitle')}
         </p>
       </div>
 
@@ -378,6 +381,9 @@ export function StudentProfilePage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Language Settings */}
+      <LanguageSettingsCard />
 
       {/* Security & Password Change */}
       <ChangePasswordCard />

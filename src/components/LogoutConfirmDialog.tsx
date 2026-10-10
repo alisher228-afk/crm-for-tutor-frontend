@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { LogOut, Loader2 } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 
 interface LogoutConfirmDialogProps {
   open: boolean
@@ -22,6 +23,8 @@ export function LogoutConfirmDialog({
   onConfirm,
   isPending = false,
 }: LogoutConfirmDialogProps) {
+  const { t } = useLanguage()
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -32,17 +35,17 @@ export function LogoutConfirmDialog({
             </div>
             <div>
               <DialogTitle className="text-base font-semibold">
-                Выйти из аккаунта?
+                {t('auth_dialogs.logout_title')}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Вы будете перенаправлены на страницу входа
+                {t('auth_dialogs.logout_subtitle')}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <p className="text-xs sm:text-sm text-muted-foreground py-2">
-          Вы уверены, что хотите завершить текущую сессию? Для следующего входа вам потребуется ввести логин и пароль.
+          {t('auth_dialogs.logout_desc')}
         </p>
 
         <DialogFooter className="pt-2 gap-2 sm:gap-0">
@@ -53,7 +56,7 @@ export function LogoutConfirmDialog({
             onClick={() => onOpenChange(false)}
             disabled={isPending}
           >
-            Отмена
+            {t('auth_dialogs.cancel')}
           </Button>
           <Button
             type="button"
@@ -71,7 +74,7 @@ export function LogoutConfirmDialog({
             ) : (
               <LogOut className="h-4 w-4" />
             )}
-            <span>Да, выйти</span>
+            <span>{t('auth_dialogs.confirm_logout')}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

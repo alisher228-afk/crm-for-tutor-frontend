@@ -4,10 +4,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { useChangePassword } from '@/hooks/useProfile'
+import { useLanguage } from '@/i18n'
 import { toast } from 'sonner'
 import { Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
 
 export function ChangePasswordCard() {
+  const { t } = useLanguage()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -22,27 +24,27 @@ export function ChangePasswordCard() {
     e.preventDefault()
 
     if (!currentPassword.trim()) {
-      toast.error('Пожалуйста, введите текущий пароль')
+      toast.error(t('security.err_enter_current'))
       return
     }
 
     if (!newPassword.trim()) {
-      toast.error('Пожалуйста, введите новый пароль')
+      toast.error(t('security.err_enter_new'))
       return
     }
 
     if (newPassword.length < 6) {
-      toast.error('Новый пароль должен содержать минимум 6 символов')
+      toast.error(t('security.err_pwd_len'))
       return
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error('Новый пароль и подтверждение не совпадают')
+      toast.error(t('security.err_pwd_match'))
       return
     }
 
     if (currentPassword === newPassword) {
-      toast.error('Новый пароль должен отличаться от текущего')
+      toast.error(t('security.err_pwd_same'))
       return
     }
 
@@ -51,13 +53,13 @@ export function ChangePasswordCard() {
         currentPassword,
         newPassword,
       })
-      toast.success('Пароль успешно обновлен')
+      toast.success(t('security.pwd_updated'))
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
     } catch (err: any) {
       const errorMessage =
-        err?.response?.data?.message || 'Не удалось изменить пароль. Проверьте текущий пароль.'
+        err?.response?.data?.message || t('security.err_pwd_failed')
       toast.error(errorMessage)
     }
   }
@@ -70,9 +72,11 @@ export function ChangePasswordCard() {
             <Lock className="h-5 w-5" />
           </div>
           <div>
-            <CardTitle className="text-base font-semibold">Безопасность и пароль</CardTitle>
+            <CardTitle className="text-base font-semibold">
+              {t('security.card_title')}
+            </CardTitle>
             <CardDescription className="text-xs">
-              Обновите пароль для входа в ваш аккаунт
+              {t('security.card_desc')}
             </CardDescription>
           </div>
         </div>
@@ -82,7 +86,7 @@ export function ChangePasswordCard() {
           {/* Current password */}
           <div className="space-y-1.5">
             <Label htmlFor="currentPassword" className="text-xs font-medium">
-              Текущий пароль
+              {t('security.current_password')}
             </Label>
             <div className="relative">
               <Input
@@ -100,7 +104,6 @@ export function ChangePasswordCard() {
                 onClick={() => setShowCurrentPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 tabIndex={-1}
-                aria-label={showCurrentPassword ? 'Скрыть пароль' : 'Показать пароль'}
               >
                 {showCurrentPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -114,13 +117,13 @@ export function ChangePasswordCard() {
           {/* New password */}
           <div className="space-y-1.5">
             <Label htmlFor="newPassword" className="text-xs font-medium">
-              Новый пароль
+              {t('security.new_password')}
             </Label>
             <div className="relative">
               <Input
                 id="newPassword"
                 type={showNewPassword ? 'text' : 'password'}
-                placeholder="Минимум 6 символов"
+                placeholder={t('security.pwd_min_len')}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 autoComplete="new-password"
@@ -132,7 +135,6 @@ export function ChangePasswordCard() {
                 onClick={() => setShowNewPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 tabIndex={-1}
-                aria-label={showNewPassword ? 'Скрыть пароль' : 'Показать пароль'}
               >
                 {showNewPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -146,13 +148,13 @@ export function ChangePasswordCard() {
           {/* Confirm password */}
           <div className="space-y-1.5">
             <Label htmlFor="confirmPassword" className="text-xs font-medium">
-              Подтверждение нового пароля
+              {t('security.confirm_password')}
             </Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="Повторите новый пароль"
+                placeholder={t('security.confirm_password')}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
@@ -164,7 +166,6 @@ export function ChangePasswordCard() {
                 onClick={() => setShowConfirmPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 tabIndex={-1}
-                aria-label={showConfirmPassword ? 'Скрыть пароль' : 'Показать пароль'}
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -183,12 +184,12 @@ export function ChangePasswordCard() {
             {changePasswordMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Обновление...
+                {t('security.updating')}
               </>
             ) : (
               <>
                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                Сохранить новый пароль
+                {t('security.update_password')}
               </>
             )}
           </Button>

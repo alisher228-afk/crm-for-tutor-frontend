@@ -8,6 +8,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useUserProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { ChangePasswordCard } from '@/components/profile/ChangePasswordCard'
+import { LanguageSettingsCard } from '@/components/profile/LanguageSettingsCard'
+import { useLanguage } from '@/i18n'
 import { toast } from 'sonner'
 import {
   Mail,
@@ -21,6 +23,7 @@ import {
 } from 'lucide-react'
 
 export function TutorProfilePage() {
+  const { t } = useLanguage()
   const { data: profile, isLoading, isError, refetch } = useUserProfile()
   const updateProfileMutation = useUpdateProfile()
 
@@ -58,9 +61,9 @@ export function TutorProfilePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Профиль преподавателя</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('profile.tutor_title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Управление персональными данными и безопасностью
+            {t('profile.tutor_subtitle')}
           </p>
         </div>
 
@@ -69,14 +72,14 @@ export function TutorProfilePage() {
             <AlertCircle className="h-10 w-10 text-destructive" />
             <div className="space-y-1">
               <p className="font-semibold text-foreground text-lg">
-                Не удалось загрузить данные профиля
+                {t('profile.load_error_title')}
               </p>
               <p className="text-sm text-muted-foreground max-w-md">
-                Возникли неполадки с получением данных. Пожалуйста, попробуйте еще раз.
+                {t('profile.load_error_desc')}
               </p>
             </div>
             <Button variant="outline" onClick={() => refetch()}>
-              Повторить попытку
+              {t('profile.retry')}
             </Button>
           </CardContent>
         </Card>
@@ -97,28 +100,35 @@ export function TutorProfilePage() {
         phone: phone.trim(),
         specialization: specialization.trim(),
       })
-      toast.success('Данные профиля успешно сохранены')
+      toast.success(t('profile.saved_success'))
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Не удалось сохранить профиль'
+      const msg = err?.response?.data?.message || t('profile.load_error_desc')
       toast.error(msg)
     }
   }
 
   const formattedDate = profile.createdAt
-    ? new Date(profile.createdAt).toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : 'Недавно'
+    ? new Date(profile.createdAt).toLocaleDateString(
+        document.documentElement.lang === 'en'
+          ? 'en-US'
+          : document.documentElement.lang === 'kk'
+            ? 'kk-KZ'
+            : 'ru-RU',
+        {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        },
+      )
+    : '—'
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Профиль преподавателя</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('profile.tutor_title')}</h1>
         <p className="text-muted-foreground text-sm">
-          Управление личными данными, специализацией и безопасностью аккаунта
+          {t('profile.tutor_subtitle')}
         </p>
       </div>
 
@@ -136,7 +146,7 @@ export function TutorProfilePage() {
               <div className="space-y-1">
                 <h2 className="text-lg font-bold text-foreground">{fullName}</h2>
                 <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-mono text-xs">
-                  Преподаватель
+                  {t('nav.role_tutor')}
                 </Badge>
               </div>
             </div>
@@ -160,7 +170,7 @@ export function TutorProfilePage() {
             )}
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4 shrink-0 text-primary" />
-              <span>Регистрация: {formattedDate}</span>
+              <span>{t('profile.registered_date')}: {formattedDate}</span>
             </div>
           </CardContent>
         </Card>
@@ -173,9 +183,9 @@ export function TutorProfilePage() {
                 <IdCard className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold">Личные данные</CardTitle>
+                <CardTitle className="text-base font-semibold">{t('profile.personal_info')}</CardTitle>
                 <CardDescription className="text-xs">
-                  Информация, отображаемая в вашей CRM и при взаимодействии с учениками
+                  {t('profile.personal_info_desc')}
                 </CardDescription>
               </div>
             </div>
@@ -186,7 +196,7 @@ export function TutorProfilePage() {
                 {/* First Name */}
                 <div className="space-y-1.5">
                   <Label htmlFor="tutorFirstName" className="text-xs font-medium">
-                    Имя
+                    {t('profile.first_name')}
                   </Label>
                   <div className="relative">
                     <Input
@@ -203,7 +213,7 @@ export function TutorProfilePage() {
                 {/* Last Name */}
                 <div className="space-y-1.5">
                   <Label htmlFor="tutorLastName" className="text-xs font-medium">
-                    Фамилия
+                    {t('profile.last_name')}
                   </Label>
                   <div className="relative">
                     <Input
@@ -222,7 +232,7 @@ export function TutorProfilePage() {
                 {/* Phone */}
                 <div className="space-y-1.5">
                   <Label htmlFor="tutorPhone" className="text-xs font-medium">
-                    Номер телефона
+                    {t('profile.phone')}
                   </Label>
                   <Input
                     id="tutorPhone"
@@ -237,7 +247,7 @@ export function TutorProfilePage() {
                 {/* Email (Read-only) */}
                 <div className="space-y-1.5">
                   <Label htmlFor="tutorEmail" className="text-xs font-medium text-muted-foreground">
-                    Email аккаунта (логин)
+                    {t('profile.email')}
                   </Label>
                   <Input
                     id="tutorEmail"
@@ -252,18 +262,18 @@ export function TutorProfilePage() {
               {/* Specialization */}
               <div className="space-y-1.5">
                 <Label htmlFor="tutorSpecialization" className="text-xs font-medium">
-                  Специализация / Преподаваемые предметы
+                  {t('profile.specialization')}
                 </Label>
                 <Input
                   id="tutorSpecialization"
                   type="text"
-                  placeholder="Математика, Физика, Подготовка к олимпиадам"
+                  placeholder={t('profile.specialization_placeholder')}
                   value={specialization}
                   onChange={(e) => setSpecialization(e.target.value)}
                   disabled={updateProfileMutation.isPending}
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Укажите ваши основные направления и предметы для удобной организации работы.
+                  {t('profile.specialization_desc')}
                 </p>
               </div>
 
@@ -276,12 +286,12 @@ export function TutorProfilePage() {
                   {updateProfileMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Сохранение...
+                      {t('profile.saving')}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Сохранить изменения
+                      {t('profile.save')}
                     </>
                   )}
                 </Button>
@@ -290,6 +300,9 @@ export function TutorProfilePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Language Settings */}
+      <LanguageSettingsCard />
 
       {/* Security & Password Change */}
       <ChangePasswordCard />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Sun, Moon } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 
 export function ThemeToggle({ className }: { className?: string }) {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -11,6 +12,14 @@ export function ThemeToggle({ className }: { className?: string }) {
     }
     return 'light'
   })
+
+  let t: (path: string) => string = () => ''
+  try {
+    const lang = useLanguage()
+    t = lang.t
+  } catch {
+    // Fallback if rendered outside LanguageProvider
+  }
 
   useEffect(() => {
     const root = document.documentElement
@@ -26,14 +35,19 @@ export function ThemeToggle({ className }: { className?: string }) {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
   }
 
+  const titleText =
+    theme === 'dark'
+      ? t('theme.switch_to_light') || 'Светлая тема'
+      : t('theme.switch_to_dark') || 'Тёмная тема'
+
   return (
     <Button
       variant="ghost"
       size="icon-sm"
       onClick={toggleTheme}
       className={className}
-      aria-label={theme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
-      title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+      aria-label={titleText}
+      title={titleText}
     >
       {theme === 'dark' ? (
         <Sun className="h-4 w-4 text-amber" strokeWidth={1.75} />

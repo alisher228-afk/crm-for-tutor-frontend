@@ -25,6 +25,8 @@ import {
 import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog'
 import { Logo } from '@/components/brand/Logo'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { LanguageToggle } from '@/components/LanguageToggle'
+import { useLanguage } from '@/i18n'
 
 interface StudentNavItem {
   to: string
@@ -36,6 +38,7 @@ interface StudentNavItem {
 
 export function StudentLayout() {
   const { user, logout } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
@@ -51,25 +54,25 @@ export function StudentLayout() {
   const pendingCount = (myHomework || []).filter((h) => h.status === 'ASSIGNED').length
 
   const studentNavItems: StudentNavItem[] = [
-    { to: '/student', end: true, label: 'Мой профиль', icon: UserCircle },
-    { to: '/student/lessons', end: false, label: 'Расписание', icon: Calendar },
+    { to: '/student', end: true, label: t('nav.my_profile'), icon: UserCircle },
+    { to: '/student/lessons', end: false, label: t('nav.schedule'), icon: Calendar },
     {
       to: '/student/homework',
       end: false,
-      label: 'Домашка',
+      label: t('nav.homework_short'),
       icon: BookOpen,
       count: pendingCount > 0 ? String(pendingCount) : undefined,
     },
-    { to: '/student/tests', end: false, label: 'Тесты и квизы', icon: BrainCircuit },
-    { to: '/student/materials', end: false, label: 'Материалы', icon: Library },
-    { to: '/student/payments', end: false, label: 'Оплаты и баланс', icon: Receipt },
+    { to: '/student/tests', end: false, label: t('nav.tests_and_quizzes'), icon: BrainCircuit },
+    { to: '/student/materials', end: false, label: t('nav.materials'), icon: Library },
+    { to: '/student/payments', end: false, label: t('nav.payments_and_balance'), icon: Receipt },
   ]
 
   const studentFullName =
     profile?.name ||
     [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') ||
     user?.email ||
-    'Ученик'
+    t('profile.student_title')
   const userInitial = studentFullName.charAt(0).toUpperCase() || 'S'
 
   return (
@@ -82,11 +85,11 @@ export function StudentLayout() {
             <Logo variant="full" size="md" />
             <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-none border border-border bg-muted/40 text-[11px] text-muted-foreground font-mono">
               <span className="h-1.5 w-1.5 bg-red-accent" />
-              Кабинет ученика
+              {t('nav.role_student')}
             </div>
             {profile?.tutorName && (
               <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-0.5 rounded-none border border-border/80 bg-muted/20 text-[11px] text-muted-foreground">
-                <span className="text-muted-foreground/70">Преподаватель:</span>
+                <span className="text-muted-foreground/70">{t('nav.teacher_label')}</span>
                 <span className="font-semibold text-foreground">{profile.tutorName}</span>
               </div>
             )}
@@ -130,10 +133,11 @@ export function StudentLayout() {
           </nav>
 
           {/* User Info, ThemeToggle & Logout (Desktop) */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2.5">
+            <LanguageToggle />
             <ThemeToggle />
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pl-1">
               <Avatar size="sm">
                 <AvatarFallback className="bg-muted text-foreground font-semibold text-xs border border-border">
                   {userInitial}
@@ -156,27 +160,28 @@ export function StudentLayout() {
               size="sm"
               onClick={() => setLogoutConfirmOpen(true)}
               className="text-muted-foreground hover:text-destructive"
-              aria-label="Выйти из аккаунта"
+              aria-label={t('nav.logout')}
             >
               <LogOut className="h-4 w-4" strokeWidth={1.75} />
-              <span className="sr-only">Выйти</span>
+              <span className="sr-only">{t('nav.logout')}</span>
             </Button>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-1">
+            <LanguageToggle />
             <ThemeToggle />
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger
                 render={
-                  <Button variant="ghost" size="icon-sm" aria-label="Открыть меню" />
+                  <Button variant="ghost" size="icon-sm" aria-label={t('nav.open_menu')} />
                 }
               >
                 <Menu className="h-5 w-5" strokeWidth={1.75} />
               </SheetTrigger>
               <SheetContent side="right" className="p-0 w-72 flex flex-col justify-between">
                 <SheetHeader className="sr-only">
-                  <SheetTitle>Меню ученика</SheetTitle>
+                  <SheetTitle>{t('nav.navigation')}</SheetTitle>
                 </SheetHeader>
 
                 <div className="p-5 space-y-6">
@@ -194,7 +199,9 @@ export function StudentLayout() {
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="h-1.5 w-1.5 rounded-full bg-red-accent" />
                         <span className="text-[10px] text-muted-foreground font-mono">
-                          {profile?.tutorName ? `Репетитор: ${profile.tutorName}` : 'Ученик'}
+                          {profile?.tutorName
+                            ? `${t('nav.teacher_label')} ${profile.tutorName}`
+                            : t('nav.role_student')}
                         </span>
                       </div>
                     </div>
@@ -240,8 +247,18 @@ export function StudentLayout() {
                   </nav>
                 </div>
 
-                {/* Logout Button */}
-                <div className="p-5 border-t border-border">
+                {/* Mobile Settings & Logout Button */}
+                <div className="p-5 border-t border-border space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-2.5 py-1.5 text-xs text-muted-foreground border border-border/60 rounded-md bg-muted/30">
+                      <span>{t('language.title')}</span>
+                      <LanguageToggle />
+                    </div>
+                    <div className="flex items-center justify-between px-2.5 py-1.5 text-xs text-muted-foreground border border-border/60 rounded-md bg-muted/30">
+                      <span>{t('nav.theme')}</span>
+                      <ThemeToggle />
+                    </div>
+                  </div>
                   <Button
                     variant="outline"
                     className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
@@ -251,7 +268,7 @@ export function StudentLayout() {
                     }}
                   >
                     <LogOut className="mr-2 h-4 w-4" strokeWidth={1.75} />
-                    Выйти из аккаунта
+                    {t('nav.logout')}
                   </Button>
                 </div>
               </SheetContent>
