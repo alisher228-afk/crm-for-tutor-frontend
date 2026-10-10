@@ -205,20 +205,25 @@ export function StudentDetailsSheet({
                     <p className="text-[11px] font-medium text-muted-foreground flex items-center justify-center gap-1">
                       <Layers className="h-3 w-3" /> Баланс
                     </p>
-                    <p
-                      className={`text-lg font-bold mt-0.5 tabular-nums ${
-                        (student.balance ?? 0) < 0
-                          ? 'text-red-600 dark:text-red-400 font-black'
-                          : (student.balance ?? 0) === 0
-                            ? 'text-amber-600 dark:text-amber-400'
-                            : 'text-foreground'
-                      }`}
-                    >
-                      {(student.balance ?? 0) < 0 && (
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-accent mr-1 align-middle" />
-                      )}
-                      {student.balance ?? 0} ур.
-                    </p>
+                    {(() => {
+                      const balance = student.lessonBalance ?? student.balance ?? 0
+                      return (
+                        <p
+                          className={`text-lg font-bold mt-0.5 tabular-nums ${
+                            balance < 0
+                              ? 'text-red-600 dark:text-red-400 font-black'
+                              : balance === 0
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : 'text-foreground'
+                          }`}
+                        >
+                          {balance < 0 && (
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-accent mr-1 align-middle" />
+                          )}
+                          {balance} ур.
+                        </p>
+                      )
+                    })()}
                   </CardContent>
                 </Card>
 

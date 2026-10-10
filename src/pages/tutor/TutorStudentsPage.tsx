@@ -333,7 +333,7 @@ export function TutorStudentsPage() {
                       [student.firstName, student.lastName].filter(Boolean).join(' ') ||
                       'Без имени'
                     const initial = fullName.charAt(0).toUpperCase() || 'У'
-                    const balance = student.balance ?? 0
+                    const balance = student.lessonBalance ?? student.balance ?? 0
 
                     return (
                       <TableRow

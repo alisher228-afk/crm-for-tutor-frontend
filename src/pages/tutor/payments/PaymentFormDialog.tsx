@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useMemo, type FormEvent } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -66,7 +66,7 @@ export function PaymentFormDialog({
 }: PaymentFormDialogProps) {
   const isEditing = Boolean(initialData?.id)
 
-  const [selectedStudentId, setSelectedStudentId] = useState(studentId)
+  const [selectedStudentId, setSelectedStudentId] = useState(studentId ? String(studentId) : '')
   const [amount, setAmount] = useState('')
   const [lessonsCount, setLessonsCount] = useState('1')
   const [paymentDate, setPaymentDate] = useState(getTodayDateString())
@@ -79,7 +79,13 @@ export function PaymentFormDialog({
   useEffect(() => {
     if (open) {
       if (initialData) {
-        setSelectedStudentId(initialData.studentId || studentId)
+        setSelectedStudentId(
+          initialData.studentId
+            ? String(initialData.studentId)
+            : studentId
+              ? String(studentId)
+              : '',
+        )
         setAmount(String(initialData.amount || ''))
         setLessonsCount(
           initialData.lessonsCount !== undefined
@@ -89,7 +95,7 @@ export function PaymentFormDialog({
         setPaymentDate(normalizeDateForInput(initialData.paymentDate))
         setNotes(initialData.notes || '')
       } else {
-        setSelectedStudentId(studentId)
+        setSelectedStudentId(studentId ? String(studentId) : '')
         setAmount('')
         setLessonsCount('1')
         setPaymentDate(getTodayDateString())
@@ -98,17 +104,29 @@ export function PaymentFormDialog({
     }
   }, [open, initialData, studentId])
 
-  const targetStudentId = selectedStudentId || studentId
+  const studentSelectItems = useMemo(() => {
+    return studentsList.map((s) => {
+      const name =
+        s.name ||
+        [s.firstName, s.lastName].filter(Boolean).join(' ') ||
+        'Ученик'
+      return {
+        value: String(s.id),
+        label: name,
+      }
+    })
+  }, [studentsList])
 
-  const targetStudent = studentsList.find((s) => s.id === targetStudentId)
+  const targetStudentId = selectedStudentId || (studentId ? String(studentId) : '')
+
+  const targetStudent = studentsList.find((s) => String(s.id) === String(targetStudentId))
   const currentDisplayName =
-    studentName ||
     (targetStudent
       ? targetStudent.name ||
         [targetStudent.firstName, targetStudent.lastName]
           .filter(Boolean)
           .join(' ')
-      : 'Ученик')
+      : studentName) || 'Ученик'
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -159,7 +177,7 @@ export function PaymentFormDialog({
 
         // Check if response contains the student's updated balance
         const balance =
-          res?.newBalance ?? res?.studentBalance ?? res?.balance
+          res?.newBalance ?? res?.studentBalance ?? res?.lessonBalance ?? res?.balance
 
         const formattedAmount = numAmount.toLocaleString('ru-RU')
         if (balance !== undefined && balance !== null) {
@@ -219,16 +237,43 @@ export function PaymentFormDialog({
             <Label className="text-xs font-semibold">Ученик *</Label>
             {studentsList.length > 0 && !isEditing ? (
               <Select
-                value={selectedStudentId}
+                items={studentSelectItems}
+                value={selectedStudentId ? String(selectedStudentId) : undefined}
                 onValueChange={(val) => {
                   if (val) {
-                    setSelectedStudentId(val)
-                    if (onSelectStudentId) onSelectStudentId(val)
+                    setSelectedStudentId(String(val))
+                    if (onSelectStudentId) onSelectStudentId(String(val))
                   }
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Выберите ученика..." />
+                  <SelectValue placeholder="Выберите ученика...">
+                    {(val) => {
+                      if (!val) return 'Выберите ученика...'
+                      const student = studentsList.find(
+                        (s) => String(s.id) === String(val),
+                      )
+                      if (!student) return val
+                      const name =
+                        student.name ||
+                        [student.firstName, student.lastName]
+                          .filter(Boolean)
+                          .join(' ') ||
+                        'Ученик'
+                      const studentBal =
+                        student.lessonBalance ?? student.balance
+                      return (
+                        <span className="flex items-center gap-2 truncate">
+                          <span className="truncate font-medium">{name}</span>
+                          {studentBal !== undefined && (
+                            <span className="text-xs text-muted-foreground shrink-0 font-normal">
+                              ({studentBal} ур.)
+                            </span>
+                          )}
+                        </span>
+                      )
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {studentsList.map((s) => {
@@ -236,9 +281,9 @@ export function PaymentFormDialog({
                       s.name ||
                       [s.firstName, s.lastName].filter(Boolean).join(' ') ||
                       'Ученик'
-                    const studentBal = s.balance ?? s.lessonBalance
+                    const studentBal = s.lessonBalance ?? s.balance
                     return (
-                      <SelectItem key={s.id} value={s.id}>
+                      <SelectItem key={s.id} value={String(s.id)}>
                         <div className="flex items-center justify-between gap-4 w-full">
                           <span>{name}</span>
                           {studentBal !== undefined && (

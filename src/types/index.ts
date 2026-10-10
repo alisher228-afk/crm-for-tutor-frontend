@@ -196,6 +196,7 @@ export interface Payment {
   newBalance?: number
   studentBalance?: number
   balance?: number
+  lessonBalance?: number
   createdAt?: string
 }
 

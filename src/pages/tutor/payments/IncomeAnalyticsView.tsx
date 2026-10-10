@@ -117,7 +117,14 @@ export function IncomeAnalyticsView() {
                 }}
               >
                 <SelectTrigger className="w-[140px] h-9">
-                  <SelectValue />
+                  <SelectValue>
+                    {(v) =>
+                      v
+                        ? MONTHS.find((m) => String(m.value) === String(v))?.label ||
+                          v
+                        : ''
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {MONTHS.map((m) => (
@@ -135,7 +142,7 @@ export function IncomeAnalyticsView() {
                 }}
               >
                 <SelectTrigger className="w-[105px] h-9">
-                  <SelectValue />
+                  <SelectValue>{(v) => (v ? `${v} г.` : '')}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((y) => (

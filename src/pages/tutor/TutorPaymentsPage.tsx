@@ -70,10 +70,10 @@ export function TutorPaymentsPage() {
 
   // Determine current student ID
   const currentStudentId =
-    selectedStudentId || (students.length > 0 ? students[0].id : '')
+    selectedStudentId || (students.length > 0 ? String(students[0].id) : '')
 
   const selectedStudent = useMemo(
-    () => students.find((s) => s.id === currentStudentId),
+    () => students.find((s) => String(s.id) === String(currentStudentId)),
     [students, currentStudentId],
   )
 
@@ -181,15 +181,15 @@ export function TutorPaymentsPage() {
                   <span className="font-bold text-primary">
                     {selectedStudentName}
                   </span>
-                  {(selectedStudent?.balance ??
-                    selectedStudent?.lessonBalance) !== undefined && (
+                  {(selectedStudent?.lessonBalance ??
+                    selectedStudent?.balance) !== undefined && (
                     <Badge
                       variant="secondary"
                       className="ml-2 font-medium text-xs"
                     >
                       Баланс:{' '}
-                      {selectedStudent?.balance ??
-                        selectedStudent?.lessonBalance}{' '}
+                      {selectedStudent?.lessonBalance ??
+                        selectedStudent?.balance}{' '}
                       ур.
                     </Badge>
                   )}
@@ -218,11 +218,12 @@ export function TutorPaymentsPage() {
                       s.name ||
                       [s.firstName, s.lastName].filter(Boolean).join(' ') ||
                       'Ученик'
-                    const isSelected = s.id === currentStudentId
+                    const isSelected = String(s.id) === String(currentStudentId)
+                    const studentBal = s.lessonBalance ?? s.balance
                     return (
                       <button
                         key={s.id}
-                        onClick={() => setSelectedStudentId(s.id)}
+                        onClick={() => setSelectedStudentId(String(s.id))}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 transition-all border ${
                           isSelected
                             ? 'bg-primary text-primary-foreground border-primary shadow-sm'
@@ -241,7 +242,7 @@ export function TutorPaymentsPage() {
                           </AvatarFallback>
                         </Avatar>
                         <span>{name}</span>
-                        {(s.balance ?? s.lessonBalance) !== undefined && (
+                        {studentBal !== undefined && (
                           <span
                             className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                               isSelected
@@ -249,7 +250,7 @@ export function TutorPaymentsPage() {
                                 : 'bg-background text-muted-foreground border'
                             }`}
                           >
-                            {s.balance ?? s.lessonBalance} ур.
+                            {studentBal} ур.
                           </span>
                         )}
                       </button>
@@ -309,11 +310,11 @@ export function TutorPaymentsPage() {
                       Текущий баланс
                     </p>
                     <p className="text-lg font-bold text-foreground">
-                      {(selectedStudent.balance ??
-                        selectedStudent.lessonBalance) !== undefined
+                      {(selectedStudent.lessonBalance ??
+                        selectedStudent.balance) !== undefined
                         ? `${
-                            selectedStudent.balance ??
-                            selectedStudent.lessonBalance
+                            selectedStudent.lessonBalance ??
+                            selectedStudent.balance
                           } ур.`
                         : '—'}
                     </p>
