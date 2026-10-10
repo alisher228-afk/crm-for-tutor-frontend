@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,9 @@ import {
   File,
   Loader2,
   FileQuestion,
+  FileCode,
+  Copy,
+  Check,
 } from 'lucide-react'
 import { getDirectFileUrl, isTelegramWebApp } from '@/lib/fileUtils'
 
@@ -43,7 +46,11 @@ export function FileViewerDialog({
   const displayFileName = fileName || title || 'Файл'
   const isTg = isTelegramWebApp()
 
-  const ext = (displayFileName.split('.').pop() || '').toLowerCase()
+  const cleanFileName = (displayFileName || '').trim()
+  const ext = cleanFileName.includes('.')
+    ? (cleanFileName.split('.').pop() || '').toLowerCase()
+    : ''
+
   const isImage =
     contentType.startsWith('image/') ||
     ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)
@@ -56,6 +63,42 @@ export function FileViewerDialog({
   const isVideo =
     contentType.startsWith('video/') ||
     ['mp4', 'webm', 'mov'].includes(ext)
+  const isOfficeDoc =
+    ['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt'].includes(ext) ||
+    contentType.includes('word') ||
+    contentType.includes('officedocument') ||
+    contentType.includes('excel') ||
+    contentType.includes('powerpoint')
+  const isText =
+    ['txt', 'csv', 'md', 'json', 'log', 'xml', 'sql', 'js', 'ts', 'html', 'css', 'py', 'java', 'cpp'].includes(ext) ||
+    contentType.startsWith('text/')
+
+  const [textContent, setTextContent] = useState<string | null>(null)
+  const [isTextLoading, setIsTextLoading] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
+
+  // Fetch text content when viewing text files
+  useEffect(() => {
+    if (isText && blobUrl) {
+      setIsTextLoading(true)
+      fetch(blobUrl)
+        .then((res) => res.text())
+        .then((text) => {
+          setTextContent(text)
+          setIsTextLoading(false)
+        })
+        .catch(() => {
+          setIsTextLoading(false)
+        })
+    } else {
+      setTextContent(null)
+    }
+  }, [blobUrl, isText])
+
+  const directUrl = apiPath ? getDirectFileUrl(apiPath) : null
+  const googleViewerUrl = directUrl && (directUrl.startsWith('https://') || directUrl.startsWith('http://'))
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(directUrl)}&embedded=true`
+    : null
 
   // Cleanup blob URL when modal closes or changes
   useEffect(() => {
@@ -89,6 +132,10 @@ export function FileViewerDialog({
               <FileImage className="h-5 w-5 text-purple-500 shrink-0" />
             ) : isPdf ? (
               <FileText className="h-5 w-5 text-rose-500 shrink-0" />
+            ) : isOfficeDoc ? (
+              <FileText className="h-5 w-5 text-blue-500 shrink-0" />
+            ) : isText ? (
+              <FileCode className="h-5 w-5 text-emerald-500 shrink-0" />
             ) : (
               <File className="h-5 w-5 text-primary shrink-0" />
             )}
@@ -140,7 +187,7 @@ export function FileViewerDialog({
           ) : !blobUrl ? (
             <div className="flex flex-col items-center justify-center gap-3 p-6 text-center max-w-sm">
               <FileQuestion className="h-10 w-10 text-muted-foreground" />
-              <p className="text-sm font-semibold">Не удалось отобразить файл</p>
+              <p className="text-sm font-semibold">Не удалось загрузить файл</p>
               {onDownload && (
                 <Button size="sm" onClick={onDownload} className="gap-1.5 mt-2">
                   <Download className="h-4 w-4" />
@@ -170,6 +217,57 @@ export function FileViewerDialog({
           ) : isVideo ? (
             <div className="w-full h-full p-2 flex items-center justify-center">
               <video controls src={blobUrl} className="max-w-full max-h-full rounded" />
+            </div>
+          ) : isOfficeDoc && googleViewerUrl ? (
+            <div className="w-full h-full flex flex-col relative bg-card">
+              <div className="bg-muted/40 border-b border-border px-3 py-1.5 flex items-center justify-between text-xs text-muted-foreground shrink-0">
+                <span className="truncate">Онлайн-просмотр документа ({displayFileName})</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="h-6 text-[11px]"
+                    onClick={handleOpenExternal}
+                  >
+                    В браузере
+                  </Button>
+                </div>
+              </div>
+              <iframe
+                src={googleViewerUrl}
+                title={title}
+                className="w-full flex-1 border-0 bg-white"
+              />
+            </div>
+          ) : isText ? (
+            <div className="w-full h-full flex flex-col bg-card">
+              <div className="bg-muted/40 border-b border-border px-3 py-1.5 flex items-center justify-between text-xs text-muted-foreground shrink-0">
+                <span>Текстовый документ ({displayFileName})</span>
+                {textContent && (
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="h-6 text-[11px] gap-1"
+                    onClick={() => {
+                      navigator.clipboard.writeText(textContent)
+                      setIsCopied(true)
+                      setTimeout(() => setIsCopied(false), 2000)
+                    }}
+                  >
+                    {isCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    <span>{isCopied ? 'Скопировано' : 'Копировать'}</span>
+                  </Button>
+                )}
+              </div>
+              {isTextLoading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <pre className="flex-1 p-4 overflow-auto font-mono text-xs text-foreground whitespace-pre-wrap select-text leading-relaxed">
+                  {textContent || 'Файл пуст'}
+                </pre>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 p-6 text-center max-w-md">
