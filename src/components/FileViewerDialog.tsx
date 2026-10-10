@@ -19,6 +19,8 @@ import {
   Check,
 } from 'lucide-react'
 import { getDirectFileUrl, isTelegramWebApp } from '@/lib/fileUtils'
+import { PdfViewer } from '@/components/PdfViewer'
+import { DocxViewer } from '@/components/DocxViewer'
 
 interface FileViewerDialogProps {
   open: boolean
@@ -57,6 +59,9 @@ export function FileViewerDialog({
   const isPdf =
     contentType === 'application/pdf' ||
     ext === 'pdf'
+  const isDocx =
+    ext === 'docx' ||
+    contentType.includes('wordprocessingml')
   const isAudio =
     contentType.startsWith('audio/') ||
     ['mp3', 'wav', 'ogg', 'm4a'].includes(ext)
@@ -64,7 +69,7 @@ export function FileViewerDialog({
     contentType.startsWith('video/') ||
     ['mp4', 'webm', 'mov'].includes(ext)
   const isOfficeDoc =
-    ['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt'].includes(ext) ||
+    ['doc', 'xlsx', 'xls', 'pptx', 'ppt'].includes(ext) ||
     contentType.includes('word') ||
     contentType.includes('officedocument') ||
     contentType.includes('excel') ||
@@ -204,11 +209,9 @@ export function FileViewerDialog({
               />
             </div>
           ) : isPdf ? (
-            <iframe
-              src={blobUrl}
-              title={title}
-              className="w-full h-full border-0 rounded-b bg-white"
-            />
+            <PdfViewer blobUrl={blobUrl} title={title} />
+          ) : isDocx ? (
+            <DocxViewer blobUrl={blobUrl} />
           ) : isAudio ? (
             <div className="p-8 text-center space-y-4">
               <p className="text-sm text-muted-foreground">Аудиозапись</p>
