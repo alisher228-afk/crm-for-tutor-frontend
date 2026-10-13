@@ -17,9 +17,12 @@ import { Loader2 } from 'lucide-react'
 import type { AxiosError } from 'axios'
 import { Logo } from '@/components/brand/Logo'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { LanguageToggle } from '@/components/LanguageToggle'
+import { useLanguage } from '@/i18n'
 
 export function TutorRegisterPage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const { registerTutor } = useAuth()
 
   const [email, setEmail] = useState('')
@@ -32,35 +35,35 @@ export function TutorRegisterPage() {
 
     const trimmedEmail = email.trim()
     if (!trimmedEmail) {
-      toast.error('Пожалуйста, введите email')
+      toast.error(t('auth.err_enter_email'))
       return
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(trimmedEmail)) {
-      toast.error('Введите корректный email адрес')
+      toast.error(t('auth.err_invalid_email'))
       return
     }
 
     if (!password) {
-      toast.error('Пожалуйста, введите пароль')
+      toast.error(t('auth.err_enter_password'))
       return
     }
 
     if (password.length < 6) {
-      toast.error('Пароль должен быть не менее 6 символов')
+      toast.error(t('auth.err_password_len'))
       return
     }
 
     if (password !== confirmPassword) {
-      toast.error('Пароли не совпадают')
+      toast.error(t('auth.err_passwords_match'))
       return
     }
 
     setIsLoading(true)
     try {
       const response = await registerTutor(trimmedEmail, password)
-      toast.success('Регистрация репетитора прошла успешно!')
+      toast.success(t('auth.tutor_register_success'))
 
       if (response?.accessToken) {
         navigate('/tutor/students')
@@ -74,8 +77,8 @@ export function TutorRegisterPage() {
       const errorMessage =
         serverMessage ||
         (axiosError.code === 'ERR_NETWORK' || !axiosError.response
-          ? 'Не удалось связаться с сервером (Network Error). Проверьте бэкенд.'
-          : 'Ошибка при регистрации. Возможно, данный email уже занят.')
+          ? t('auth.err_network')
+          : t('auth.err_register_failed'))
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -84,7 +87,8 @@ export function TutorRegisterPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background relative">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <LanguageToggle />
         <ThemeToggle />
       </div>
 
@@ -93,20 +97,22 @@ export function TutorRegisterPage() {
           <Link to="/" className="mx-auto flex flex-col items-center gap-1 group cursor-pointer focus-visible:outline-none">
             <Logo variant="full" size="lg" className="group-hover:opacity-90 transition-opacity" />
           </Link>
-          <CardTitle className="text-xl font-bold tracking-tight">Регистрация репетитора</CardTitle>
+          <CardTitle className="text-xl font-bold tracking-tight">
+            {t('auth.tutor_register_title')}
+          </CardTitle>
           <CardDescription className="text-muted-foreground text-sm">
-            Создайте профиль для управления расписанием, учениками и оплатами
+            {t('auth.tutor_register_subtitle')}
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="tutor@example.com"
+                placeholder={t('auth.email_placeholder')}
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -115,11 +121,11 @@ export function TutorRegisterPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password">Пароль</Label>
+              <Label htmlFor="password">{t('auth.password')}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Минимум 6 символов"
+                placeholder={t('auth.password_min_placeholder')}
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -128,11 +134,11 @@ export function TutorRegisterPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword">Подтверждение пароля</Label>
+              <Label htmlFor="confirmPassword">{t('auth.confirm_password')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Повторите пароль"
+                placeholder={t('auth.confirm_password_placeholder')}
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -144,16 +150,16 @@ export function TutorRegisterPage() {
           <CardFooter className="flex flex-col gap-4 mt-2">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? 'Создание аккаунта...' : 'Зарегистрироваться'}
+              {isLoading ? t('auth.creating_account') : t('auth.register_button')}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              Уже есть аккаунт?{' '}
+              {t('auth.already_have_account')}{' '}
               <Link
                 to="/login"
                 className="font-medium text-foreground underline underline-offset-4 hover:text-primary transition-colors"
               >
-                Войти
+                {t('auth.login_link')}
               </Link>
             </p>
           </CardFooter>
@@ -162,3 +168,4 @@ export function TutorRegisterPage() {
     </div>
   )
 }
+

@@ -17,9 +17,12 @@ import { Loader2, Send } from 'lucide-react'
 import type { AxiosError } from 'axios'
 import { Logo } from '@/components/brand/Logo'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { LanguageToggle } from '@/components/LanguageToggle'
+import { useLanguage } from '@/i18n'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const {
     login,
     isTelegramWebApp,
@@ -43,30 +46,30 @@ export function LoginPage() {
 
     const trimmedEmail = email.trim()
     if (!trimmedEmail) {
-      toast.error('Пожалуйста, введите email')
+      toast.error(t('auth.err_enter_email'))
       return
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(trimmedEmail)) {
-      toast.error('Введите корректный email адрес')
+      toast.error(t('auth.err_invalid_email'))
       return
     }
 
     if (!password) {
-      toast.error('Пожалуйста, введите пароль')
+      toast.error(t('auth.err_enter_password'))
       return
     }
 
     if (password.length < 6) {
-      toast.error('Пароль должен содержать не менее 6 символов')
+      toast.error(t('auth.err_password_len'))
       return
     }
 
     setIsLoading(true)
     try {
       const response = await login(trimmedEmail, password)
-      toast.success('Авторизация успешна')
+      toast.success(t('auth.login_success'))
 
       const role = (response.role as string)?.replace(/^ROLE_/, '')
       if (role === 'TUTOR') {
@@ -83,8 +86,8 @@ export function LoginPage() {
       const errorMessage =
         serverMessage ||
         (axiosError.code === 'ERR_NETWORK' || !axiosError.response
-          ? 'Не удалось связаться с сервером (Network Error). Проверьте бэкенд.'
-          : 'Не удалось войти. Проверьте правильность email и пароля.')
+          ? t('auth.err_network')
+          : t('auth.err_login_failed'))
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -95,14 +98,14 @@ export function LoginPage() {
     e.preventDefault()
     const trimmedCode = telegramCode.trim()
     if (!trimmedCode) {
-      toast.error('Пожалуйста, введите код привязки')
+      toast.error(t('auth.err_enter_code'))
       return
     }
 
     setIsTelegramSubmitting(true)
     try {
       const response = await loginWithTelegram(trimmedCode)
-      toast.success('Telegram успешно привязан!')
+      toast.success(t('auth.tg_linked_success'))
 
       const role = (response.role as string)?.replace(/^ROLE_/, '')
       if (role === 'TUTOR') {
@@ -114,7 +117,7 @@ export function LoginPage() {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       const serverMessage =
         axiosError.response?.data?.message || axiosError.response?.data?.error
-      toast.error(serverMessage || 'Неверный или просроченный код привязки')
+      toast.error(serverMessage || t('auth.err_invalid_code'))
     } finally {
       setIsTelegramSubmitting(false)
     }
@@ -124,39 +127,46 @@ export function LoginPage() {
   if (isTelegramWebApp && !showPasswordLogin) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background relative">
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <LanguageToggle />
+          <ThemeToggle />
+        </div>
+
         <Card className="w-full max-w-md border-border bg-card shadow-soft">
           <CardHeader className="space-y-3 text-center pb-2">
             <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <Send className="h-6 w-6" />
             </div>
             <CardTitle className="text-xl font-bold">
-              {telegramUser?.first_name ? `Привет, ${telegramUser.first_name}! 👋` : 'Studly в Telegram'}
+              {telegramUser?.first_name
+                ? t('auth.tg_welcome', { name: telegramUser.first_name })
+                : t('auth.tg_title_default')}
             </CardTitle>
             <CardDescription className="text-muted-foreground text-sm">
               {isAuthLoading
-                ? 'Авторизация через Telegram...'
+                ? t('auth.tg_auth_loading')
                 : telegramLinkRequired
-                  ? 'Для входа введите 6-значный код привязки, полученный от вашего репетитора'
-                  : 'Загрузка профиля...'}
+                  ? t('auth.tg_link_code_desc')
+                  : t('auth.tg_profile_loading')}
             </CardDescription>
           </CardHeader>
 
           {isAuthLoading ? (
             <CardContent className="flex flex-col items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-              <p className="text-sm text-muted-foreground">Входим в личный кабинет...</p>
+              <p className="text-sm text-muted-foreground">{t('auth.tg_entering')}</p>
             </CardContent>
           ) : (
             <form onSubmit={handleTelegramLinkSubmit}>
               <CardContent className="space-y-4 pt-2">
                 <div className="space-y-1.5 text-center">
                   <Label htmlFor="telegramCode" className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                    Код привязки от репетитора
+                    {t('auth.tg_code_label')}
                   </Label>
                   <Input
                     id="telegramCode"
                     type="text"
-                    placeholder="000000"
+                    placeholder={t('auth.tg_code_placeholder')}
                     maxLength={8}
                     value={telegramCode}
                     onChange={(e) => setTelegramCode(e.target.value.toUpperCase())}
@@ -176,19 +186,19 @@ export function LoginPage() {
                   {isTelegramSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Подключение...
+                      {t('auth.tg_connecting')}
                     </>
                   ) : (
-                    'Привязать и войти'
+                    t('auth.tg_connect_button')
                   )}
                 </Button>
 
                 <button
                   type="button"
                   onClick={() => setShowPasswordLogin(true)}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors pt-2 underline underline-offset-4"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors pt-2 underline underline-offset-4 cursor-pointer"
                 >
-                  Войти по логину и паролю
+                  {t('auth.tg_switch_password')}
                 </button>
               </CardFooter>
             </form>
@@ -201,7 +211,8 @@ export function LoginPage() {
   // Normal login view
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background relative">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <LanguageToggle />
         <ThemeToggle />
       </div>
 
@@ -211,18 +222,20 @@ export function LoginPage() {
             <Logo variant="full" size="lg" className="group-hover:opacity-90 transition-opacity" />
           </Link>
           <CardDescription className="text-muted-foreground text-sm">
-            Войдите в личный кабинет для управления занятиями и расписанием
+            {t('auth.login_subtitle')}
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-foreground text-sm font-medium">Email</Label>
+              <Label htmlFor="email" className="text-foreground text-sm font-medium">
+                {t('auth.email')}
+              </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="teacher@studly.crm"
+                placeholder={t('auth.email_placeholder')}
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -233,12 +246,14 @@ export function LoginPage() {
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-foreground text-sm font-medium">Пароль</Label>
+                <Label htmlFor="password" className="text-foreground text-sm font-medium">
+                  {t('auth.password')}
+                </Label>
               </div>
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder={t('auth.password_placeholder')}
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -251,31 +266,31 @@ export function LoginPage() {
           <CardFooter className="flex flex-col gap-4 mt-2">
             <Button type="submit" className="w-full h-10 font-medium" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? 'Вход...' : 'Войти в аккаунт'}
+              {isLoading ? t('auth.logging_in') : t('auth.login_button')}
             </Button>
 
             {isTelegramWebApp && (
               <button
                 type="button"
                 onClick={() => setShowPasswordLogin(false)}
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-primary hover:underline cursor-pointer"
               >
-                ← Вернуться ко входу через Telegram
+                {t('auth.tg_back_to_telegram')}
               </button>
             )}
 
             <div className="text-center text-sm text-muted-foreground space-y-1">
               <p>
-                Вы репетитор и ещё не с нами?{' '}
+                {t('auth.not_registered_tutor')}{' '}
                 <Link
                   to="/register"
                   className="font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
                 >
-                  Зарегистрироваться
+                  {t('auth.register_link')}
                 </Link>
               </p>
               <p className="text-xs text-muted-foreground/80">
-                Ученики регистрируются по персональной ссылке-приглашению или через Telegram.
+                {t('auth.student_notice')}
               </p>
             </div>
           </CardFooter>
@@ -284,3 +299,4 @@ export function LoginPage() {
     </div>
   )
 }
+
