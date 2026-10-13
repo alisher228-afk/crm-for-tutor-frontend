@@ -25,6 +25,7 @@ import {
   Send,
   Sparkles,
 } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 import type { Homework } from '@/types'
 import type { AxiosError } from 'axios'
 
@@ -35,37 +36,13 @@ interface StudentHomeworkDetailsSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
-const statusConfig: Record<
-  string,
-  { label: string; badgeClass: string; icon: typeof CheckCircle2 }
-> = {
-  ASSIGNED: {
-    label: 'Нужно сдать',
-    badgeClass:
-      'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900',
-    icon: Clock,
-  },
-  SUBMITTED: {
-    label: 'Сдано на проверку',
-    badgeClass:
-      'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800',
-    icon: AlertCircle,
-  },
-  REVIEWED: {
-    label: 'Проверено',
-    badgeClass:
-      'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-    icon: CheckCircle2,
-  },
-}
-
-function formatDeadline(isoStr?: string): { text: string; isPast: boolean } {
-  if (!isoStr) return { text: 'Бессрочно', isPast: false }
+function formatDeadline(isoStr?: string, locale = 'ru-RU', noDeadlineText = 'Бессрочно'): { text: string; isPast: boolean } {
+  if (!isoStr) return { text: noDeadlineText, isPast: false }
   const d = new Date(isoStr)
-  if (isNaN(d.getTime())) return { text: 'Бессрочно', isPast: false }
+  if (isNaN(d.getTime())) return { text: noDeadlineText, isPast: false }
 
   const isPast = d.getTime() < Date.now()
-  const formatted = d.toLocaleDateString('ru-RU', {
+  const formatted = d.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -80,11 +57,38 @@ export function StudentHomeworkDetailsSheet({
   open,
   onOpenChange,
 }: StudentHomeworkDetailsSheetProps) {
+  const { t, language } = useLanguage()
   const { data: fetchedHomework } = useHomework(homeworkId)
   const homework = fetchedHomework || initialHomework
 
   const submitMutation = useSubmitHomework()
   const [studentNotes, setStudentNotes] = useState('')
+
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
+  const statusConfig: Record<
+    string,
+    { label: string; badgeClass: string; icon: typeof CheckCircle2 }
+  > = {
+    ASSIGNED: {
+      label: t('student_homework.filter_assigned'),
+      badgeClass:
+        'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900',
+      icon: Clock,
+    },
+    SUBMITTED: {
+      label: t('student_homework.filter_submitted'),
+      badgeClass:
+        'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+      icon: AlertCircle,
+    },
+    REVIEWED: {
+      label: t('student_homework.filter_reviewed'),
+      badgeClass:
+        'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
+      icon: CheckCircle2,
+    },
+  }
 
   useEffect(() => {
     if (open && homework) {
@@ -103,6 +107,8 @@ export function StudentHomeworkDetailsSheet({
 
   const { text: deadlineText, isPast: isDeadlinePast } = formatDeadline(
     homework.deadline,
+    dateLocale,
+    t('student_homework.no_deadline'),
   )
 
   const isAssigned = homework.status === 'ASSIGNED'
@@ -117,11 +123,11 @@ export function StudentHomeworkDetailsSheet({
         id: homeworkId,
         studentNotes: studentNotes.trim() || undefined,
       })
-      toast.success('Задание успешно отправлено на проверку!')
+      toast.success(t('student_homework.submitted_toast'))
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось сдать задание',
+        axiosError.response?.data?.message || t('student_homework.submit_failed_toast'),
       )
     }
   }
@@ -145,7 +151,7 @@ export function StudentHomeworkDetailsSheet({
 
               {homework.lessonTopic && (
                 <Badge variant="outline" className="text-xs font-normal">
-                  Урок: {homework.lessonTopic}
+                  {t('student_homework.lesson_prefix')} {homework.lessonTopic}
                 </Badge>
               )}
             </div>
@@ -157,7 +163,7 @@ export function StudentHomeworkDetailsSheet({
             {homework.deadline && (
               <SheetDescription className="flex items-center gap-2 pt-1 text-xs">
                 <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>Дедлайн: </span>
+                <span>{t('student_homework.deadline')} </span>
                 <span
                   className={
                     isDeadlinePast && isAssigned
@@ -169,7 +175,7 @@ export function StudentHomeworkDetailsSheet({
                 </span>
                 {isDeadlinePast && isAssigned && (
                   <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                    Срок истёк
+                    {t('student_homework.deadline_expired')}
                   </Badge>
                 )}
               </SheetDescription>
@@ -181,7 +187,7 @@ export function StudentHomeworkDetailsSheet({
             <div className="space-y-2">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <FileText className="h-3.5 w-3.5" />
-                <span>Описание задания</span>
+                <span>{t('student_homework.description_title')}</span>
               </h3>
               <Card className="border-border bg-muted/20">
                 <CardContent className="p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap">
@@ -196,7 +202,7 @@ export function StudentHomeworkDetailsSheet({
             <div className="space-y-2">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>Отзыв репетитора</span>
+                <span>{t('student_homework.tutor_feedback')}</span>
               </h3>
               <Card className="border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20">
                 <CardContent className="p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap">
@@ -222,18 +228,18 @@ export function StudentHomeworkDetailsSheet({
                     className="text-xs font-semibold flex items-center gap-1.5"
                   >
                     <MessageSquare className="h-3.5 w-3.5 text-primary" />
-                    <span>Ваш комментарий к решению</span>
+                    <span>{t('student_homework.submission_label')}</span>
                   </Label>
                   <Textarea
                     id="student-notes"
                     rows={4}
-                    placeholder="Напишите, как далось задание, возникли ли вопросы или оставьте пояснение к решению и прикреплённым файлам..."
+                    placeholder={t('student_homework.submission_placeholder')}
                     value={studentNotes}
                     onChange={(e) => setStudentNotes(e.target.value)}
                     className="text-sm resize-y"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    При необходимости прикрепите файлы с решением в блоке выше перед отправкой.
+                    {t('student_homework.submission_hint')}
                   </p>
                 </div>
 
@@ -247,7 +253,7 @@ export function StudentHomeworkDetailsSheet({
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
-                  <span>Сдать задание на проверку</span>
+                  <span>{t('student_homework.submit_btn')}</span>
                 </Button>
               </form>
             ) : (
@@ -267,8 +273,8 @@ export function StudentHomeworkDetailsSheet({
                   )}
                   <span>
                     {isReviewed
-                      ? 'Задание проверено преподавателем'
-                      : 'Задание отправлено и ожидает проверки преподавателя'}
+                      ? t('student_homework.status_reviewed_banner')
+                      : t('student_homework.status_submitted_banner')}
                   </span>
                 </div>
 
@@ -276,7 +282,7 @@ export function StudentHomeworkDetailsSheet({
                   <div className="space-y-1.5">
                     <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                       <MessageSquare className="h-3.5 w-3.5" />
-                      <span>Ваш комментарий при сдаче:</span>
+                      <span>{t('student_homework.my_notes_title')}</span>
                     </span>
                     <Card className="border-border bg-muted/30">
                       <CardContent className="p-3 text-xs sm:text-sm text-foreground whitespace-pre-wrap">

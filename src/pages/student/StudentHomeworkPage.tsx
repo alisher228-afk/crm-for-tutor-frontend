@@ -19,38 +19,15 @@ import {
   Sparkles,
   Paperclip,
 } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 import type { Homework } from '@/types'
 
-const statusConfig: Record<
-  string,
-  { label: string; badgeClass: string; icon: typeof CheckCircle2 }
-> = {
-  ASSIGNED: {
-    label: 'Нужно сдать',
-    badgeClass:
-      'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900',
-    icon: Clock,
-  },
-  SUBMITTED: {
-    label: 'Сдано на проверку',
-    badgeClass:
-      'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800',
-    icon: AlertCircle,
-  },
-  REVIEWED: {
-    label: 'Проверено',
-    badgeClass:
-      'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-    icon: CheckCircle2,
-  },
-}
-
-function formatDeadline(isoStr?: string): { text: string; isPast: boolean } {
-  if (!isoStr) return { text: 'Бессрочно', isPast: false }
+function formatDeadline(isoStr?: string, locale = 'ru-RU', noDeadlineText = 'Бессрочно'): { text: string; isPast: boolean } {
+  if (!isoStr) return { text: noDeadlineText, isPast: false }
   const d = new Date(isoStr)
-  if (isNaN(d.getTime())) return { text: 'Бессрочно', isPast: false }
+  if (isNaN(d.getTime())) return { text: noDeadlineText, isPast: false }
   const isPast = d.getTime() < Date.now()
-  const text = d.toLocaleDateString('ru-RU', {
+  const text = d.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -62,6 +39,7 @@ function formatDeadline(isoStr?: string): { text: string; isPast: boolean } {
 type StatusFilter = 'ALL' | 'ASSIGNED' | 'SUBMITTED' | 'REVIEWED'
 
 export function StudentHomeworkPage() {
+  const { t, language } = useLanguage()
   const { data: homeworkList = [], isLoading, isError, refetch } = useMyHomework()
 
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>('ALL')
@@ -70,6 +48,35 @@ export function StudentHomeworkPage() {
   // Details sheet
   const [selectedHomework, setSelectedHomework] = useState<Homework | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
+  const statusConfig: Record<
+    string,
+    { label: string; badgeClass: string; icon: typeof CheckCircle2 }
+  > = useMemo(
+    () => ({
+      ASSIGNED: {
+        label: t('student_homework.filter_assigned'),
+        badgeClass:
+          'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900',
+        icon: Clock,
+      },
+      SUBMITTED: {
+        label: t('student_homework.filter_submitted'),
+        badgeClass:
+          'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+        icon: AlertCircle,
+      },
+      REVIEWED: {
+        label: t('student_homework.filter_reviewed'),
+        badgeClass:
+          'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
+        icon: CheckCircle2,
+      },
+    }),
+    [t],
+  )
 
   // Stats
   const stats = useMemo(() => {
@@ -108,9 +115,11 @@ export function StudentHomeworkPage() {
     <div className="space-y-6">
       {/* Top Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Мои домашние задания</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t('student_homework.title')}
+        </h1>
         <p className="text-muted-foreground text-sm">
-          Задания от вашего преподавателя, материалы, прикрепление файлов и сдача решений
+          {t('student_homework.subtitle')}
         </p>
       </div>
 
@@ -126,7 +135,7 @@ export function StudentHomeworkPage() {
           }`}
         >
           <span className="text-xs text-muted-foreground font-medium block">
-            Всего заданий
+            {t('student_homework.stats_total')}
           </span>
           <span className="text-xl font-bold text-foreground mt-0.5 block">
             {stats.total}
@@ -143,7 +152,7 @@ export function StudentHomeworkPage() {
           }`}
         >
           <span className="text-xs text-blue-700 dark:text-blue-300 font-medium block">
-            Нужно сдать
+            {t('student_homework.stats_assigned')}
           </span>
           <span className="text-xl font-bold text-blue-800 dark:text-blue-200 mt-0.5 block">
             {stats.assigned}
@@ -160,7 +169,7 @@ export function StudentHomeworkPage() {
           }`}
         >
           <span className="text-xs text-amber-700 dark:text-amber-300 font-medium block">
-            На проверке
+            {t('student_homework.stats_submitted')}
           </span>
           <span className="text-xl font-bold text-amber-800 dark:text-amber-200 mt-0.5 block">
             {stats.submitted}
@@ -177,7 +186,7 @@ export function StudentHomeworkPage() {
           }`}
         >
           <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium block">
-            Проверено
+            {t('student_homework.stats_reviewed')}
           </span>
           <span className="text-xl font-bold text-emerald-800 dark:text-emerald-200 mt-0.5 block">
             {stats.reviewed}
@@ -190,7 +199,7 @@ export function StudentHomeworkPage() {
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Поиск по названию или теме..."
+            placeholder={t('student_homework.search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 text-xs bg-background h-9"
@@ -204,7 +213,7 @@ export function StudentHomeworkPage() {
             onClick={() => setSelectedStatus('ALL')}
             className="text-xs text-muted-foreground hover:text-foreground self-start sm:self-auto"
           >
-            Сбросить фильтр
+            {t('student_homework.btn_reset_filter')}
           </Button>
         )}
       </div>
@@ -222,14 +231,14 @@ export function StudentHomeworkPage() {
             <AlertCircle className="h-10 w-10 text-destructive" />
             <div className="space-y-1">
               <p className="font-semibold text-foreground text-lg">
-                Не удалось загрузить задания
+                {t('student_homework.err_load')}
               </p>
               <p className="text-sm text-muted-foreground">
-                Проверьте соединение с интернетом и попробуйте снова
+                {t('student_homework.err_load_desc')}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Повторить попытку
+              {t('common.retry')}
             </Button>
           </CardContent>
         </Card>
@@ -244,6 +253,8 @@ export function StudentHomeworkPage() {
             const StatusIcon = currentStatus.icon
             const { text: deadlineText, isPast: isDeadlinePast } = formatDeadline(
               hw.deadline,
+              dateLocale,
+              t('student_homework.no_deadline'),
             )
             const isAssigned = hw.status === 'ASSIGNED'
             const isReviewed = hw.status === 'REVIEWED'
@@ -274,7 +285,9 @@ export function StudentHomeworkPage() {
                           }`}
                         >
                           <Calendar className="h-3 w-3" />
-                          <span>Дедлайн: {deadlineText}</span>
+                          <span>
+                            {t('student_homework.deadline')} {deadlineText}
+                          </span>
                         </span>
                       )}
 
@@ -304,21 +317,25 @@ export function StudentHomeworkPage() {
                       {isReviewed && hw.tutorFeedback && (
                         <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
                           <Sparkles className="h-3 w-3" />
-                          <span>Отзыв репетитора</span>
+                          <span>{t('student_homework.tutor_feedback_badge')}</span>
                         </span>
                       )}
 
                       {hw.studentNotes && (
                         <span className="flex items-center gap-1">
                           <MessageSquare className="h-3 w-3" />
-                          <span>Ваш комментарий</span>
+                          <span>{t('student_homework.student_notes_badge')}</span>
                         </span>
                       )}
 
                       {hw.attachments && hw.attachments.length > 0 && (
                         <span className="flex items-center gap-1">
                           <Paperclip className="h-3 w-3" />
-                          <span>Вложений: {hw.attachments.length}</span>
+                          <span>
+                            {t('student_homework.attachments_count', {
+                              count: hw.attachments.length,
+                            })}
+                          </span>
                         </span>
                       )}
                     </div>
@@ -329,11 +346,11 @@ export function StudentHomeworkPage() {
                     {isAssigned ? (
                       <div className="flex items-center gap-1 text-xs font-medium text-primary group-hover:underline">
                         <Send className="h-3.5 w-3.5" />
-                        <span>Сдать работу</span>
+                        <span>{t('student_homework.submit_work')}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground">
-                        <span>Подробнее</span>
+                        <span>{t('student_homework.details')}</span>
                         <ChevronRight className="h-4 w-4" />
                       </div>
                     )}
@@ -351,11 +368,13 @@ export function StudentHomeworkPage() {
               <BookOpen className="h-7 w-7" />
             </div>
             <div className="max-w-xs space-y-1">
-              <p className="font-semibold text-foreground">Заданий не найдено</p>
+              <p className="font-semibold text-foreground">
+                {t('student_homework.empty_title')}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {selectedStatus !== 'ALL' || search
-                  ? 'По текущим параметрам поиска ничего не найдено.'
-                  : 'Преподаватель пока не выдал вам домашних заданий.'}
+                  ? t('student_homework.empty_filtered_desc')
+                  : t('student_homework.empty_no_homework_desc')}
               </p>
             </div>
             {(selectedStatus !== 'ALL' || search) && (
@@ -368,7 +387,7 @@ export function StudentHomeworkPage() {
                 }}
                 className="mt-2 text-xs"
               >
-                Сбросить все фильтры
+                {t('student_homework.btn_reset_all_filters')}
               </Button>
             )}
           </CardContent>

@@ -24,22 +24,22 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 import type { TeachingMaterial } from '@/types'
 
-function formatBytes(bytes?: number, decimals = 1): string {
-  if (!bytes || bytes === 0) return '0 Б'
+function formatBytes(bytes?: number, decimals = 1, units = ['Б', 'КБ', 'МБ', 'ГБ']): string {
+  if (!bytes || bytes === 0) return `0 ${units[0]}`
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Б', 'КБ', 'МБ', 'ГБ']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${units[i] || units[units.length - 1]}`
 }
 
-function formatDate(isoStr?: string): string {
+function formatDate(isoStr?: string, locale = 'ru-RU'): string {
   if (!isoStr) return ''
   const d = new Date(isoStr)
   if (isNaN(d.getTime())) return ''
-  return d.toLocaleDateString('ru-RU', {
+  return d.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -76,10 +76,19 @@ function getFileIcon(fileName?: string, contentType?: string) {
 }
 
 export function StudentMaterialsPage() {
+  const { t, language } = useLanguage()
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
   const [openingId, setOpeningId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+  const byteUnits = [
+    t('student_materials.size_b'),
+    t('student_materials.size_kb'),
+    t('student_materials.size_mb'),
+    t('student_materials.size_gb'),
+  ]
 
   // In-app file viewer state
   const [viewerState, setViewerState] = useState<{
@@ -138,7 +147,7 @@ export function StudentMaterialsPage() {
         ...prev,
         isLoading: false,
       }))
-      toast.error('Не удалось открыть файл. Попробуйте скачать его.')
+      toast.error(t('student_materials.view_failed_toast'))
     } finally {
       setOpeningId(null)
     }
@@ -148,9 +157,13 @@ export function StudentMaterialsPage() {
     try {
       setDownloadingId(material.id)
       await materialsApi.downloadMyMaterial(material.id, material.originalFileName)
-      toast.success(`Файл «${material.originalFileName}» скачивается`)
+      toast.success(
+        t('student_materials.downloading_toast', {
+          name: material.originalFileName || material.title,
+        }),
+      )
     } catch {
-      toast.error('Не удалось скачать файл')
+      toast.error(t('student_materials.download_failed_toast'))
     } finally {
       setDownloadingId(null)
     }
@@ -165,10 +178,12 @@ export function StudentMaterialsPage() {
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
               <Library className="h-5 w-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Библиотека материалов</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t('student_materials.title')}
+            </h1>
           </div>
           <p className="text-muted-foreground text-sm mt-1">
-            Учебники, методические пособия и книги от вашего преподавателя
+            {t('student_materials.subtitle')}
           </p>
         </div>
       </div>
@@ -180,7 +195,7 @@ export function StudentMaterialsPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Поиск по названию книги, описанию или имени файла..."
+              placeholder={t('student_materials.search_placeholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 text-xs sm:text-sm bg-background"
@@ -201,7 +216,7 @@ export function StudentMaterialsPage() {
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 text-xs">
               <span className="text-muted-foreground flex items-center gap-1 shrink-0 mr-1">
                 <Filter className="h-3 w-3" />
-                Разделы:
+                {t('student_materials.sections_label')}
               </span>
               <button
                 type="button"
@@ -212,7 +227,7 @@ export function StudentMaterialsPage() {
                     : 'bg-muted/40 hover:bg-muted text-foreground border-border'
                 }`}
               >
-                Все материалы ({materials.length})
+                {t('student_materials.all_materials', { count: materials.length })}
               </button>
               {categories.map((cat) => (
                 <button
@@ -260,13 +275,13 @@ export function StudentMaterialsPage() {
           <CardContent className="py-12 text-center flex flex-col items-center justify-center space-y-3">
             <AlertCircle className="h-8 w-8 text-destructive" />
             <p className="font-semibold text-foreground">
-              Не удалось загрузить материалы
+              {t('student_materials.err_load')}
             </p>
             <p className="text-xs text-muted-foreground">
-              Проверьте соединение с интернетом или повторите запрос
+              {t('student_materials.err_load_desc')}
             </p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Повторить попытку
+              {t('student_materials.btn_retry')}
             </Button>
           </CardContent>
         </Card>
@@ -299,7 +314,7 @@ export function StudentMaterialsPage() {
                           </Badge>
                         )}
                         <span className="text-[11px] text-muted-foreground ml-auto">
-                          {formatBytes(mat.sizeBytes)}
+                          {formatBytes(mat.sizeBytes, 1, byteUnits)}
                         </span>
                       </div>
 
@@ -319,7 +334,7 @@ export function StudentMaterialsPage() {
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground/60 italic">
-                      Описание отсутствует
+                      {t('student_materials.empty_description_italic')}
                     </p>
                   )}
 
@@ -328,7 +343,7 @@ export function StudentMaterialsPage() {
                     <span className="truncate max-w-[170px]" title={mat.originalFileName}>
                       {mat.originalFileName}
                     </span>
-                    <span>{formatDate(mat.createdAt)}</span>
+                    <span>{formatDate(mat.createdAt, dateLocale)}</span>
                   </div>
 
                   {/* Action buttons */}
@@ -345,7 +360,7 @@ export function StudentMaterialsPage() {
                       ) : (
                         <ExternalLink className="h-3.5 w-3.5" />
                       )}
-                      <span>Просмотр</span>
+                      <span>{t('student_materials.view_btn')}</span>
                     </Button>
 
                     <Button
@@ -360,7 +375,7 @@ export function StudentMaterialsPage() {
                       ) : (
                         <Download className="h-3.5 w-3.5" />
                       )}
-                      <span>Скачать</span>
+                      <span>{t('student_materials.download_btn')}</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -376,11 +391,13 @@ export function StudentMaterialsPage() {
               <BookOpen className="h-7 w-7" />
             </div>
             <div className="max-w-xs space-y-1">
-              <p className="font-semibold text-foreground">Материалов пока нет</p>
+              <p className="font-semibold text-foreground">
+                {t('student_materials.empty_title')}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {search || selectedCategory !== 'ALL'
-                  ? 'По заданным параметрам поиска ничего не найдено.'
-                  : 'Преподаватель ещё не добавил учебники или методические материалы в библиотеку.'}
+                  ? t('student_materials.empty_search_desc')
+                  : t('student_materials.empty_default_desc')}
               </p>
             </div>
             {(search || selectedCategory !== 'ALL') && (
@@ -393,7 +410,7 @@ export function StudentMaterialsPage() {
                   setSelectedCategory('ALL')
                 }}
               >
-                Сбросить фильтры
+                {t('student_materials.reset_filters')}
               </Button>
             )}
           </CardContent>

@@ -12,6 +12,7 @@ import {
   AlertCircle,
   MessageSquare,
 } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 import type { Lesson } from '@/types'
 
 interface StudentLessonCardProps {
@@ -19,41 +20,11 @@ interface StudentLessonCardProps {
   onCancelLesson?: (lesson: Lesson) => void
 }
 
-const statusConfig: Record<
-  string,
-  { label: string; badgeClass: string; icon: typeof CheckCircle2 }
-> = {
-  SCHEDULED: {
-    label: 'Запланирован',
-    badgeClass:
-      'bg-muted text-foreground border border-border font-medium',
-    icon: CalendarClock,
-  },
-  COMPLETED: {
-    label: 'Проведен',
-    badgeClass:
-      'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-medium',
-    icon: CheckCircle2,
-  },
-  CANCELLED_BY_TUTOR: {
-    label: 'Отменен (репетитор)',
-    badgeClass:
-      'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20 font-medium',
-    icon: XCircle,
-  },
-  CANCELLED_BY_STUDENT: {
-    label: 'Отменен вами',
-    badgeClass:
-      'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-medium',
-    icon: XCircle,
-  },
-}
-
-function formatTime(isoStr: string): string {
+function formatTime(isoStr: string, locale: string): string {
   if (!isoStr) return ''
   const d = new Date(isoStr)
   if (isNaN(d.getTime())) return ''
-  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
 }
 
 function getDurationMinutes(start: string, end: string): number {
@@ -64,8 +35,10 @@ function getDurationMinutes(start: string, end: string): number {
 }
 
 export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardProps) {
-  const startFormatted = formatTime(lesson.startTime)
-  const endFormatted = formatTime(lesson.endTime)
+  const { t, language } = useLanguage()
+  const timeLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+  const startFormatted = formatTime(lesson.startTime, timeLocale)
+  const endFormatted = formatTime(lesson.endTime, timeLocale)
   const duration = getDurationMinutes(lesson.startTime, lesson.endTime)
 
   const lessonDate = new Date(lesson.startTime)
@@ -80,11 +53,41 @@ export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardP
 
   const isLateCancellation = hoursUntilLesson < 12
 
+  const statusConfig: Record<
+    string,
+    { label: string; badgeClass: string; icon: typeof CheckCircle2 }
+  > = {
+    SCHEDULED: {
+      label: t('student_lessons.status_scheduled'),
+      badgeClass: 'bg-muted text-foreground border border-border font-medium',
+      icon: CalendarClock,
+    },
+    COMPLETED: {
+      label: t('student_lessons.status_completed'),
+      badgeClass:
+        'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-medium',
+      icon: CheckCircle2,
+    },
+    CANCELLED_BY_TUTOR: {
+      label: t('student_lessons.status_cancelled_tutor'),
+      badgeClass:
+        'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20 font-medium',
+      icon: XCircle,
+    },
+    CANCELLED_BY_STUDENT: {
+      label: t('student_lessons.status_cancelled_student'),
+      badgeClass:
+        'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-medium',
+      icon: XCircle,
+    },
+  }
+
   const currentStatus = statusConfig[lesson.status] || {
     label: lesson.status,
     badgeClass: 'bg-muted text-muted-foreground',
     icon: CalendarClock,
   }
+
   const StatusIcon = currentStatus.icon
 
   const isToday = (() => {
@@ -120,7 +123,7 @@ export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardP
             </span>
             {duration > 0 && (
               <span className="text-xs text-muted-foreground font-medium">
-                {duration} мин.
+                {duration} {t('student_lessons.min_short')}
               </span>
             )}
           </div>
@@ -136,7 +139,7 @@ export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardP
         {/* Topic */}
         <div className="pt-0.5">
           <h3 className="font-semibold text-base text-foreground leading-snug">
-            {lesson.topic || 'Занятие без указанной темы'}
+            {lesson.topic || t('student_lessons.no_topic')}
           </h3>
         </div>
 
@@ -159,7 +162,7 @@ export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardP
               })}
             >
               <Video className="h-3.5 w-3.5 text-white shrink-0" />
-              <span className="text-white">Подключиться к занятию</span>
+              <span className="text-white">{t('student_lessons.connect_to_lesson')}</span>
               <ExternalLink className="h-3 w-3 text-white/80 shrink-0" />
             </a>
           ) : (
@@ -171,7 +174,7 @@ export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardP
               variant="ghost"
               size="sm"
               onClick={() => onCancelLesson?.(lesson)}
-              className={`h-8 text-xs gap-1.5 ml-auto ${
+              className={`h-8 text-xs gap-1.5 ml-auto cursor-pointer ${
                 isLateCancellation
                   ? 'text-amber-700 dark:text-amber-400 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/30'
                   : 'text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
@@ -180,12 +183,12 @@ export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardP
               {isLateCancellation ? (
                 <>
                   <MessageSquare className="h-3.5 w-3.5" />
-                  <span>Отмена через преподавателя</span>
+                  <span>{t('student_lessons.cancel_via_tutor')}</span>
                 </>
               ) : (
                 <>
                   <CalendarX2 className="h-3.5 w-3.5" />
-                  <span>Отменить занятие</span>
+                  <span>{t('student_lessons.cancel_lesson')}</span>
                 </>
               )}
             </Button>
@@ -197,7 +200,7 @@ export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardP
           <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300">
             <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
             <p className="line-clamp-2">
-              <span className="font-semibold">Причина отмены: </span>
+              <span className="font-semibold">{t('student_lessons.cancellation_reason')}{' '}</span>
               {lesson.cancellationReason}
             </p>
           </div>
@@ -214,3 +217,4 @@ export function StudentLessonCard({ lesson, onCancelLesson }: StudentLessonCardP
     </Card>
   )
 }
+

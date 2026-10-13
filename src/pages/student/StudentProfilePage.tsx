@@ -40,7 +40,8 @@ import {
 
 export function StudentProfilePage() {
   const { user } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const numLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
   const { data: profile, isLoading, isError, refetch } = useMyProfile()
 
   const [telegramModalOpen, setTelegramModalOpen] = useState(false)
@@ -59,7 +60,7 @@ export function StudentProfilePage() {
       }
       setTelegramModalOpen(true)
     } catch (e) {
-      toast.error('Не удалось сгенерировать код привязки Telegram')
+      toast.error(t('student_profile.err_generate_code'))
     } finally {
       setIsGeneratingCode(false)
     }
@@ -69,7 +70,7 @@ export function StudentProfilePage() {
     if (telegramCode) {
       navigator.clipboard.writeText(telegramCode)
       setHasCopiedCode(true)
-      toast.success('Код скопирован')
+      toast.success(t('student_profile.toast_code_copied'))
       setTimeout(() => setHasCopiedCode(false), 2000)
     }
   }
@@ -129,12 +130,12 @@ export function StudentProfilePage() {
     user?.email ||
     t('profile.student_title')
 
-  const userInitial = fullName.charAt(0).toUpperCase() || 'У'
+  const userInitial = fullName.charAt(0).toUpperCase() || 'U'
 
   const getBalanceStatus = (val: number) => {
     if (val > 2) {
       return {
-        label: 'Баланс в норме',
+        label: t('student_profile.balance_status_normal'),
         badgeClass:
           'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
         textColor: 'text-emerald-600 dark:text-emerald-400',
@@ -142,14 +143,14 @@ export function StudentProfilePage() {
     }
     if (val > 0) {
       return {
-        label: 'Осталось мало уроков',
+        label: t('student_profile.balance_status_low'),
         badgeClass:
           'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800',
         textColor: 'text-amber-600 dark:text-amber-400',
       }
     }
     return {
-      label: 'Требуется пополнение',
+      label: t('student_profile.balance_status_empty'),
       badgeClass:
         'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-900',
       textColor: 'text-rose-600 dark:text-rose-400',
@@ -176,9 +177,11 @@ export function StudentProfilePage() {
               <Send className="h-5 w-5" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-foreground">Подключите Telegram-бота для напоминаний</h4>
+              <h4 className="text-sm font-semibold text-foreground">
+                {t('student_profile.tg_banner_title')}
+              </h4>
               <p className="text-xs text-muted-foreground">
-                Бот напомнит об уроке за 30 минут, пришлет ссылку на созвон и откроет кабинет в 1 клик
+                {t('student_profile.tg_banner_desc')}
               </p>
             </div>
           </div>
@@ -188,7 +191,7 @@ export function StudentProfilePage() {
             disabled={isGeneratingCode}
             className="shrink-0 bg-sky-600 hover:bg-sky-700 text-white font-medium"
           >
-            {isGeneratingCode ? 'Генерация...' : 'Подключить Telegram'}
+            {isGeneratingCode ? t('student_profile.tg_generating') : t('student_profile.tg_banner_btn')}
           </Button>
         </div>
       )}
@@ -201,7 +204,7 @@ export function StudentProfilePage() {
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Sparkles className="h-4 w-4 text-primary" />
-                Баланс уроков
+                {t('student_profile.balance_title')}
               </span>
               <Badge variant="outline" className={balanceStatus.badgeClass}>
                 {balanceStatus.label}
@@ -217,11 +220,15 @@ export function StudentProfilePage() {
                   {balance}
                 </span>
                 <span className="text-xl font-bold text-muted-foreground">
-                  {balance === 1 ? 'урок' : balance > 1 && balance < 5 ? 'урока' : 'уроков'}
+                  {balance === 1
+                    ? t('student_payments.lessons_1')
+                    : balance > 1 && balance < 5
+                    ? t('student_payments.lessons_few')
+                    : t('student_payments.lessons_many')}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Оплаченные и готовые к планированию занятия
+                {t('student_profile.balance_desc')}
               </p>
             </div>
 
@@ -235,7 +242,7 @@ export function StudentProfilePage() {
                 })}
               >
                 <Receipt className="h-3.5 w-3.5 text-primary" />
-                <span>История оплат и списаний</span>
+                <span>{t('student_profile.btn_payment_history')}</span>
               </Link>
             </div>
           </CardContent>
@@ -263,7 +270,9 @@ export function StudentProfilePage() {
                 variant="outline"
                 className="bg-primary/5 text-primary border-primary/20 text-xs font-medium"
               >
-                {profile.status === 'ARCHIVED' ? 'Архив' : 'Обучается'}
+                {profile.status === 'ARCHIVED'
+                  ? t('student_profile.status_archived')
+                  : t('student_profile.status_learning')}
               </Badge>
             </div>
           </CardHeader>
@@ -276,9 +285,9 @@ export function StudentProfilePage() {
                   <Phone className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Телефон</p>
+                  <p className="text-xs text-muted-foreground">{t('student_profile.phone_label')}</p>
                   <p className="font-medium text-foreground text-xs sm:text-sm">
-                    {profile.phone || 'Не указан'}
+                    {profile.phone || t('student_profile.not_specified')}
                   </p>
                 </div>
               </div>
@@ -293,7 +302,7 @@ export function StudentProfilePage() {
                     <span>Telegram</span>
                     {profile.telegramLinked && (
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
-                        <CheckCircle2 className="h-3 w-3" /> привязан
+                        <CheckCircle2 className="h-3 w-3" /> {t('student_profile.tg_linked_label')}
                       </span>
                     )}
                   </p>
@@ -303,7 +312,7 @@ export function StudentProfilePage() {
                         ? profile.telegram.startsWith('@')
                           ? profile.telegram
                           : `@${profile.telegram}`
-                        : 'Привязан к боту'}
+                        : t('student_profile.tg_linked_to_bot')}
                     </p>
                   ) : (
                     <button
@@ -311,7 +320,7 @@ export function StudentProfilePage() {
                       onClick={handleOpenTelegramModal}
                       className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 mt-0.5 cursor-pointer"
                     >
-                      <Send className="h-3 w-3" /> Подключить бота
+                      <Send className="h-3 w-3" /> {t('student_profile.btn_connect_bot')}
                     </button>
                   )}
                 </div>
@@ -323,9 +332,9 @@ export function StudentProfilePage() {
                   <GraduationCap className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Текущий уровень</p>
+                  <p className="text-xs text-muted-foreground">{t('student_profile.level_label')}</p>
                   <p className="font-medium text-foreground text-xs sm:text-sm">
-                    {profile.currentLevel || 'Не указан'}
+                    {profile.currentLevel || t('student_profile.not_specified')}
                   </p>
                 </div>
               </div>
@@ -336,11 +345,13 @@ export function StudentProfilePage() {
                   <DollarSign className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Ставка занятия</p>
+                  <p className="text-xs text-muted-foreground">{t('student_profile.rate_label')}</p>
                   <p className="font-medium text-foreground text-xs sm:text-sm">
                     {profile.hourlyRate
-                      ? `${profile.hourlyRate.toLocaleString('ru-RU')} / урок`
-                      : 'Индивидуально'}
+                      ? t('student_profile.rate_per_lesson', {
+                          rate: profile.hourlyRate.toLocaleString(numLocale),
+                        })
+                      : t('student_profile.rate_individual')}
                   </p>
                 </div>
               </div>
@@ -355,13 +366,13 @@ export function StudentProfilePage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-primary" />
-              <span>Ваш преподаватель</span>
+              <span>{t('student_profile.tutor_card_title')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
             <div className="space-y-1">
               <p className="font-semibold text-base text-foreground">
-                {profile.tutorName || 'Репетитор'}
+                {profile.tutorName || t('student_profile.tutor_default_name')}
               </p>
               <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 {profile.tutorEmail && (
@@ -395,10 +406,10 @@ export function StudentProfilePage() {
             <div className="space-y-1">
               <div className="flex items-center gap-2 font-semibold text-foreground">
                 <Calendar className="h-4 w-4 text-primary" />
-                <span>Расписание занятий</span>
+                <span>{t('student_profile.nav_schedule_title')}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Смотрите время предстоящих уроков и ссылки на видеовстречи
+                {t('student_profile.nav_schedule_desc')}
               </p>
             </div>
             <Link
@@ -409,7 +420,7 @@ export function StudentProfilePage() {
                 className: 'shrink-0 ml-3',
               })}
             >
-              Перейти
+              {t('student_profile.btn_go')}
             </Link>
           </CardContent>
         </Card>
@@ -419,10 +430,10 @@ export function StudentProfilePage() {
             <div className="space-y-1">
               <div className="flex items-center gap-2 font-semibold text-foreground">
                 <BookOpen className="h-4 w-4 text-primary" />
-                <span>Домашние задания</span>
+                <span>{t('student_profile.nav_homework_title')}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Задачи от преподавателя, файлы, дедлайны и проверка
+                {t('student_profile.nav_homework_desc')}
               </p>
             </div>
             <Link
@@ -433,7 +444,7 @@ export function StudentProfilePage() {
                 className: 'shrink-0 ml-3',
               })}
             >
-              Перейти
+              {t('student_profile.btn_go')}
             </Link>
           </CardContent>
         </Card>
@@ -443,8 +454,7 @@ export function StudentProfilePage() {
       <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/40 border border-border text-xs text-muted-foreground">
         <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
         <p>
-          Все параметры профиля и баланса синхронизируются с вашим репетитором. Если вам нужно
-          изменить контактные данные или пополнить баланс уроков, свяжитесь с вашим преподавателем.
+          {t('student_profile.sync_notice')}
         </p>
       </div>
 
@@ -455,9 +465,11 @@ export function StudentProfilePage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400 mb-2">
               <Bot className="h-6 w-6" />
             </div>
-            <DialogTitle className="text-xl">Подключение Telegram-бота</DialogTitle>
+            <DialogTitle className="text-xl">
+              {t('student_profile.modal_tg_title')}
+            </DialogTitle>
             <DialogDescription>
-              Получайте напоминания об уроках и открывайте личный кабинет в 1 клик
+              {t('student_profile.modal_tg_desc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -471,12 +483,14 @@ export function StudentProfilePage() {
               }}
             >
               <Send className="h-4 w-4" />
-              Открыть бота в Telegram (автопривязка)
+              {t('student_profile.modal_tg_auto_btn')}
             </Button>
 
             <div className="relative flex py-1 items-center">
               <div className="flex-grow border-t border-border"></div>
-              <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase font-medium">или вручную по коду</span>
+              <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase font-medium">
+                {t('student_profile.modal_tg_or_manual')}
+              </span>
               <div className="flex-grow border-t border-border"></div>
             </div>
 
@@ -495,16 +509,26 @@ export function StudentProfilePage() {
                 ) : (
                   <Copy className="h-4 w-4 mr-1" />
                 )}
-                <span>{hasCopiedCode ? 'Скопировано' : 'Копировать'}</span>
+                <span>
+                  {hasCopiedCode
+                    ? t('student_profile.modal_tg_copied')
+                    : t('student_profile.modal_tg_copy')}
+                </span>
               </Button>
             </div>
 
             <div className="rounded-lg bg-muted/30 p-3 text-left text-xs text-muted-foreground space-y-1">
-              <p className="font-semibold text-foreground">Инструкция для ручного ввода:</p>
+              <p className="font-semibold text-foreground">
+                {t('student_profile.modal_tg_instructions_title')}
+              </p>
               <ol className="list-decimal pl-4 space-y-0.5">
-                <li>Перейдите в бота <strong>@{botUsername.replace(/^@/, '')}</strong></li>
-                <li>Нажмите <strong>Start</strong> и отправьте этот 6-значный код</li>
-                <li>Срок действия кода: <strong>24 часа</strong></li>
+                <li>
+                  {t('student_profile.modal_tg_instruction_1', {
+                    bot: botUsername.replace(/^@/, ''),
+                  })}
+                </li>
+                <li>{t('student_profile.modal_tg_instruction_2')}</li>
+                <li>{t('student_profile.modal_tg_instruction_3')}</li>
               </ol>
             </div>
           </div>

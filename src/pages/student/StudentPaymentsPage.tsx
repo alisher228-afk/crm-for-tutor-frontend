@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table'
 import { useMyPayments } from '@/hooks/usePayments'
 import { useMyProfile } from '@/hooks/useStudents'
+import { useLanguage } from '@/i18n'
 import {
   Sparkles,
   DollarSign,
@@ -23,12 +24,12 @@ import {
   Receipt,
 } from 'lucide-react'
 
-function formatPaymentDate(dateStr?: string): string {
+function formatPaymentDate(dateStr?: string, locale = 'ru-RU'): string {
   if (!dateStr) return '—'
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     const [year, month, day] = dateStr.split('-').map(Number)
     const d = new Date(year, month - 1, day)
-    return d.toLocaleDateString('ru-RU', {
+    return d.toLocaleDateString(locale, {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -36,7 +37,7 @@ function formatPaymentDate(dateStr?: string): string {
   }
   const d = new Date(dateStr)
   if (isNaN(d.getTime())) return dateStr
-  return d.toLocaleDateString('ru-RU', {
+  return d.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -44,10 +45,13 @@ function formatPaymentDate(dateStr?: string): string {
 }
 
 export function StudentPaymentsPage() {
+  const { t, language } = useLanguage()
   const { data: paymentsData, isLoading: isLoadingPayments, isError: isErrorPayments, refetch: refetchPayments } =
     useMyPayments()
 
   const { data: profile, isLoading: isLoadingProfile } = useMyProfile()
+
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
 
   const payments = useMemo(() => {
     if (!paymentsData) return []
@@ -78,9 +82,11 @@ export function StudentPaymentsPage() {
     <div className="space-y-6">
       {/* Top Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">История оплат и баланс</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t('student_payments.title')}
+        </h1>
         <p className="text-muted-foreground text-sm">
-          Информация о совершенных платежах и текущем остатке оплаченных занятий
+          {t('student_payments.subtitle')}
         </p>
       </div>
 
@@ -94,7 +100,7 @@ export function StudentPaymentsPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Текущий баланс
+                {t('student_payments.current_balance')}
               </p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="text-2xl sm:text-3xl font-black text-foreground">
@@ -102,10 +108,10 @@ export function StudentPaymentsPage() {
                 </span>
                 <span className="text-xs font-semibold text-muted-foreground">
                   {currentBalance === 1
-                    ? 'урок'
+                    ? t('student_payments.lessons_1')
                     : currentBalance > 1 && currentBalance < 5
-                    ? 'урока'
-                    : 'уроков'}
+                    ? t('student_payments.lessons_few')
+                    : t('student_payments.lessons_many')}
                 </span>
               </div>
             </div>
@@ -120,10 +126,10 @@ export function StudentPaymentsPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Всего оплачено
+                {t('student_payments.total_paid')}
               </p>
               <p className="text-2xl sm:text-3xl font-black text-foreground mt-0.5">
-                {stats.totalAmount.toLocaleString('ru-RU')}
+                {stats.totalAmount.toLocaleString(dateLocale)}
               </p>
             </div>
           </CardContent>
@@ -137,14 +143,14 @@ export function StudentPaymentsPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Оплачено уроков
+                {t('student_payments.lessons_credited')}
               </p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="text-2xl sm:text-3xl font-black text-foreground">
                   {stats.totalLessonsPaid}
                 </span>
                 <span className="text-xs font-semibold text-muted-foreground">
-                  за всё время
+                  {t('student_payments.all_time')}
                 </span>
               </div>
             </div>
@@ -167,14 +173,14 @@ export function StudentPaymentsPage() {
               <AlertCircle className="h-8 w-8 text-destructive" />
               <div className="space-y-1">
                 <p className="font-semibold text-foreground">
-                  Не удалось загрузить историю платежей
+                  {t('student_payments.err_load')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Проверьте подключение к сети или повторите попытку позже
+                  {t('student_payments.err_load_desc')}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => refetchPayments()}>
-                Повторить попытку
+                {t('common.retry')}
               </Button>
             </div>
           ) : payments.length > 0 ? (
@@ -182,10 +188,10 @@ export function StudentPaymentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/20">
-                    <TableHead className="w-[160px]">Дата платежа</TableHead>
-                    <TableHead className="w-[150px]">Сумма</TableHead>
-                    <TableHead className="w-[130px]">Начислено уроков</TableHead>
-                    <TableHead>Назначение / Комментарий</TableHead>
+                    <TableHead className="w-[160px]">{t('student_payments.th_date')}</TableHead>
+                    <TableHead className="w-[150px]">{t('student_payments.th_amount')}</TableHead>
+                    <TableHead className="w-[130px]">{t('student_payments.th_lessons')}</TableHead>
+                    <TableHead>{t('student_payments.th_notes')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -195,14 +201,14 @@ export function StudentPaymentsPage() {
                       <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{formatPaymentDate(payment.paymentDate)}</span>
+                          <span>{formatPaymentDate(payment.paymentDate, dateLocale)}</span>
                         </div>
                       </TableCell>
 
                       {/* Amount */}
                       <TableCell className="whitespace-nowrap">
                         <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                          +{payment.amount.toLocaleString('ru-RU')}
+                          +{payment.amount.toLocaleString(dateLocale)}
                         </span>
                       </TableCell>
 
@@ -210,7 +216,7 @@ export function StudentPaymentsPage() {
                       <TableCell className="whitespace-nowrap text-xs sm:text-sm">
                         {payment.lessonsCount !== undefined ? (
                           <Badge variant="outline" className="font-medium">
-                            +{payment.lessonsCount} ур.
+                            +{payment.lessonsCount} {t('student_payments.unit_lesson')}
                           </Badge>
                         ) : (
                           <span className="text-muted-foreground">—</span>
@@ -223,7 +229,7 @@ export function StudentPaymentsPage() {
                           <span className="text-foreground">{payment.notes}</span>
                         ) : (
                           <span className="text-muted-foreground/60 italic">
-                            Пополнение баланса
+                            {t('student_payments.default_notes')}
                           </span>
                         )}
                       </TableCell>
@@ -239,9 +245,11 @@ export function StudentPaymentsPage() {
                 <Receipt className="h-7 w-7" />
               </div>
               <div className="max-w-xs space-y-1">
-                <p className="font-semibold text-foreground">Платежей пока не было</p>
+                <p className="font-semibold text-foreground">
+                  {t('student_payments.empty_title')}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Когда репетитор зафиксирует оплату за занятия, история и чек отобразятся здесь.
+                  {t('student_payments.empty_desc')}
                 </p>
               </div>
             </div>
@@ -253,8 +261,7 @@ export function StudentPaymentsPage() {
       <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/40 border border-border text-xs text-muted-foreground">
         <ShieldCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         <p>
-          Все оплаты фиксируются вашим репетитором. Для продления абонемента или уточнения реквизитов
-          свяжитесь с преподавателем напрямую.
+          {t('student_payments.footer_notice')}
         </p>
       </div>
     </div>

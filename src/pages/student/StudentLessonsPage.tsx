@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { formatDateToLocalIso } from '@/lib/dateUtils'
+import { useLanguage } from '@/i18n'
 import type { Lesson } from '@/types'
 
 type PeriodMode = 'this_week' | 'next_week' | 'custom'
@@ -36,7 +37,9 @@ function formatDateToInput(d: Date): string {
 }
 
 export function StudentLessonsPage() {
+  const { t, language } = useLanguage()
   const [periodMode, setPeriodMode] = useState<PeriodMode>('this_week')
+
 
   // Custom date range state
   const [customFrom, setCustomFrom] = useState(() => {
@@ -125,13 +128,15 @@ export function StudentLessonsPage() {
     return { total, scheduled, completed }
   }, [lessons])
 
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Мои уроки</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('student_lessons.title')}</h1>
         <p className="text-muted-foreground text-sm">
-          Расписание занятий, темы уроков и ссылки на подключение
+          {t('student_lessons.subtitle')}
         </p>
       </div>
 
@@ -145,7 +150,7 @@ export function StudentLessonsPage() {
               onClick={() => setPeriodMode('this_week')}
               className="text-xs"
             >
-              Эта неделя
+              {t('student_lessons.this_week')}
             </Button>
             <Button
               variant={periodMode === 'next_week' ? 'default' : 'outline'}
@@ -153,7 +158,7 @@ export function StudentLessonsPage() {
               onClick={() => setPeriodMode('next_week')}
               className="text-xs"
             >
-              Следующая неделя
+              {t('student_lessons.next_week')}
             </Button>
             <Button
               variant={periodMode === 'custom' ? 'default' : 'outline'}
@@ -161,7 +166,7 @@ export function StudentLessonsPage() {
               onClick={() => setPeriodMode('custom')}
               className="text-xs"
             >
-              Выбрать период
+              {t('student_lessons.custom_period')}
             </Button>
           </div>
 
@@ -188,12 +193,14 @@ export function StudentLessonsPage() {
       {/* Stats Summary Strip */}
       <div className="grid grid-cols-3 gap-3">
         <div className="p-3.5 rounded-lg border bg-card text-card-foreground flex flex-col">
-          <span className="text-xs text-muted-foreground font-medium">Всего в периоде</span>
+          <span className="text-xs text-muted-foreground font-medium">
+            {t('student_lessons.stats_total')}
+          </span>
           <span className="text-xl font-bold text-foreground mt-0.5">{stats.total}</span>
         </div>
         <div className="p-3.5 rounded-lg border bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50 flex flex-col">
           <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">
-            Предстоит
+            {t('student_lessons.stats_upcoming')}
           </span>
           <span className="text-xl font-bold text-blue-800 dark:text-blue-200 mt-0.5">
             {stats.scheduled}
@@ -201,7 +208,7 @@ export function StudentLessonsPage() {
         </div>
         <div className="p-3.5 rounded-lg border bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 flex flex-col">
           <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
-            Проведено
+            {t('student_lessons.stats_completed')}
           </span>
           <span className="text-xl font-bold text-emerald-800 dark:text-emerald-200 mt-0.5">
             {stats.completed}
@@ -228,14 +235,14 @@ export function StudentLessonsPage() {
             <AlertCircle className="h-10 w-10 text-destructive" />
             <div className="space-y-1">
               <p className="font-semibold text-foreground text-lg">
-                Не удалось загрузить расписание
+                {t('student_lessons.err_load')}
               </p>
               <p className="text-sm text-muted-foreground">
-                Проверьте подключение к сети и попробуйте снова
+                {t('student_lessons.err_load_desc')}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Повторить попытку
+              {t('common.retry')}
             </Button>
           </CardContent>
         </Card>
@@ -249,13 +256,15 @@ export function StudentLessonsPage() {
             if (dayKey !== 'Без даты') {
               const [y, m, d] = dayKey.split('-').map(Number)
               const dateObj = new Date(y, m - 1, d)
-              dayTitle = dateObj.toLocaleDateString('ru-RU', {
+              dayTitle = dateObj.toLocaleDateString(dateLocale, {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
               })
               // Capitalize first letter
               dayTitle = dayTitle.charAt(0).toUpperCase() + dayTitle.slice(1)
+            } else {
+              dayTitle = t('student_lessons.no_date')
             }
 
             return (
@@ -272,11 +281,14 @@ export function StudentLessonsPage() {
                   </h2>
                   {isToday && (
                     <Badge variant="default" className="text-[10px] px-2 py-0">
-                      Сегодня
+                      {t('student_lessons.today')}
                     </Badge>
                   )}
                   <span className="text-xs text-muted-foreground ml-auto font-medium">
-                    {dayLessons.length} {dayLessons.length === 1 ? 'занятие' : 'занятия'}
+                    {dayLessons.length}{' '}
+                    {dayLessons.length === 1
+                      ? t('student_lessons.single_lesson')
+                      : t('student_lessons.plural_lessons')}
                   </span>
                 </div>
 
@@ -305,9 +317,11 @@ export function StudentLessonsPage() {
               <CalendarIcon className="h-7 w-7" />
             </div>
             <div className="max-w-xs space-y-1">
-              <p className="font-semibold text-foreground">Уроков не запланировано</p>
+              <p className="font-semibold text-foreground">
+                {t('student_lessons.no_lessons_title')}
+              </p>
               <p className="text-xs text-muted-foreground">
-                В выбранный период занятий нет. Преподаватель добавит уроки в расписание по мере согласования.
+                {t('student_lessons.no_lessons_desc')}
               </p>
             </div>
             {periodMode !== 'this_week' && (
@@ -317,7 +331,7 @@ export function StudentLessonsPage() {
                 className="mt-2 text-xs"
                 onClick={() => setPeriodMode('this_week')}
               >
-                Вернуться на эту неделю
+                {t('student_lessons.back_to_this_week')}
               </Button>
             )}
           </CardContent>
@@ -334,3 +348,4 @@ export function StudentLessonsPage() {
     </div>
   )
 }
+

@@ -26,6 +26,7 @@ import {
   Check,
   Loader2,
 } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 import type { TestItem, QuizQuestion, TestSubmission } from '@/types'
 
 interface StudentTestPlayerModalProps {
@@ -41,7 +42,10 @@ function formatTime(seconds: number): string {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 }
 
-function getScoreFeedback(percentage: number): {
+function getScoreFeedback(
+  percentage: number,
+  t: (key: string, params?: Record<string, any>) => string,
+): {
   title: string
   color: string
   badgeClass: string
@@ -49,33 +53,33 @@ function getScoreFeedback(percentage: number): {
 } {
   if (percentage >= 90) {
     return {
-      title: 'Превосходно!',
+      title: t('student_tests.feedback_excellent_title'),
       color: 'text-emerald-600 dark:text-emerald-400',
       badgeClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
-      description: 'Отличный результат! Материал усвоен на высшем уровне.',
+      description: t('student_tests.feedback_excellent_desc'),
     }
   }
   if (percentage >= 75) {
     return {
-      title: 'Хорошо!',
+      title: t('student_tests.feedback_good_title'),
       color: 'text-sky-600 dark:text-sky-400',
       badgeClass: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30',
-      description: 'Хороший результат! Большинство вопросов решено правильно.',
+      description: t('student_tests.feedback_good_desc'),
     }
   }
   if (percentage >= 50) {
     return {
-      title: 'Удовлетворительно',
+      title: t('student_tests.feedback_fair_title'),
       color: 'text-amber-600 dark:text-amber-400',
       badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30',
-      description: 'Тест сдан, но есть пробелы в некоторых темах. Рекомендуется повторить материал.',
+      description: t('student_tests.feedback_fair_desc'),
     }
   }
   return {
-    title: 'Нужно повторить',
+    title: t('student_tests.feedback_poor_title'),
     color: 'text-rose-600 dark:text-rose-400',
     badgeClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30',
-    description: 'Много ошибок. Ознакомьтесь с разбором ответов и попробуйте пройти тест снова.',
+    description: t('student_tests.feedback_poor_desc'),
   }
 }
 
@@ -85,6 +89,7 @@ export function StudentTestPlayerModal({
   onOpenChange,
   initialViewMode = 'play',
 }: StudentTestPlayerModalProps) {
+  const { t } = useLanguage()
   const submitMutation = useSubmitMyTest()
 
   // Parse questions
@@ -107,7 +112,7 @@ export function StudentTestPlayerModal({
 
       return parsed.map((item, idx) => ({
         id: String(item?.id ?? idx + 1),
-        question: String(item?.question ?? `Вопрос ${idx + 1}`),
+        question: String(item?.question ?? `Q ${idx + 1}`),
         options: Array.isArray(item?.options)
           ? item.options.map((opt: unknown) => String(opt ?? ''))
           : [],
@@ -202,16 +207,16 @@ export function StudentTestPlayerModal({
       setLastSubmission(result)
       setViewMode('result')
       setConfirmSubmitOpen(false)
-      toast.success('Тест успешно завершён!')
+      toast.success(t('student_tests.toast_test_completed'))
     } catch {
-      toast.error('Не удалось отправить результаты теста')
+      toast.error(t('student_tests.toast_submit_error'))
     }
-  }, [test?.id, selectedAnswers, timeSpent, submitMutation])
+  }, [test?.id, selectedAnswers, timeSpent, submitMutation, t])
 
   const handleAutoSubmit = useCallback(() => {
-    toast.warning('Время на прохождение теста истекло! Завершаем тест...')
+    toast.warning(t('student_tests.toast_time_expired'))
     executeSubmit()
-  }, [executeSubmit])
+  }, [executeSubmit, t])
 
   const handleSelectOption = (qIdx: number, optIdx: number) => {
     if (viewMode !== 'testing') return
@@ -238,7 +243,7 @@ export function StudentTestPlayerModal({
   const isTimeCritical = timeLimitSeconds > 0 && secondsRemaining <= 120
 
   const activeSubmission = lastSubmission || test?.mySubmission
-  const feedback = activeSubmission ? getScoreFeedback(activeSubmission.percentage) : null
+  const feedback = activeSubmission ? getScoreFeedback(activeSubmission.percentage, t) : null
 
   return (
     <>
@@ -264,11 +269,15 @@ export function StudentTestPlayerModal({
                 </div>
                 <div className="min-w-0">
                   <DialogTitle className="text-base sm:text-lg font-bold truncate">
-                    {test?.title || 'Тестирование'}
+                    {test?.title || t('student_tests.player_default_title')}
                   </DialogTitle>
                   <DialogDescription className="text-xs truncate">
                     {test?.topic ? `${test.topic} • ` : ''}
-                    {totalCount} {totalCount === 1 ? 'вопрос' : 'вопросов'}
+                    {totalCount === 1
+                      ? t('student_tests.questions_1', { count: totalCount })
+                      : totalCount > 1 && totalCount < 5
+                      ? t('student_tests.questions_few', { count: totalCount })
+                      : t('student_tests.questions_count', { count: totalCount })}
                   </DialogDescription>
                 </div>
               </div>
@@ -297,7 +306,7 @@ export function StudentTestPlayerModal({
                     onClick={() => setConfirmSubmitOpen(true)}
                     className="text-xs font-semibold h-8"
                   >
-                    Завершить тест
+                    {t('student_tests.player_btn_finish')}
                   </Button>
                 </div>
               )}
@@ -311,7 +320,7 @@ export function StudentTestPlayerModal({
                     className="text-xs gap-1.5 h-8"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
-                    <span>Пройти заново</span>
+                    <span>{t('student_tests.player_btn_retake')}</span>
                   </Button>
                 </div>
               )}
@@ -325,10 +334,13 @@ export function StudentTestPlayerModal({
               <div className="p-3 sm:px-6 bg-muted/20 border-b border-border">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Вопросы: {answeredCount} из {totalCount} отвечено
+                    {t('student_tests.player_nav_answered', {
+                      answered: answeredCount,
+                      total: totalCount,
+                    })}
                   </p>
                   <span className="text-xs text-muted-foreground font-medium">
-                    Вопрос {currentIdx + 1}
+                    {t('student_tests.player_nav_current', { current: currentIdx + 1 })}
                   </span>
                 </div>
 
@@ -363,7 +375,7 @@ export function StudentTestPlayerModal({
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <span className="text-xs font-semibold text-primary uppercase tracking-wider">
-                        Вопрос №{currentIdx + 1}
+                        {t('student_tests.player_q_num', { num: currentIdx + 1 })}
                       </span>
                       <p className="text-base sm:text-lg font-bold text-foreground leading-relaxed whitespace-pre-wrap">
                         {currentQ.question}
@@ -415,7 +427,7 @@ export function StudentTestPlayerModal({
                       className="gap-1.5"
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      <span>Предыдущий</span>
+                      <span>{t('student_tests.player_btn_prev')}</span>
                     </Button>
 
                     <div className="text-xs text-muted-foreground">
@@ -430,7 +442,7 @@ export function StudentTestPlayerModal({
                         onClick={() => setCurrentIdx((i) => Math.min(totalCount - 1, i + 1))}
                         className="gap-1.5"
                       >
-                        <span>Следующий</span>
+                        <span>{t('student_tests.player_btn_next')}</span>
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     ) : (
@@ -442,14 +454,14 @@ export function StudentTestPlayerModal({
                         className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
                       >
                         <CheckCircle2 className="h-4 w-4" />
-                        <span>Завершить тест</span>
+                        <span>{t('student_tests.player_btn_finish')}</span>
                       </Button>
                     )}
                   </div>
                 </div>
               ) : (
                 <div className="p-8 text-center text-muted-foreground">
-                  Вопросы не найдены в этом тесте
+                  {t('student_tests.player_no_questions')}
                 </div>
               )}
             </div>
@@ -480,7 +492,7 @@ export function StudentTestPlayerModal({
                     <div className="grid grid-cols-3 gap-2 max-w-md mx-auto pt-2">
                       <div className="p-2.5 rounded-lg border border-border bg-background/50 text-center">
                         <p className="text-[10px] uppercase font-bold text-muted-foreground">
-                          Балл
+                          {t('student_tests.stat_score')}
                         </p>
                         <p className="text-lg font-black text-foreground mt-0.5">
                           {activeSubmission.score} / {activeSubmission.totalQuestions}
@@ -489,7 +501,7 @@ export function StudentTestPlayerModal({
 
                       <div className="p-2.5 rounded-lg border border-border bg-background/50 text-center">
                         <p className="text-[10px] uppercase font-bold text-muted-foreground">
-                          Время
+                          {t('student_tests.stat_time')}
                         </p>
                         <p className="text-lg font-black text-foreground mt-0.5">
                           {activeSubmission.timeSpentSeconds
@@ -500,10 +512,12 @@ export function StudentTestPlayerModal({
 
                       <div className="p-2.5 rounded-lg border border-border bg-background/50 text-center">
                         <p className="text-[10px] uppercase font-bold text-muted-foreground">
-                          Статус
+                          {t('student_tests.stat_status')}
                         </p>
                         <p className="text-lg font-black text-foreground mt-0.5">
-                          {activeSubmission.percentage >= 50 ? 'Сдан' : 'Не сдан'}
+                          {activeSubmission.percentage >= 50
+                            ? t('student_tests.status_passed')
+                            : t('student_tests.status_failed')}
                         </p>
                       </div>
                     </div>
@@ -516,7 +530,7 @@ export function StudentTestPlayerModal({
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-primary" />
                   <h4 className="text-sm font-bold text-foreground">
-                    Подробный разбор вопросов:
+                    {t('student_tests.review_title')}
                   </h4>
                 </div>
 
@@ -551,16 +565,16 @@ export function StudentTestPlayerModal({
                             {isCorrect ? (
                               <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-semibold gap-1 text-[11px]">
                                 <CheckCircle2 className="h-3 w-3" />
-                                Верно (+1)
+                                {t('student_tests.badge_correct')}
                               </Badge>
                             ) : isAnswered ? (
                               <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30 font-semibold gap-1 text-[11px]">
                                 <XCircle className="h-3 w-3" />
-                                Неверно (0)
+                                {t('student_tests.badge_incorrect')}
                               </Badge>
                             ) : (
                               <Badge variant="outline" className="text-muted-foreground text-[11px]">
-                                Без ответа
+                                {t('student_tests.badge_no_answer')}
                               </Badge>
                             )}
                           </div>
@@ -591,12 +605,12 @@ export function StudentTestPlayerModal({
                                 <span>{opt}</span>
                                 {isCorrectOpt && (
                                   <span className="ml-auto text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                                    Правильный ответ
+                                    {t('student_tests.correct_answer_label')}
                                   </span>
                                 )}
                                 {isStudentOpt && !isCorrectOpt && (
                                   <span className="ml-auto text-[10px] font-bold text-rose-600 dark:text-rose-400">
-                                    Ваш выбор
+                                    {t('student_tests.your_choice_label')}
                                   </span>
                                 )}
                               </div>
@@ -608,7 +622,7 @@ export function StudentTestPlayerModal({
                         {q.explanation && (
                           <div className="ml-7 p-2.5 rounded-lg bg-background/80 border border-border text-xs text-muted-foreground space-y-1">
                             <span className="font-semibold text-foreground flex items-center gap-1">
-                              <Sparkles className="h-3 w-3 text-amber-500" /> Пояснение учителя:
+                              <Sparkles className="h-3 w-3 text-amber-500" /> {t('student_tests.tutor_explanation_label')}
                             </span>
                             <p className="italic">{q.explanation}</p>
                           </div>
@@ -632,25 +646,27 @@ export function StudentTestPlayerModal({
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <DialogTitle className="text-base font-bold">
-                Завершить тестирование?
+                {t('student_tests.confirm_finish_title')}
               </DialogTitle>
             </div>
           </DialogHeader>
 
           <div className="py-2 text-sm text-foreground/80 space-y-2">
             <p>
-              Вы ответили на <strong>{answeredCount}</strong> из{' '}
-              <strong>{totalCount}</strong> вопросов.
+              {t('student_tests.confirm_answered_desc', {
+                answered: answeredCount,
+                total: totalCount,
+              })}
             </p>
             {answeredCount < totalCount && (
               <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                Внимание: вы оставили {totalCount - answeredCount} вопросов без
-                ответа. Они будут зачтены как неверные.
+                {t('student_tests.confirm_unanswered_warning', {
+                  count: totalCount - answeredCount,
+                })}
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              После отправки тест будет проверен автоматически, и вы сразу
-              увидите оценку и разбор ответов.
+              {t('student_tests.confirm_auto_check_desc')}
             </p>
           </div>
 
@@ -662,7 +678,7 @@ export function StudentTestPlayerModal({
               onClick={() => setConfirmSubmitOpen(false)}
               disabled={submitMutation.isPending}
             >
-              Вернуться к тесту
+              {t('student_tests.btn_return_to_test')}
             </Button>
             <Button
               type="button"
@@ -674,7 +690,7 @@ export function StudentTestPlayerModal({
               {submitMutation.isPending && (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               )}
-              <span>Да, завершить</span>
+              <span>{t('student_tests.btn_yes_finish')}</span>
             </Button>
           </DialogFooter>
         </DialogContent>

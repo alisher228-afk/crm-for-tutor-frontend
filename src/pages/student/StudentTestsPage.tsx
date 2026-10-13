@@ -23,11 +23,15 @@ import {
   Users,
   User,
 } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 import type { TestItem, TestType } from '@/types'
 
 type FilterTab = 'ALL' | 'INTERNAL' | 'EXTERNAL' | 'COMPLETED'
 
 export function StudentTestsPage() {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
   const [search, setSearch] = useState('')
   const [filterTab, setFilterTab] = useState<FilterTab>('ALL')
 
@@ -89,9 +93,9 @@ export function StudentTestsPage() {
           timeSpentSeconds: 60,
         },
       })
-      toast.success('Квиз отмечен как пройденный!')
+      toast.success(t('student_tests.marked_toast'))
     } catch {
-      toast.error('Не удалось сохранить статус')
+      toast.error(t('student_tests.marked_failed_toast'))
     }
   }
 
@@ -135,13 +139,15 @@ export function StudentTestsPage() {
 
       if (isToday) {
         return {
-          label: `Сегодня до ${d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
+          label: t('student_tests.deadline_today', {
+            time: d.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' }),
+          }),
           isPast,
         }
       }
 
       return {
-        label: d.toLocaleDateString('ru-RU', {
+        label: d.toLocaleDateString(dateLocale, {
           day: 'numeric',
           month: 'short',
           hour: '2-digit',
@@ -158,9 +164,9 @@ export function StudentTestsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Тесты и Квизы</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('student_tests.title')}</h1>
         <p className="text-muted-foreground text-sm">
-          Интерактивные тестирования от преподавателя, проверка знаний и ссылки на квизы
+          {t('student_tests.subtitle')}
         </p>
       </div>
 
@@ -173,7 +179,7 @@ export function StudentTestsPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Всего тестов
+                {t('student_tests.stats_total')}
               </p>
               <p className="text-2xl font-black text-foreground mt-0.5">
                 {totalCount}
@@ -189,10 +195,13 @@ export function StudentTestsPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Пройдено
+                {t('student_tests.stats_completed')}
               </p>
               <p className="text-2xl font-black text-foreground mt-0.5">
-                {completedCount} <span className="text-xs font-normal text-muted-foreground">из {totalCount}</span>
+                {completedCount}{' '}
+                <span className="text-xs font-normal text-muted-foreground">
+                  {t('student_tests.stats_of', { total: totalCount })}
+                </span>
               </p>
             </div>
           </CardContent>
@@ -205,7 +214,7 @@ export function StudentTestsPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Средний балл
+                {t('student_tests.stats_avg_score')}
               </p>
               <p className="text-2xl font-black text-foreground mt-0.5">
                 {completedCount > 0 ? `${avgScore}%` : '—'}
@@ -224,7 +233,7 @@ export function StudentTestsPage() {
             className="h-8 text-xs font-medium"
             onClick={() => setFilterTab('ALL')}
           >
-            Все тесты ({totalCount})
+            {t('student_tests.tests_all_count', { count: totalCount })}
           </Button>
           <Button
             variant={filterTab === 'INTERNAL' ? 'default' : 'outline'}
@@ -233,7 +242,7 @@ export function StudentTestsPage() {
             onClick={() => setFilterTab('INTERNAL')}
           >
             <BrainCircuit className="h-3.5 w-3.5" />
-            <span>Внутренние тесты</span>
+            <span>{t('student_tests.filter_internal_tests')}</span>
           </Button>
           <Button
             variant={filterTab === 'EXTERNAL' ? 'default' : 'outline'}
@@ -242,7 +251,7 @@ export function StudentTestsPage() {
             onClick={() => setFilterTab('EXTERNAL')}
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            <span>Внешние квизы</span>
+            <span>{t('student_tests.filter_external')}</span>
           </Button>
           <Button
             variant={filterTab === 'COMPLETED' ? 'default' : 'outline'}
@@ -251,7 +260,7 @@ export function StudentTestsPage() {
             onClick={() => setFilterTab('COMPLETED')}
           >
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-            <span>Пройденные ({completedCount})</span>
+            <span>{t('student_tests.filter_completed_count', { count: completedCount })}</span>
           </Button>
         </div>
 
@@ -259,7 +268,7 @@ export function StudentTestsPage() {
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Поиск по названию или теме..."
+            placeholder={t('student_tests.search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-8 text-xs"
@@ -348,7 +357,7 @@ export function StudentTestsPage() {
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                          Доступен
+                          {t('student_tests.badge_available')}
                         </Badge>
                       )}
                     </div>
@@ -361,7 +370,9 @@ export function StudentTestsPage() {
                       {test.description}
                     </p>
                   ) : (
-                    <p className="text-xs text-muted-foreground italic">Без описания</p>
+                    <p className="text-xs text-muted-foreground italic">
+                      {t('student_tests.no_description')}
+                    </p>
                   )}
 
                   <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -371,7 +382,7 @@ export function StudentTestsPage() {
                         className="text-[11px] gap-1 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 font-medium"
                       >
                         <Users className="h-3 w-3" />
-                        <span>Групповой</span>
+                        <span>{t('student_tests.badge_group')}</span>
                       </Badge>
                     ) : test.targetType === 'INDIVIDUAL' ? (
                       <Badge
@@ -379,7 +390,7 @@ export function StudentTestsPage() {
                         className="text-[11px] gap-1 bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30 font-medium"
                       >
                         <User className="h-3 w-3" />
-                        <span>Персональный</span>
+                        <span>{t('student_tests.badge_individual')}</span>
                       </Badge>
                     ) : null}
 
@@ -389,7 +400,11 @@ export function StudentTestsPage() {
                         className="text-[11px] bg-muted/30 text-foreground border-border"
                       >
                         <Sparkles className="h-3 w-3 mr-1 text-primary" />
-                        {qCount} {qCount === 1 ? 'вопрос' : 'вопросов'}
+                        {qCount === 1
+                          ? t('student_tests.questions_1', { count: qCount })
+                          : qCount > 1 && qCount < 5
+                          ? t('student_tests.questions_few', { count: qCount })
+                          : t('student_tests.questions_count', { count: qCount })}
                       </Badge>
                     ) : (
                       <Badge
@@ -397,20 +412,23 @@ export function StudentTestsPage() {
                         className="text-[11px] bg-sky-500/5 text-sky-700 dark:text-sky-300 border-sky-500/20"
                       >
                         <ExternalLink className="h-3 w-3 mr-1" />
-                        Внешний квиз
+                        {t('student_tests.badge_external_quiz')}
                       </Badge>
                     )}
 
                     {test.timeLimitMinutes && (
                       <Badge variant="outline" className="text-[11px] gap-1 text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        <span>{test.timeLimitMinutes} мин</span>
+                        <span>{test.timeLimitMinutes} {t('student_tests.min_unit')}</span>
                       </Badge>
                     )}
 
                     {isPassed && submission && (
                       <span className="text-[11px] font-medium text-muted-foreground ml-auto">
-                        Балл: {submission.score}/{submission.totalQuestions}
+                        {t('student_tests.score_display', {
+                          score: submission.score,
+                          total: submission.totalQuestions,
+                        })}
                       </span>
                     )}
                   </div>
@@ -427,17 +445,17 @@ export function StudentTestsPage() {
                           onClick={() => handleViewResult(test)}
                         >
                           <BookOpen className="h-3.5 w-3.5 text-primary" />
-                          <span>Результат</span>
+                          <span>{t('student_tests.btn_result')}</span>
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           className="text-xs gap-1 h-8 text-muted-foreground hover:text-foreground"
                           onClick={() => handleStartTest(test)}
-                          title="Пройти тест заново"
+                          title={t('student_tests.btn_retake_tooltip')}
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
-                          <span>Пересдать</span>
+                          <span>{t('student_tests.btn_retake')}</span>
                         </Button>
                       </div>
                     ) : (
@@ -447,7 +465,7 @@ export function StudentTestsPage() {
                         onClick={() => handleStartTest(test)}
                       >
                         <BrainCircuit className="h-3.5 w-3.5" />
-                        <span>Пройти тестирование</span>
+                        <span>{t('student_tests.btn_take_test')}</span>
                         <ArrowRight className="h-3.5 w-3.5 ml-auto" />
                       </Button>
                     )
@@ -462,12 +480,12 @@ export function StudentTestsPage() {
                           if (safe) {
                             window.open(safe, '_blank', 'noopener,noreferrer')
                           } else {
-                            toast.error('Ссылка на внешний тест отсутствует')
+                            toast.error(t('student_tests.no_external_link_toast'))
                           }
                         }}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
-                        <span>Перейти к квизу</span>
+                        <span>{t('student_tests.btn_go_to_quiz')}</span>
                       </Button>
 
                       {!isPassed && (
@@ -476,10 +494,10 @@ export function StudentTestsPage() {
                           variant="outline"
                           className="text-xs h-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 gap-1 shrink-0"
                           onClick={() => handleExternalComplete(test)}
-                          title="Отметить как выполненный"
+                          title={t('student_tests.btn_mark_submitted_tooltip')}
                         >
                           <Check className="h-3.5 w-3.5" />
-                          <span>Сдано</span>
+                          <span>{t('student_tests.btn_submitted')}</span>
                         </Button>
                       )}
                     </div>
@@ -496,9 +514,9 @@ export function StudentTestsPage() {
               <BrainCircuit className="h-6 w-6" />
             </div>
             <div>
-              <p className="font-semibold text-base">Тесты пока не назначены</p>
+              <p className="font-semibold text-base">{t('student_tests.empty_tests_title')}</p>
               <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                Когда преподаватель подготовит или назначит тест/квиз, он появится в этом списке.
+                {t('student_tests.empty_tests_desc')}
               </p>
             </div>
           </CardContent>
