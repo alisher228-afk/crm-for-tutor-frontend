@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useLanguage } from '@/i18n'
 
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -38,6 +39,8 @@ import type { TestItem, TestType, TestTargetType } from '@/types'
 type TargetFilter = 'ANY' | 'ALL' | 'GROUP' | 'INDIVIDUAL'
 
 export function TutorTestsPage() {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
@@ -107,7 +110,7 @@ export function TutorTestsPage() {
     if (!dateStr) return ''
     try {
       const d = new Date(dateStr)
-      return d.toLocaleDateString('ru-RU', {
+      return d.toLocaleDateString(dateLocale, {
         day: 'numeric',
         month: 'short',
         hour: '2-digit',
@@ -132,7 +135,7 @@ export function TutorTestsPage() {
     if (url) {
       navigator.clipboard.writeText(url)
       setCopiedId(test.id)
-      toast.success('Ссылка на тест скопирована в буфер обмена')
+      toast.success(t('tutor_tests.toast_link_copied'))
       setTimeout(() => setCopiedId(null), 2000)
     }
   }
@@ -154,12 +157,12 @@ export function TutorTestsPage() {
   }
 
   const getDomainName = (url?: string): string => {
-    if (!url) return 'Внешний тест'
+    if (!url) return t('tutor_tests.default_external_domain')
     try {
       const normalized = getSafeUrl(url)
       return new URL(normalized).hostname.replace(/^www\./, '')
     } catch {
-      return 'Внешний тест'
+      return t('tutor_tests.default_external_domain')
     }
   }
 
@@ -168,15 +171,15 @@ export function TutorTestsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Тесты и Квизы</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('tutor_tests.title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Конструктор интерактивных тестов и ссылки на внешние квизы (Quizland, Quizlet и др.)
+            {t('tutor_tests.subtitle')}
           </p>
         </div>
 
         <Button onClick={handleOpenCreate} className="self-start sm:self-auto gap-2">
           <Plus className="h-4 w-4" />
-          <span>Создать тест</span>
+          <span>{t('tutor_tests.btn_create_test')}</span>
         </Button>
       </div>
 
@@ -192,7 +195,7 @@ export function TutorTestsPage() {
               setPage(0)
             }}
           >
-            Все тесты ({totalElements})
+            {t('tutor_tests.tab_all', { count: totalElements })}
           </Button>
 
           <Button
@@ -205,7 +208,7 @@ export function TutorTestsPage() {
             }}
           >
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span>Интерактивные</span>
+            <span>{t('tutor_tests.tab_interactive')}</span>
           </Button>
 
           <Button
@@ -218,7 +221,7 @@ export function TutorTestsPage() {
             }}
           >
             <ExternalLink className="h-3.5 w-3.5 text-sky-600" />
-            <span>Внешние ссылки</span>
+            <span>{t('tutor_tests.tab_external')}</span>
           </Button>
         </div>
 
@@ -226,7 +229,7 @@ export function TutorTestsPage() {
         <div className="relative max-w-xs w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Поиск по названию или теме..."
+            placeholder={t('tutor_tests.search_placeholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -247,7 +250,7 @@ export function TutorTestsPage() {
 
       {/* Target Audience Filters */}
       <div className="flex flex-wrap items-center gap-1.5 -mt-2">
-        <span className="text-xs text-muted-foreground mr-1">Кому назначен:</span>
+        <span className="text-xs text-muted-foreground mr-1">{t('tutor_tests.filter_target_label')}</span>
         <button
           type="button"
           onClick={() => {
@@ -260,7 +263,7 @@ export function TutorTestsPage() {
               : 'bg-card text-muted-foreground border-border hover:bg-muted'
           }`}
         >
-          Все аудитории
+          {t('tutor_tests.target_any')}
         </button>
         <button
           type="button"
@@ -275,7 +278,7 @@ export function TutorTestsPage() {
           }`}
         >
           <Globe className="h-3 w-3" />
-          <span>Для всех</span>
+          <span>{t('tutor_tests.target_all')}</span>
         </button>
         <button
           type="button"
@@ -290,7 +293,7 @@ export function TutorTestsPage() {
           }`}
         >
           <Users className="h-3 w-3" />
-          <span>Групповые</span>
+          <span>{t('tutor_tests.target_group')}</span>
         </button>
         <button
           type="button"
@@ -305,7 +308,7 @@ export function TutorTestsPage() {
           }`}
         >
           <User className="h-3 w-3" />
-          <span>Индивидуальные</span>
+          <span>{t('tutor_tests.target_individual')}</span>
         </button>
       </div>
 
@@ -325,12 +328,12 @@ export function TutorTestsPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive mb-3">
             <AlertCircle className="h-6 w-6" />
           </div>
-          <h3 className="font-semibold text-base">Ошибка при загрузке тестов</h3>
+          <h3 className="font-semibold text-base">{t('tutor_tests.err_load_title')}</h3>
           <p className="text-sm text-muted-foreground mt-1 mb-4">
-            Не удалось связаться с сервером. Попробуйте еще раз.
+            {t('tutor_tests.err_load_desc')}
           </p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Повторить попытку
+            {t('tutor_tests.btn_retry')}
           </Button>
         </div>
       ) : tests.length > 0 ? (
@@ -380,7 +383,7 @@ export function TutorTestsPage() {
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-primary"
                         onClick={() => handleOpenEdit(test)}
-                        title="Редактировать"
+                        title={t('tutor_tests.action_edit')}
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </Button>
@@ -391,7 +394,7 @@ export function TutorTestsPage() {
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleOpenDelete(test)}
-                        title="Удалить"
+                        title={t('tutor_tests.action_delete')}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -405,7 +408,7 @@ export function TutorTestsPage() {
                       {test.description}
                     </p>
                   ) : (
-                    <p className="text-xs text-muted-foreground italic">Без описания</p>
+                    <p className="text-xs text-muted-foreground italic">{t('tutor_tests.no_desc')}</p>
                   )}
 
                   <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -415,7 +418,7 @@ export function TutorTestsPage() {
                         className="text-[11px] gap-1 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 font-medium"
                       >
                         <Users className="h-3 w-3" />
-                        <span>Группа: {test.groupName}</span>
+                        <span>{t('tutor_tests.badge_group_prefix', { name: test.groupName || '' })}</span>
                       </Badge>
                     ) : test.targetType === 'INDIVIDUAL' ? (
                       <Badge
@@ -423,7 +426,7 @@ export function TutorTestsPage() {
                         className="text-[11px] gap-1 bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30 font-medium"
                       >
                         <User className="h-3 w-3" />
-                        <span>{test.studentName ? `Ученик: ${test.studentName}` : 'Индивидуально'}</span>
+                        <span>{test.studentName ? t('tutor_tests.badge_student_prefix', { name: test.studentName }) : t('tutor_tests.badge_student_indiv')}</span>
                       </Badge>
                     ) : (
                       <Badge
@@ -431,7 +434,7 @@ export function TutorTestsPage() {
                         className="text-[11px] gap-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
                       >
                         <Globe className="h-3 w-3" />
-                        <span>Для всех</span>
+                        <span>{t('tutor_tests.badge_for_all')}</span>
                       </Badge>
                     )}
 
@@ -441,7 +444,7 @@ export function TutorTestsPage() {
                         className="text-[11px] bg-primary/10 text-primary border-primary/20"
                       >
                         <Sparkles className="h-3 w-3 mr-1" />
-                        {qCount} {qCount === 1 ? 'вопрос' : 'вопросов'}
+                        {qCount === 1 ? t('tutor_tests.q_count_1', { count: qCount }) : t('tutor_tests.q_count_many', { count: qCount })}
                       </Badge>
                     ) : (
                       <Badge
@@ -456,14 +459,14 @@ export function TutorTestsPage() {
                     {test.timeLimitMinutes && (
                       <Badge variant="outline" className="text-[11px] gap-1 text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        <span>{test.timeLimitMinutes} мин</span>
+                        <span>{t('tutor_tests.unit_minutes', { count: test.timeLimitMinutes })}</span>
                       </Badge>
                     )}
 
                     {test.deadline && (
                       <Badge variant="outline" className="text-[11px] gap-1 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30">
                         <Calendar className="h-3 w-3" />
-                        <span>До {formatDeadline(test.deadline)}</span>
+                        <span>{t('tutor_tests.deadline_prefix', { date: formatDeadline(test.deadline) })}</span>
                       </Badge>
                     )}
 
@@ -471,10 +474,10 @@ export function TutorTestsPage() {
                       type="button"
                       onClick={() => handleOpenSubmissions(test)}
                       className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-border bg-muted/60 hover:bg-muted text-foreground transition-colors cursor-pointer"
-                      title="Посмотреть сдачи и баллы учеников"
+                      title={t('tutor_tests.submissions_count', { count: test.submissionsCount ?? 0 })}
                     >
                       <Users className="h-3 w-3 text-primary" />
-                      <span>{test.submissionsCount ?? 0} сдали</span>
+                      <span>{t('tutor_tests.submissions_count', { count: test.submissionsCount ?? 0 })}</span>
                       {test.averageScore !== undefined && test.averageScore !== null && (test.submissionsCount ?? 0) > 0 && (
                         <span className="font-semibold text-emerald-600 dark:text-emerald-400 ml-0.5">
                           • {test.averageScore}%
@@ -492,7 +495,7 @@ export function TutorTestsPage() {
                       onClick={() => handleOpenPreview(test)}
                     >
                       <BrainCircuit className="h-3.5 w-3.5" />
-                      <span>Пройти / Предпросмотр</span>
+                      <span>{t('tutor_tests.btn_preview_test')}</span>
                     </Button>
                   ) : (
                     <div className="flex items-center gap-1.5 w-full">
@@ -504,12 +507,12 @@ export function TutorTestsPage() {
                           if (safe) {
                             window.open(safe, '_blank', 'noopener,noreferrer')
                           } else {
-                            toast.error('Ссылка на внешний тест отсутствует')
+                            toast.error(t('tutor_tests.err_no_external_url'))
                           }
                         }}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
-                        <span>Перейти к тесту</span>
+                        <span>{t('tutor_tests.btn_go_to_test')}</span>
                       </Button>
 
                       <Button
@@ -518,7 +521,7 @@ export function TutorTestsPage() {
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
                         onClick={() => handleOpenPreview(test)}
-                        title="Предпросмотр карточки"
+                        title={t('tutor_tests.tooltip_preview')}
                       >
                         <BrainCircuit className="h-3.5 w-3.5" />
                       </Button>
@@ -529,7 +532,7 @@ export function TutorTestsPage() {
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
                         onClick={() => handleCopyLink(test)}
-                        title="Скопировать ссылку"
+                        title={t('tutor_tests.tooltip_copy_link')}
                       >
                         {copiedId === test.id ? (
                           <Check className="h-3.5 w-3.5 text-emerald-600" />
@@ -550,21 +553,21 @@ export function TutorTestsPage() {
             <HelpCircle className="h-6 w-6" />
           </div>
           <h3 className="font-semibold text-base">
-            {search ? 'Тесты не найдены' : 'Тесты пока не созданы'}
+            {search ? t('tutor_tests.empty_search_title') : t('tutor_tests.empty_tests_title')}
           </h3>
           <p className="text-sm text-muted-foreground max-w-md mt-1 mb-4">
             {search
-              ? `По запросу "${search}" ничего не найдено.`
-              : 'Создайте свой первый интерактивный квиз с автопроверкой или сохраните полезную ссылку на Quizland / Quizlet.'}
+              ? t('tutor_tests.empty_search_desc', { query: search })
+              : t('tutor_tests.empty_tests_desc')}
           </p>
           {search ? (
             <Button variant="outline" size="sm" onClick={() => setSearch('')}>
-              Сбросить поиск
+              {t('tutor_tests.btn_reset_search')}
             </Button>
           ) : (
             <Button size="sm" onClick={handleOpenCreate}>
               <Plus className="mr-1.5 h-4 w-4" />
-              Создать первый тест
+              {t('tutor_tests.btn_create_first')}
             </Button>
           )}
         </div>
@@ -573,7 +576,7 @@ export function TutorTestsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-2 pt-2 text-xs text-muted-foreground">
-          <div>Всего: {totalElements} тестов</div>
+          <div>{t('tutor_tests.pagination_total', { total: totalElements })}</div>
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
@@ -583,7 +586,7 @@ export function TutorTestsPage() {
               className="h-8 px-2.5"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              <span>Назад</span>
+              <span>{t('tutor_tests.btn_prev')}</span>
             </Button>
             <span className="px-2 font-medium">
               {page + 1} / {totalPages}
@@ -595,7 +598,7 @@ export function TutorTestsPage() {
               disabled={page + 1 >= totalPages || isLoading}
               className="h-8 px-2.5"
             >
-              <span>Вперед</span>
+              <span>{t('tutor_tests.btn_next')}</span>
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </div>

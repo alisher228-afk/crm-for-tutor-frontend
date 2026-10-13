@@ -23,6 +23,7 @@ import { toast } from 'sonner'
 import { Loader2, DollarSign, Calendar, FileText, Hash, UserCheck } from 'lucide-react'
 import type { Payment, StudentProfile } from '@/types'
 import type { AxiosError } from 'axios'
+import { useLanguage } from '@/i18n'
 
 interface PaymentFormDialogProps {
   open: boolean
@@ -64,6 +65,8 @@ export function PaymentFormDialog({
   studentsList = [],
   onSelectStudentId,
 }: PaymentFormDialogProps) {
+  const { t, language } = useLanguage()
+  const numLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
   const isEditing = Boolean(initialData?.id)
 
   const [selectedStudentId, setSelectedStudentId] = useState(studentId ? String(studentId) : '')
@@ -109,13 +112,13 @@ export function PaymentFormDialog({
       const name =
         s.name ||
         [s.firstName, s.lastName].filter(Boolean).join(' ') ||
-        'Ученик'
+        t('tutor_lessons.default_student')
       return {
         value: String(s.id),
         label: name,
       }
     })
-  }, [studentsList])
+  }, [studentsList, t])
 
   const targetStudentId = selectedStudentId || (studentId ? String(studentId) : '')
 
@@ -126,30 +129,30 @@ export function PaymentFormDialog({
         [targetStudent.firstName, targetStudent.lastName]
           .filter(Boolean)
           .join(' ')
-      : studentName) || 'Ученик'
+      : studentName) || t('tutor_lessons.default_student')
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
     if (!targetStudentId) {
-      toast.error('Пожалуйста, выберите ученика')
+      toast.error(t('tutor_payments.err_student_req'))
       return
     }
 
     const numAmount = Number(amount)
     if (!amount || isNaN(numAmount) || numAmount <= 0) {
-      toast.error('Укажите корректную сумму оплаты')
+      toast.error(t('tutor_payments.err_amount_req'))
       return
     }
 
     const numLessons = lessonsCount ? Number(lessonsCount) : undefined
     if (numLessons !== undefined && (isNaN(numLessons) || numLessons < 0)) {
-      toast.error('Количество уроков должно быть положительным числом')
+      toast.error(t('tutor_payments.err_lessons_pos'))
       return
     }
 
     if (!paymentDate) {
-      toast.error('Укажите дату оплаты')
+      toast.error(t('tutor_payments.err_date_req'))
       return
     }
 
@@ -165,7 +168,7 @@ export function PaymentFormDialog({
             notes: notes.trim() || undefined,
           },
         })
-        toast.success('Запись об оплате успешно обновлена')
+        toast.success(t('tutor_payments.toast_updated'))
       } else {
         const res = await createMutation.mutateAsync({
           studentId: targetStudentId,
@@ -179,13 +182,16 @@ export function PaymentFormDialog({
         const balance =
           res?.newBalance ?? res?.studentBalance ?? res?.lessonBalance ?? res?.balance
 
-        const formattedAmount = numAmount.toLocaleString('ru-RU')
+        const formattedAmount = numAmount.toLocaleString(numLocale)
         if (balance !== undefined && balance !== null) {
           toast.success(
-            `Оплата на ${formattedAmount} зафиксирована! Новый баланс ученика: ${balance} ур.`,
+            t('tutor_payments.toast_created_with_balance', {
+              amount: formattedAmount,
+              balance,
+            }),
           )
         } else {
-          toast.success(`Оплата на ${formattedAmount} успешно зафиксирована`)
+          toast.success(t('tutor_payments.toast_created', { amount: formattedAmount }))
         }
 
         if (onSelectStudentId && targetStudentId !== studentId) {
@@ -199,8 +205,8 @@ export function PaymentFormDialog({
       toast.error(
         axiosError.response?.data?.message ||
           (isEditing
-            ? 'Не удалось обновить оплату'
-            : 'Не удалось зафиксировать оплату'),
+            ? t('tutor_payments.toast_update_err')
+            : t('tutor_payments.toast_create_err')),
       )
     }
   }
@@ -222,19 +228,19 @@ export function PaymentFormDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-emerald-600" />
-            <span>{isEditing ? 'Редактировать оплату' : 'Добавить оплату'}</span>
+            <span>{isEditing ? t('tutor_payments.form_title_edit') : t('tutor_payments.form_title_create')}</span>
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? 'Измените параметры платежа или заметку'
-              : 'Зафиксируйте внесение средств учеником для пополнения баланса'}
+              ? t('tutor_payments.form_desc_edit')
+              : t('tutor_payments.form_desc_create')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-1">
           {/* Student field */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Ученик *</Label>
+            <Label className="text-xs font-semibold">{t('tutor_payments.label_student_req')}</Label>
             {studentsList.length > 0 && !isEditing ? (
               <Select
                 items={studentSelectItems}
@@ -247,9 +253,9 @@ export function PaymentFormDialog({
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Выберите ученика...">
+                  <SelectValue placeholder={t('tutor_payments.select_student_placeholder')}>
                     {(val) => {
-                      if (!val) return 'Выберите ученика...'
+                      if (!val) return t('tutor_payments.select_student_placeholder')
                       const student = studentsList.find(
                         (s) => String(s.id) === String(val),
                       )
@@ -259,7 +265,7 @@ export function PaymentFormDialog({
                         [student.firstName, student.lastName]
                           .filter(Boolean)
                           .join(' ') ||
-                        'Ученик'
+                        t('tutor_students.default_student_name')
                       const studentBal =
                         student.lessonBalance ?? student.balance
                       return (
@@ -267,7 +273,7 @@ export function PaymentFormDialog({
                           <span className="truncate font-medium">{name}</span>
                           {studentBal !== undefined && (
                             <span className="text-xs text-muted-foreground shrink-0 font-normal">
-                              ({studentBal} ур.)
+                              ({t('tutor_payments.unit_lessons', { count: studentBal })})
                             </span>
                           )}
                         </span>
@@ -280,7 +286,7 @@ export function PaymentFormDialog({
                     const name =
                       s.name ||
                       [s.firstName, s.lastName].filter(Boolean).join(' ') ||
-                      'Ученик'
+                      t('tutor_students.default_student_name')
                     const studentBal = s.lessonBalance ?? s.balance
                     return (
                       <SelectItem key={s.id} value={String(s.id)}>
@@ -288,7 +294,7 @@ export function PaymentFormDialog({
                           <span>{name}</span>
                           {studentBal !== undefined && (
                             <span className="text-xs text-muted-foreground">
-                              Баланс: {studentBal} ур.
+                              {t('tutor_lessons.balance_label', { balance: studentBal })}
                             </span>
                           )}
                         </div>
@@ -308,7 +314,7 @@ export function PaymentFormDialog({
           {/* Amount input & Quick Buttons */}
           <div className="space-y-1.5">
             <Label htmlFor="payment-amount" className="text-xs font-semibold">
-              Сумма оплаты *
+              {t('tutor_payments.label_amount_req')}
             </Label>
             <div>
               <Input
@@ -316,7 +322,7 @@ export function PaymentFormDialog({
                 type="number"
                 min="0"
                 step="any"
-                placeholder="Например, 3000"
+                placeholder={t('tutor_payments.placeholder_amount')}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
@@ -337,7 +343,7 @@ export function PaymentFormDialog({
                       : 'bg-muted/50 hover:bg-muted text-foreground border-border'
                   }`}
                 >
-                  +{val.toLocaleString('ru-RU')}
+                  +{val.toLocaleString(numLocale)}
                 </button>
               ))}
             </div>
@@ -351,7 +357,7 @@ export function PaymentFormDialog({
                 className="text-xs font-semibold flex items-center gap-1"
               >
                 <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>Кол-во уроков</span>
+                <span>{t('tutor_payments.label_lessons_count')}</span>
               </Label>
               <Input
                 id="payment-lessons-count"
@@ -363,7 +369,7 @@ export function PaymentFormDialog({
                 onChange={(e) => setLessonsCount(e.target.value)}
               />
               <p className="text-[11px] text-muted-foreground">
-                Пополнит баланс ученика
+                {t('tutor_payments.lessons_count_hint')}
               </p>
             </div>
 
@@ -373,7 +379,7 @@ export function PaymentFormDialog({
                 className="text-xs font-semibold flex items-center gap-1"
               >
                 <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>Дата платежа *</span>
+                <span>{t('tutor_payments.label_payment_date')}</span>
               </Label>
               <Input
                 id="payment-date"
@@ -392,11 +398,11 @@ export function PaymentFormDialog({
               className="text-xs font-semibold flex items-center gap-1"
             >
               <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>Заметка к платежу (опционально)</span>
+              <span>{t('tutor_payments.label_notes')}</span>
             </Label>
             <Textarea
               id="payment-notes"
-              placeholder="Например: Оплата абонемента за октябрь, перевод Сбер"
+              placeholder={t('tutor_payments.placeholder_notes')}
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -411,11 +417,11 @@ export function PaymentFormDialog({
               onClick={() => onOpenChange(false)}
               disabled={isPending}
             >
-              Отмена
+              {t('tutor_payments.btn_cancel')}
             </Button>
             <Button type="submit" disabled={isPending} className="gap-2">
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              <span>{isEditing ? 'Сохранить изменения' : 'Зафиксировать'}</span>
+              <span>{isEditing ? t('tutor_payments.btn_submit_edit') : t('tutor_payments.btn_submit_create')}</span>
             </Button>
           </DialogFooter>
         </form>

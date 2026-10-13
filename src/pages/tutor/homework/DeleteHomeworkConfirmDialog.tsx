@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/i18n'
 import { Trash2, Loader2, AlertTriangle } from 'lucide-react'
 import type { Homework } from '@/types'
 
@@ -25,6 +26,8 @@ export function DeleteHomeworkConfirmDialog({
   onConfirm,
   isPending = false,
 }: DeleteHomeworkConfirmDialogProps) {
+  const { t } = useLanguage()
+
   if (!homework) return null
 
   return (
@@ -37,7 +40,7 @@ export function DeleteHomeworkConfirmDialog({
             </div>
             <div>
               <DialogTitle className="text-base font-semibold">
-                Удалить домашнее задание?
+                {t('tutor_homework.modal_delete_title')}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                 «{homework.title}»
@@ -48,14 +51,13 @@ export function DeleteHomeworkConfirmDialog({
 
         <div className="space-y-3 py-2 text-xs sm:text-sm text-muted-foreground">
           <p>
-            Вы уверены, что хотите удалить домашнее задание{' '}
-            <strong className="text-foreground">«{homework.title}»</strong>?
+            {t('tutor_homework.confirm_text', { title: homework.title })}
           </p>
 
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300 flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
             <span>
-              Все прикрепленные файлы, ответы ученика и история проверки будут удалены навсегда. Это действие нельзя отменить.
+              {t('tutor_homework.warning_delete')}
             </span>
           </div>
         </div>
@@ -68,7 +70,7 @@ export function DeleteHomeworkConfirmDialog({
             onClick={() => onOpenChange(false)}
             disabled={isPending}
           >
-            Отмена
+            {t('tutor_homework.btn_cancel')}
           </Button>
           <Button
             type="button"
@@ -83,7 +85,7 @@ export function DeleteHomeworkConfirmDialog({
             ) : (
               <Trash2 className="h-4 w-4" />
             )}
-            <span>Удалить задание</span>
+            <span>{t('tutor_homework.btn_delete')}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

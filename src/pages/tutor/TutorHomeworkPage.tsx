@@ -11,6 +11,7 @@ import {
   useUpdateHomeworkStatus,
   useDeleteHomework,
 } from '@/hooks/useHomework'
+import { useLanguage } from '@/i18n'
 import { CreateHomeworkDialog } from './homework/CreateHomeworkDialog'
 import { HomeworkDetailsSheet } from './homework/HomeworkDetailsSheet'
 import { DeleteHomeworkConfirmDialog } from './homework/DeleteHomeworkConfirmDialog'
@@ -38,36 +39,12 @@ import {
 import type { Homework } from '@/types'
 import type { AxiosError } from 'axios'
 
-const statusBadgeConfig: Record<
-  string,
-  { label: string; badgeClass: string; icon: typeof CheckCircle2 }
-> = {
-  ASSIGNED: {
-    label: 'Выдано',
-    badgeClass:
-      'bg-muted text-muted-foreground border border-border font-medium',
-    icon: Clock,
-  },
-  SUBMITTED: {
-    label: 'Сдано на проверку',
-    badgeClass:
-      'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/25 font-semibold',
-    icon: AlertCircle,
-  },
-  REVIEWED: {
-    label: 'Проверено',
-    badgeClass:
-      'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-medium',
-    icon: CheckCircle2,
-  },
-}
-
-function formatDeadline(isoStr?: string): { text: string; isPast: boolean } {
-  if (!isoStr) return { text: 'Бессрочно', isPast: false }
+function formatDeadline(isoStr: string | undefined, dateLocale: string, fallback: string): { text: string; isPast: boolean } {
+  if (!isoStr) return { text: fallback, isPast: false }
   const d = new Date(isoStr)
-  if (isNaN(d.getTime())) return { text: 'Бессрочно', isPast: false }
+  if (isNaN(d.getTime())) return { text: fallback, isPast: false }
   const isPast = d.getTime() < Date.now()
-  const text = d.toLocaleDateString('ru-RU', {
+  const text = d.toLocaleDateString(dateLocale, {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -90,6 +67,33 @@ interface GroupAssignmentSummary {
 }
 
 export function TutorHomeworkPage() {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
+  const statusBadgeConfig: Record<
+    string,
+    { label: string; badgeClass: string; icon: typeof CheckCircle2 }
+  > = {
+    ASSIGNED: {
+      label: t('tutor_homework.status_assigned'),
+      badgeClass:
+        'bg-muted text-muted-foreground border border-border font-medium',
+      icon: Clock,
+    },
+    SUBMITTED: {
+      label: t('tutor_homework.status_submitted'),
+      badgeClass:
+        'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/25 font-semibold',
+      icon: AlertCircle,
+    },
+    REVIEWED: {
+      label: t('tutor_homework.status_reviewed'),
+      badgeClass:
+        'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-medium',
+      icon: CheckCircle2,
+    },
+  }
+
   // Main tab: individual or group
   const [activeMainTab, setActiveMainTab] = useState<'individual' | 'group'>('individual')
 
@@ -167,7 +171,7 @@ export function TutorHomeworkPage() {
   const selectedIndividualName =
     selectedIndividual?.name ||
     [selectedIndividual?.firstName, selectedIndividual?.lastName].filter(Boolean).join(' ') ||
-    'Ученик'
+    t('tutor_students.default_student_name')
 
   // Selected group student profile
   const selectedGroupStudent = useMemo(
@@ -178,7 +182,7 @@ export function TutorHomeworkPage() {
   const selectedGroupStudentName =
     selectedGroupStudent?.name ||
     [selectedGroupStudent?.firstName, selectedGroupStudent?.lastName].filter(Boolean).join(' ') ||
-    'Ученик группы'
+    t('tutor_students.default_student_name')
 
   // Homework query for Individual tab
   const {
@@ -262,7 +266,7 @@ export function TutorHomeworkPage() {
     if (!deleteCandidate) return
     try {
       await deleteMutation.mutateAsync(deleteCandidate.id)
-      toast.success(`Задание "${deleteCandidate.title}" удалено`)
+      toast.success(t('tutor_homework.toast_deleted', { title: deleteCandidate.title }))
       setIsDeleteOpen(false)
       if (selectedHomework?.id === deleteCandidate.id) {
         setIsDetailsOpen(false)
@@ -272,7 +276,7 @@ export function TutorHomeworkPage() {
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось удалить домашнее задание',
+        axiosError.response?.data?.message || t('tutor_homework.toast_delete_err'),
       )
     }
   }
@@ -284,11 +288,11 @@ export function TutorHomeworkPage() {
         id: hw.id,
         status: 'REVIEWED',
       })
-      toast.success(`Задание "${hw.title}" проверено!`)
+      toast.success(t('tutor_homework.toast_reviewed_success', { title: hw.title }))
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось обновить статус',
+        axiosError.response?.data?.message || t('tutor_homework.toast_status_err'),
       )
     }
   }
@@ -340,9 +344,9 @@ export function TutorHomeworkPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Домашние задания</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('tutor_homework.title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Управляйте домашними заданиями для индивидуальных учеников и учебных групп
+            {t('tutor_homework.subtitle')}
           </p>
         </div>
 
@@ -356,7 +360,7 @@ export function TutorHomeworkPage() {
             className="self-start sm:self-auto gap-2"
           >
             <BookPlus className="h-4 w-4" />
-            <span>Выдать задание</span>
+            <span>{t('tutor_homework.btn_assign')}</span>
           </Button>
         )}
 
@@ -371,7 +375,7 @@ export function TutorHomeworkPage() {
                 className="gap-2"
               >
                 <Users className="h-4 w-4" />
-                <span>Выдать всей группе</span>
+                <span>{t('tutor_homework.btn_assign_group')}</span>
               </Button>
             ) : selectedGroupStudentId ? (
               <Button
@@ -382,7 +386,7 @@ export function TutorHomeworkPage() {
                 className="gap-2"
               >
                 <BookPlus className="h-4 w-4" />
-                <span>Выдать ученику</span>
+                <span>{t('tutor_homework.btn_assign_student')}</span>
               </Button>
             ) : null}
           </div>
@@ -401,7 +405,7 @@ export function TutorHomeworkPage() {
           }`}
         >
           <User className="h-4 w-4" />
-          <span>Индивидуальные</span>
+          <span>{t('tutor_homework.tab_individual')}</span>
           <span
             className={`ml-1 px-1.5 py-0.5 rounded-full text-[11px] font-bold ${
               activeMainTab === 'individual'
@@ -423,7 +427,7 @@ export function TutorHomeworkPage() {
           }`}
         >
           <Users className="h-4 w-4" />
-          <span>Групповые</span>
+          <span>{t('tutor_homework.tab_group')}</span>
           <span
             className={`ml-1 px-1.5 py-0.5 rounded-full text-[11px] font-bold ${
               activeMainTab === 'group'
@@ -447,7 +451,7 @@ export function TutorHomeworkPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <User className="h-4 w-4 text-primary" />
-                  <span>Ученик:</span>
+                  <span>{t('tutor_homework.label_student')}</span>
                   <span className="font-bold text-primary">
                     {selectedIndividualName}
                   </span>
@@ -456,7 +460,7 @@ export function TutorHomeworkPage() {
                 <div className="relative w-full sm:w-72">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Поиск учеников..."
+                    placeholder={t('tutor_homework.search_individual_placeholder')}
                     value={individualSearch}
                     onChange={(e) => setIndividualSearch(e.target.value)}
                     className="pl-8 h-8 text-xs bg-background"
@@ -475,7 +479,7 @@ export function TutorHomeworkPage() {
                     const name =
                       s.name ||
                       [s.firstName, s.lastName].filter(Boolean).join(' ') ||
-                      'Ученик'
+                      t('tutor_students.default_student_name')
                     const isSelected = s.id === selectedIndividualId
                     const initial = name.charAt(0).toUpperCase()
 
@@ -507,7 +511,7 @@ export function TutorHomeworkPage() {
                   })
                 ) : (
                   <p className="text-xs text-muted-foreground py-1">
-                    Индивидуальные ученики не найдены
+                    {t('tutor_homework.empty_individual_search')}
                   </p>
                 )}
               </div>
@@ -519,7 +523,7 @@ export function TutorHomeworkPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Card className="border-border">
                 <CardContent className="p-3 text-center">
-                  <p className="text-xs text-muted-foreground font-medium">Всего</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('tutor_homework.stat_total')}</p>
                   <p className="text-xl font-bold mt-0.5 text-foreground">
                     {individualStats.total}
                   </p>
@@ -541,7 +545,7 @@ export function TutorHomeworkPage() {
                         : 'text-muted-foreground'
                     }`}
                   >
-                    На проверке
+                    {t('tutor_homework.stat_submitted')}
                   </p>
                   <p
                     className={`text-xl font-bold mt-0.5 ${
@@ -557,7 +561,7 @@ export function TutorHomeworkPage() {
 
               <Card className="border-border">
                 <CardContent className="p-3 text-center">
-                  <p className="text-xs text-muted-foreground font-medium">В работе</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('tutor_homework.stat_assigned')}</p>
                   <p className="text-xl font-bold mt-0.5 text-foreground">
                     {individualStats.assigned}
                   </p>
@@ -566,7 +570,7 @@ export function TutorHomeworkPage() {
 
               <Card className="border-border">
                 <CardContent className="p-3 text-center">
-                  <p className="text-xs text-muted-foreground font-medium">Проверено</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('tutor_homework.stat_reviewed')}</p>
                   <p className="text-xl font-bold mt-0.5 text-emerald-600 dark:text-emerald-400">
                     {individualStats.reviewed}
                   </p>
@@ -588,14 +592,14 @@ export function TutorHomeworkPage() {
                 <AlertCircle className="h-10 w-10 text-destructive" />
                 <div>
                   <p className="font-semibold text-base text-foreground">
-                    Не удалось загрузить домашние задания
+                    {t('tutor_homework.err_load_hw_title')}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                    Проверьте соединение с сервером и повторите попытку.
+                    {t('tutor_homework.err_load_hw_desc')}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => refetchIndividualHw()}>
-                  Повторить попытку
+                  {t('tutor_homework.btn_retry')}
                 </Button>
               </CardContent>
             </Card>
@@ -607,7 +611,7 @@ export function TutorHomeworkPage() {
                   badgeClass: 'bg-muted text-muted-foreground',
                   icon: Clock,
                 }
-                const { text: deadlineText, isPast } = formatDeadline(hw.deadline)
+                const { text: deadlineText, isPast } = formatDeadline(hw.deadline, dateLocale, t('tutor_homework.deadline_none'))
                 const isSubmitted = hw.status === 'SUBMITTED'
 
                 return (
@@ -633,13 +637,13 @@ export function TutorHomeworkPage() {
 
                           {isPast && hw.status !== 'REVIEWED' && (
                             <span className="text-[10px] font-semibold text-destructive">
-                              Просрочено
+                              {t('tutor_homework.deadline_overdue')}
                             </span>
                           )}
 
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            Дедлайн: {deadlineText}
+                            {t('tutor_homework.deadline_prefix', { date: deadlineText })}
                           </span>
                         </div>
 
@@ -658,13 +662,13 @@ export function TutorHomeworkPage() {
                           {hw.studentNotes && (
                             <span className="flex items-center gap-1 text-primary font-medium">
                               <MessageSquare className="h-3 w-3" />
-                              Есть ответ ученика
+                              {t('tutor_homework.has_student_notes')}
                             </span>
                           )}
                           {hw.attachments && hw.attachments.length > 0 && (
                             <span className="flex items-center gap-1">
                               <Paperclip className="h-3 w-3" />
-                              Вложений: {hw.attachments.length}
+                              {t('tutor_homework.attachments_count', { count: hw.attachments.length })}
                             </span>
                           )}
                         </div>
@@ -684,7 +688,7 @@ export function TutorHomeworkPage() {
                             ) : (
                               <CheckCircle2 className="h-3.5 w-3.5" />
                             )}
-                            <span>Проверено</span>
+                            <span>{t('tutor_homework.btn_reviewed_quick')}</span>
                           </Button>
                         )}
 
@@ -693,7 +697,7 @@ export function TutorHomeworkPage() {
                           variant="ghost"
                           size="icon-sm"
                           onClick={(e) => handleDeleteClick(e, hw)}
-                          title="Удалить задание"
+                          title={t('tutor_homework.tooltip_delete')}
                           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -714,10 +718,9 @@ export function TutorHomeworkPage() {
                   <BookCheck className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="font-semibold text-base">Заданий пока нет</p>
+                  <p className="font-semibold text-base">{t('tutor_homework.empty_student_hw_title')}</p>
                   <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                    Выдайте домашнее задание ученику{' '}
-                    <strong className="text-foreground">{selectedIndividualName}</strong>
+                    {t('tutor_homework.empty_student_hw_desc', { name: selectedIndividualName })}
                   </p>
                 </div>
                 <Button
@@ -728,7 +731,7 @@ export function TutorHomeworkPage() {
                   }}
                 >
                   <BookPlus className="mr-2 h-4 w-4" />
-                  Выдать первое задание
+                  {t('tutor_homework.btn_create_first_hw')}
                 </Button>
               </CardContent>
             </Card>
@@ -748,9 +751,9 @@ export function TutorHomeworkPage() {
             <Card className="border-border">
               <CardContent className="h-48 flex flex-col items-center justify-center text-center p-6 space-y-2">
                 <Users className="h-8 w-8 text-muted-foreground opacity-60" />
-                <p className="font-semibold text-base">Группы пока не созданы</p>
+                <p className="font-semibold text-base">{t('tutor_homework.empty_groups_title')}</p>
                 <p className="text-xs text-muted-foreground max-w-sm">
-                  Вы можете распределить учеников по группам в разделе «Ученики», и здесь появятся групповые задания.
+                  {t('tutor_homework.empty_groups_desc')}
                 </p>
               </CardContent>
             </Card>
@@ -760,13 +763,13 @@ export function TutorHomeworkPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <FolderKanban className="h-4 w-4 text-primary" />
-                    <span>Выбор группы:</span>
+                    <span>{t('tutor_homework.group_select_label')}</span>
                     <span className="font-bold text-primary">
-                      {selectedGroupName || 'Не выбрана'}
+                      {selectedGroupName || t('tutor_homework.group_not_selected')}
                     </span>
                     {currentGroup && (
                       <span className="text-xs font-normal text-muted-foreground">
-                        ({groupStudents.length} учеников)
+                        {t('tutor_homework.group_students_count', { count: groupStudents.length })}
                       </span>
                     )}
                   </div>
@@ -820,7 +823,7 @@ export function TutorHomeworkPage() {
                   }`}
                 >
                   <FolderKanban className="h-3.5 w-3.5" />
-                  <span>Домашка для группы</span>
+                  <span>{t('tutor_homework.subview_group_overview')}</span>
                   <span className="ml-1 text-[10px] opacity-70">
                     ({groupAssignments.length})
                   </span>
@@ -836,7 +839,7 @@ export function TutorHomeworkPage() {
                   }`}
                 >
                   <UserCheck className="h-3.5 w-3.5" />
-                  <span>По отдельности каждому</span>
+                  <span>{t('tutor_homework.subview_per_student')}</span>
                   <span className="ml-1 text-[10px] opacity-70">
                     ({groupStudents.length})
                   </span>
@@ -845,7 +848,7 @@ export function TutorHomeworkPage() {
 
               {groupSubView === 'group_overview' && (
                 <p className="text-xs text-muted-foreground">
-                  Общий прогресс по заданиям, выданным всей группе
+                  {t('tutor_homework.group_overview_hint')}
                 </p>
               )}
             </div>
@@ -860,7 +863,7 @@ export function TutorHomeworkPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Card className="border-border">
                   <CardContent className="p-3 text-center">
-                    <p className="text-xs text-muted-foreground font-medium">Заданий группы</p>
+                    <p className="text-xs text-muted-foreground font-medium">{t('tutor_homework.stat_group_assignments')}</p>
                     <p className="text-xl font-bold mt-0.5 text-foreground">
                       {groupStats.totalAssignments}
                     </p>
@@ -882,7 +885,7 @@ export function TutorHomeworkPage() {
                           : 'text-muted-foreground'
                       }`}
                     >
-                      На проверке
+                      {t('tutor_homework.stat_submitted')}
                     </p>
                     <p
                       className={`text-xl font-bold mt-0.5 ${
@@ -898,7 +901,7 @@ export function TutorHomeworkPage() {
 
                 <Card className="border-border">
                   <CardContent className="p-3 text-center">
-                    <p className="text-xs text-muted-foreground font-medium">В работе</p>
+                    <p className="text-xs text-muted-foreground font-medium">{t('tutor_homework.stat_assigned')}</p>
                     <p className="text-xl font-bold mt-0.5 text-foreground">
                       {groupStats.assigned}
                     </p>
@@ -907,7 +910,7 @@ export function TutorHomeworkPage() {
 
                 <Card className="border-border">
                   <CardContent className="p-3 text-center">
-                    <p className="text-xs text-muted-foreground font-medium">Проверено</p>
+                    <p className="text-xs text-muted-foreground font-medium">{t('tutor_homework.stat_reviewed')}</p>
                     <p className="text-xl font-bold mt-0.5 text-emerald-600 dark:text-emerald-400">
                       {groupStats.reviewed}
                     </p>
@@ -926,9 +929,9 @@ export function TutorHomeworkPage() {
                 <Card className="border-destructive/30 bg-destructive/5">
                   <CardContent className="h-48 flex flex-col items-center justify-center text-center p-6 space-y-2">
                     <AlertCircle className="h-8 w-8 text-destructive" />
-                    <p className="font-semibold text-sm">Не удалось загрузить задания группы</p>
+                    <p className="font-semibold text-sm">{t('tutor_homework.err_load_group_hw')}</p>
                     <Button variant="outline" size="sm" onClick={() => refetchGroupHw()}>
-                      Повторить попытку
+                      {t('tutor_homework.btn_retry')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -936,7 +939,7 @@ export function TutorHomeworkPage() {
                 <div className="space-y-4">
                   {groupAssignments.map((ga) => {
                     const isExpanded = !!expandedAssignments[ga.key]
-                    const { text: deadlineText, isPast } = formatDeadline(ga.deadline)
+                    const { text: deadlineText, isPast } = formatDeadline(ga.deadline, dateLocale, t('tutor_homework.deadline_none'))
                     const submittedTotal = ga.submittedCount + ga.reviewedCount
 
                     return (
@@ -948,18 +951,18 @@ export function TutorHomeworkPage() {
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                                   <Users className="h-3 w-3" />
-                                  <span>Для всей группы</span>
+                                  <span>{t('tutor_homework.badge_for_entire_group')}</span>
                                 </span>
 
                                 {isPast && (
                                   <span className="text-[10px] font-semibold text-destructive">
-                                    Дедлайн прошел
+                                    {t('tutor_homework.deadline_passed')}
                                   </span>
                                 )}
 
                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
-                                  Срок: {deadlineText}
+                                  {t('tutor_homework.deadline_due', { date: deadlineText })}
                                 </span>
                               </div>
 
@@ -982,7 +985,7 @@ export function TutorHomeworkPage() {
                                 onClick={() => toggleAssignmentExpand(ga.key)}
                                 className="text-xs h-8 gap-1.5"
                               >
-                                <span>Ученики ({submittedTotal}/{ga.totalCount} сдали)</span>
+                                <span>{t('tutor_homework.btn_students_turned_in', { submitted: submittedTotal, total: ga.totalCount })}</span>
                                 {isExpanded ? (
                                   <ChevronUp className="h-3.5 w-3.5" />
                                 ) : (
@@ -996,22 +999,22 @@ export function TutorHomeworkPage() {
                           <div className="space-y-1.5 pt-1">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-muted-foreground font-medium">
-                                Сдано {submittedTotal} из {ga.totalCount} учеников
+                                {t('tutor_homework.progress_turned_in', { submitted: submittedTotal, total: ga.totalCount })}
                               </span>
                               <div className="flex items-center gap-2 text-[11px]">
                                 {ga.reviewedCount > 0 && (
                                   <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                                    {ga.reviewedCount} проверено
+                                    {t('tutor_homework.stat_reviewed_count', { count: ga.reviewedCount })}
                                   </span>
                                 )}
                                 {ga.submittedCount > 0 && (
                                   <span className="text-amber-600 dark:text-amber-400 font-medium">
-                                    {ga.submittedCount} на проверке
+                                    {t('tutor_homework.stat_submitted_count', { count: ga.submittedCount })}
                                   </span>
                                 )}
                                 {ga.assignedCount > 0 && (
                                   <span className="text-blue-600 dark:text-blue-400">
-                                    {ga.assignedCount} в работе
+                                    {t('tutor_homework.stat_assigned_count', { count: ga.assignedCount })}
                                   </span>
                                 )}
                               </div>
@@ -1022,21 +1025,21 @@ export function TutorHomeworkPage() {
                                   width: `${(ga.reviewedCount / ga.totalCount) * 100}%`,
                                 }}
                                 className="bg-emerald-500 h-full transition-all"
-                                title="Проверено"
+                                title={t('tutor_homework.stat_reviewed')}
                               />
                               <div
                                 style={{
                                   width: `${(ga.submittedCount / ga.totalCount) * 100}%`,
                                 }}
                                 className="bg-amber-500 h-full transition-all"
-                                title="На проверке"
+                                title={t('tutor_homework.stat_submitted')}
                               />
                               <div
                                 style={{
                                   width: `${(ga.assignedCount / ga.totalCount) * 100}%`,
                                 }}
                                 className="bg-blue-400 h-full transition-all"
-                                title="В работе"
+                                title={t('tutor_homework.stat_assigned')}
                               />
                             </div>
                           </div>
@@ -1045,7 +1048,7 @@ export function TutorHomeworkPage() {
                           {isExpanded && (
                             <div className="pt-3 border-t border-border/80 space-y-2">
                               <p className="text-xs font-semibold text-foreground">
-                                Решения учеников группы:
+                                {t('tutor_homework.group_submissions_title')}
                               </p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {ga.submissions.map((sub) => {
@@ -1054,7 +1057,7 @@ export function TutorHomeworkPage() {
                                     badgeClass: 'bg-muted text-muted-foreground',
                                     icon: Clock,
                                   }
-                                  const sName = sub.studentName || 'Ученик'
+                                  const sName = sub.studentName || t('tutor_students.default_student_name')
                                   const isSubSubmitted = sub.status === 'SUBMITTED'
 
                                   return (
@@ -1075,7 +1078,7 @@ export function TutorHomeworkPage() {
                                           </p>
                                           {sub.studentNotes && (
                                             <p className="text-[10px] text-primary truncate">
-                                              Есть комментарий
+                                              {t('tutor_homework.has_comment')}
                                             </p>
                                           )}
                                         </div>
@@ -1096,7 +1099,7 @@ export function TutorHomeworkPage() {
                                             disabled={updateStatusMutation.isPending}
                                             className="h-6 px-2 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white"
                                           >
-                                            Проверено
+                                            {t('tutor_homework.btn_reviewed_quick')}
                                           </Button>
                                         )}
 
@@ -1121,10 +1124,9 @@ export function TutorHomeworkPage() {
                       <Users className="h-6 w-6" />
                     </div>
                     <div>
-                      <p className="font-semibold text-base">Групповых заданий пока нет</p>
+                      <p className="font-semibold text-base">{t('tutor_homework.empty_group_hw_title')}</p>
                       <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                        Выдайте задание группе{' '}
-                        <strong className="text-foreground">{selectedGroupName}</strong> — задание появится у всех учеников группы одновременно.
+                        {t('tutor_homework.empty_group_hw_desc', { name: selectedGroupName })}
                       </p>
                     </div>
                     <Button
@@ -1135,7 +1137,7 @@ export function TutorHomeworkPage() {
                       }}
                     >
                       <BookPlus className="mr-2 h-4 w-4" />
-                      Выдать задание группе
+                      {t('tutor_homework.btn_assign_group_first')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -1154,7 +1156,7 @@ export function TutorHomeworkPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       <UserCheck className="h-4 w-4 text-primary" />
-                      <span>Ученик группы {selectedGroupName}:</span>
+                      <span>{t('tutor_homework.label_group_student', { group: selectedGroupName })}</span>
                       <span className="font-bold text-primary">
                         {selectedGroupStudentName}
                       </span>
@@ -1167,7 +1169,7 @@ export function TutorHomeworkPage() {
                       const name =
                         s.name ||
                         [s.firstName, s.lastName].filter(Boolean).join(' ') ||
-                        'Ученик'
+                        t('tutor_students.default_student_name')
                       const isSelected = s.id === selectedGroupStudentId
                       const initial = name.charAt(0).toUpperCase()
 
@@ -1206,7 +1208,7 @@ export function TutorHomeworkPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <Card className="border-border">
                     <CardContent className="p-3 text-center">
-                      <p className="text-xs text-muted-foreground font-medium">Всего</p>
+                      <p className="text-xs text-muted-foreground font-medium">{t('tutor_homework.stat_total')}</p>
                       <p className="text-xl font-bold mt-0.5 text-foreground">
                         {groupStudentStats.total}
                       </p>
@@ -1228,7 +1230,7 @@ export function TutorHomeworkPage() {
                             : 'text-muted-foreground'
                         }`}
                       >
-                        На проверке
+                        {t('tutor_homework.stat_submitted')}
                       </p>
                       <p
                         className={`text-xl font-bold mt-0.5 ${
@@ -1244,7 +1246,7 @@ export function TutorHomeworkPage() {
 
                   <Card className="border-border">
                     <CardContent className="p-3 text-center">
-                      <p className="text-xs text-muted-foreground font-medium">В работе</p>
+                      <p className="text-xs text-muted-foreground font-medium">{t('tutor_homework.stat_assigned')}</p>
                       <p className="text-xl font-bold mt-0.5 text-foreground">
                         {groupStudentStats.assigned}
                       </p>
@@ -1253,7 +1255,7 @@ export function TutorHomeworkPage() {
 
                   <Card className="border-border">
                     <CardContent className="p-3 text-center">
-                      <p className="text-xs text-muted-foreground font-medium">Проверено</p>
+                      <p className="text-xs text-muted-foreground font-medium">{t('tutor_homework.stat_reviewed')}</p>
                       <p className="text-xl font-bold mt-0.5 text-emerald-600 dark:text-emerald-400">
                         {groupStudentStats.reviewed}
                       </p>
@@ -1274,10 +1276,10 @@ export function TutorHomeworkPage() {
                   <CardContent className="h-64 flex flex-col items-center justify-center text-center p-6 space-y-3">
                     <AlertCircle className="h-10 w-10 text-destructive" />
                     <p className="font-semibold text-base text-foreground">
-                      Не удалось загрузить задания ученика
+                      {t('tutor_homework.err_load_group_student_hw')}
                     </p>
                     <Button variant="outline" size="sm" onClick={() => refetchGroupStudentHw()}>
-                      Повторить попытку
+                      {t('tutor_homework.btn_retry')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -1289,7 +1291,7 @@ export function TutorHomeworkPage() {
                       badgeClass: 'bg-muted text-muted-foreground',
                       icon: Clock,
                     }
-                    const { text: deadlineText, isPast } = formatDeadline(hw.deadline)
+                    const { text: deadlineText, isPast } = formatDeadline(hw.deadline, dateLocale, t('tutor_homework.deadline_none'))
                     const isSubmitted = hw.status === 'SUBMITTED'
 
                     return (
@@ -1314,13 +1316,13 @@ export function TutorHomeworkPage() {
 
                               {isPast && hw.status !== 'REVIEWED' && (
                                 <span className="text-[10px] font-semibold text-destructive">
-                                  Просрочено
+                                  {t('tutor_homework.deadline_overdue')}
                                 </span>
                               )}
 
                               <span className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                Дедлайн: {deadlineText}
+                                {t('tutor_homework.deadline_prefix', { date: deadlineText })}
                               </span>
                             </div>
 
@@ -1338,13 +1340,13 @@ export function TutorHomeworkPage() {
                               {hw.studentNotes && (
                                 <span className="flex items-center gap-1 text-primary font-medium">
                                   <MessageSquare className="h-3 w-3" />
-                                  Есть ответ ученика
+                                  {t('tutor_homework.has_student_notes')}
                                 </span>
                               )}
                               {hw.attachments && hw.attachments.length > 0 && (
                                 <span className="flex items-center gap-1">
                                   <Paperclip className="h-3 w-3" />
-                                  Вложений: {hw.attachments.length}
+                                  {t('tutor_homework.attachments_count', { count: hw.attachments.length })}
                                 </span>
                               )}
                             </div>
@@ -1363,7 +1365,7 @@ export function TutorHomeworkPage() {
                                 ) : (
                                   <CheckCircle2 className="h-3.5 w-3.5" />
                                 )}
-                                <span>Проверено</span>
+                                <span>{t('tutor_homework.btn_reviewed_quick')}</span>
                               </Button>
                             )}
 
@@ -1372,7 +1374,7 @@ export function TutorHomeworkPage() {
                               variant="ghost"
                               size="icon-sm"
                               onClick={(e) => handleDeleteClick(e, hw)}
-                              title="Удалить задание"
+                              title={t('tutor_homework.tooltip_delete')}
                               className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1392,10 +1394,9 @@ export function TutorHomeworkPage() {
                       <BookCheck className="h-6 w-6" />
                     </div>
                     <div>
-                      <p className="font-semibold text-base">Индивидуальных заданий в группе нет</p>
+                      <p className="font-semibold text-base">{t('tutor_homework.empty_per_student_hw_title')}</p>
                       <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                        Вы можете выдать персональное задание ученику{' '}
-                        <strong className="text-foreground">{selectedGroupStudentName}</strong>
+                        {t('tutor_homework.empty_per_student_hw_desc', { name: selectedGroupStudentName })}
                       </p>
                     </div>
                     <Button
@@ -1406,7 +1407,7 @@ export function TutorHomeworkPage() {
                       }}
                     >
                       <BookPlus className="mr-2 h-4 w-4" />
-                      Выдать персональное задание
+                      {t('tutor_homework.btn_assign_personal')}
                     </Button>
                   </CardContent>
                 </Card>

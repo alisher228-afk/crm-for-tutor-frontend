@@ -27,15 +27,7 @@ import {
 } from 'lucide-react'
 import type { Lesson, LessonStatus } from '@/types'
 import type { AxiosError } from 'axios'
-
-function getStudentNoun(count: number): string {
-  const mod10 = count % 10
-  const mod100 = count % 100
-  if (mod100 >= 11 && mod100 <= 19) return 'учеников'
-  if (mod10 === 1) return 'ученик'
-  if (mod10 >= 2 && mod10 <= 4) return 'ученика'
-  return 'учеников'
-}
+import { useLanguage } from '@/i18n'
 
 export interface LessonCardStudent {
   id: string
@@ -60,41 +52,11 @@ interface LessonCardProps {
   onSelectStudent?: (studentId: string) => void
 }
 
-const statusConfig: Record<
-  string,
-  { label: string; badgeClass: string; icon: typeof CheckCircle2 }
-> = {
-  SCHEDULED: {
-    label: 'Запланирован',
-    badgeClass:
-      'bg-muted text-foreground border-border font-medium',
-    icon: CalendarClock,
-  },
-  COMPLETED: {
-    label: 'Проведен',
-    badgeClass:
-      'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20 font-medium',
-    icon: CheckCircle2,
-  },
-  CANCELLED_BY_TUTOR: {
-    label: 'Отменен (тьютор)',
-    badgeClass:
-      'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20 font-medium',
-    icon: XCircle,
-  },
-  CANCELLED_BY_STUDENT: {
-    label: 'Отменен (ученик)',
-    badgeClass:
-      'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20 font-medium',
-    icon: XCircle,
-  },
-}
-
-function formatTime(isoStr: string): string {
+function formatTime(isoStr: string, locale: string): string {
   if (!isoStr) return ''
   const d = new Date(isoStr)
   if (isNaN(d.getTime())) return ''
-  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
 }
 
 function getDurationMinutes(start: string, end: string): number {
@@ -115,10 +77,42 @@ export function LessonCard({
   onViewGroupStudents,
   onSelectStudent,
 }: LessonCardProps) {
+  const { t, language } = useLanguage()
+  const timeLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
   const updateStatusMutation = useUpdateLessonStatus()
 
-  const startFormatted = formatTime(lesson.startTime)
-  const endFormatted = formatTime(lesson.endTime)
+  const statusConfig: Record<
+    string,
+    { label: string; badgeClass: string; icon: typeof CheckCircle2 }
+  > = {
+    SCHEDULED: {
+      label: t('tutor_lessons.status_scheduled'),
+      badgeClass:
+        'bg-muted text-foreground border-border font-medium',
+      icon: CalendarClock,
+    },
+    COMPLETED: {
+      label: t('tutor_lessons.status_completed'),
+      badgeClass:
+        'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20 font-medium',
+      icon: CheckCircle2,
+    },
+    CANCELLED_BY_TUTOR: {
+      label: t('tutor_lessons.status_cancelled_tutor'),
+      badgeClass:
+        'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20 font-medium',
+      icon: XCircle,
+    },
+    CANCELLED_BY_STUDENT: {
+      label: t('tutor_lessons.status_cancelled_student'),
+      badgeClass:
+        'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20 font-medium',
+      icon: XCircle,
+    },
+  }
+
+  const startFormatted = formatTime(lesson.startTime, timeLocale)
+  const endFormatted = formatTime(lesson.endTime, timeLocale)
   const duration = getDurationMinutes(lesson.startTime, lesson.endTime)
 
   const currentStatus = statusConfig[lesson.status] || {
@@ -136,11 +130,11 @@ export function LessonCard({
 
   const displayTitle = isGroup
     ? lesson.groupName!.trim()
-    : studentFullName || 'Индивидуальный ученик'
+    : studentFullName || t('tutor_lessons.default_individual_student')
 
   const studentInitial = studentFullName
     ? studentFullName.charAt(0).toUpperCase()
-    : 'У'
+    : t('tutor_lessons.default_student').charAt(0).toUpperCase()
 
   const displayStudents = students || []
 
@@ -155,18 +149,22 @@ export function LessonCard({
           ),
         )
         toast.success(
-          `Статус занятия изменен на "${statusConfig[status]?.label || status}" для всей группы`,
+          t('tutor_lessons.status_changed_group', {
+            status: statusConfig[status]?.label || status,
+          }),
         )
       } else {
         await updateStatusMutation.mutateAsync({ id: lesson.id, status })
         toast.success(
-          `Статус занятия изменен на "${statusConfig[status]?.label || status}"`,
+          t('tutor_lessons.status_changed', {
+            status: statusConfig[status]?.label || status,
+          }),
         )
       }
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось изменить статус урока',
+        axiosError.response?.data?.message || t('tutor_lessons.toast_status_err'),
       )
     }
   }
@@ -208,7 +206,7 @@ export function LessonCard({
             {isToday && (
               <span
                 className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-red-accent"
-                title="Занятие на сегодня"
+                title={t('tutor_lessons.today_tooltip')}
               />
             )}
             <span className="text-sm font-bold tracking-tight tabular-nums">
@@ -217,7 +215,7 @@ export function LessonCard({
             <span className="text-[11px] text-muted-foreground tabular-nums">{endFormatted}</span>
             {duration > 0 && (
               <span className="text-[10px] text-muted-foreground/80 mt-0.5 font-medium tabular-nums">
-                {duration} мин.
+                {duration} {t('tutor_lessons.unit_minutes')}
               </span>
             )}
           </div>
@@ -242,7 +240,7 @@ export function LessonCard({
                   type="button"
                   onClick={() => onSelectStudent(lesson.studentId)}
                   className="font-semibold text-sm text-foreground truncate hover:text-primary hover:underline cursor-pointer text-left"
-                  title="Открыть карточку ученика"
+                  title={t('tutor_lessons.open_student_card')}
                 >
                   {displayTitle}
                 </button>
@@ -257,13 +255,19 @@ export function LessonCard({
                   type="button"
                   onClick={() => onViewGroupStudents?.(lesson.groupName!, displayStudents)}
                   className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
-                  title="Посмотреть полный список учеников"
+                  title={t('tutor_lessons.view_all_students')}
                 >
                   <Users className="h-3 w-3" />
                   <span>
                     {displayStudents.length > 0
-                      ? `${displayStudents.length} ${getStudentNoun(displayStudents.length)}`
-                      : 'Группа'}
+                      ? `${displayStudents.length} ${
+                          displayStudents.length === 1
+                            ? t('tutor_lessons.student_noun_1')
+                            : displayStudents.length < 5
+                            ? t('tutor_lessons.student_noun_few')
+                            : t('tutor_lessons.student_noun_many')
+                        }`
+                      : t('tutor_groups.title')}
                   </span>
                   <ChevronRight className="h-3 w-3 opacity-60" />
                 </button>
@@ -272,7 +276,7 @@ export function LessonCard({
                   variant="outline"
                   className="text-[10px] text-muted-foreground font-normal px-1.5 py-0"
                 >
-                  Индивидуально
+                  {t('tutor_lessons.badge_individual')}
                 </Badge>
               )}
 
@@ -283,12 +287,12 @@ export function LessonCard({
                   className="text-[10px] border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1 px-1.5 py-0"
                   title={
                     conflictingNames?.length
-                      ? `Пересекается с: ${conflictingNames.join(', ')}`
-                      : 'Пересечение по времени с другим уроком'
+                      ? t('tutor_lessons.conflict_tooltip_prefix', { names: conflictingNames.join(', ') })
+                      : t('tutor_lessons.conflict_tooltip_generic')
                   }
                 >
                   <AlertTriangle className="h-2.5 w-2.5" />
-                  Накладка
+                  {t('tutor_lessons.badge_conflict')}
                 </Badge>
               )}
             </div>
@@ -308,7 +312,7 @@ export function LessonCard({
                       }
                     }}
                     className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-muted hover:bg-muted/80 text-foreground font-medium border border-border/60 transition-colors cursor-pointer"
-                    title={`Ученик: ${st.name}. Нажмите, чтобы открыть информацию`}
+                    title={t('tutor_lessons.student_card_tooltip')}
                   >
                     {st.name}
                   </button>
@@ -319,7 +323,7 @@ export function LessonCard({
                     onClick={() => onViewGroupStudents?.(lesson.groupName!, displayStudents)}
                     className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
                   >
-                    +{displayStudents.length - 3} ещё...
+                    {t('tutor_lessons.more_students', { count: displayStudents.length - 3 })}
                   </button>
                 )}
               </div>
@@ -331,13 +335,13 @@ export function LessonCard({
               </p>
             ) : (
               <p className="text-xs text-muted-foreground italic">
-                Тема занятия не указана
+                {t('tutor_lessons.no_topic')}
               </p>
             )}
 
             {lesson.cancellationReason && (
               <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-                Причина отмены: {lesson.cancellationReason}
+                {t('tutor_lessons.cancel_reason_prefix')} {lesson.cancellationReason}
               </p>
             )}
 
@@ -349,7 +353,7 @@ export function LessonCard({
                 className="inline-flex items-center gap-1.5 text-xs text-sky-600 hover:text-sky-700 dark:text-sky-400 hover:underline pt-0.5"
               >
                 <Video className="h-3 w-3" />
-                <span className="truncate max-w-[220px]">Подключиться к уроку</span>
+                <span className="truncate max-w-[220px]">{t('tutor_lessons.btn_join_meeting')}</span>
                 <ExternalLink className="h-2.5 w-2.5" />
               </a>
             )}
@@ -383,7 +387,7 @@ export function LessonCard({
                 className="flex items-center gap-2 text-xs"
               >
                 <CalendarClock className="h-4 w-4 text-blue-600" />
-                <span>Запланирован</span>
+                <span>{t('tutor_lessons.status_scheduled')}</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
@@ -391,7 +395,7 @@ export function LessonCard({
                 className="flex items-center gap-2 text-xs"
               >
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span>Проведен</span>
+                <span>{t('tutor_lessons.status_completed')}</span>
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
@@ -401,7 +405,7 @@ export function LessonCard({
                 className="flex items-center gap-2 text-xs text-rose-600"
               >
                 <XCircle className="h-4 w-4" />
-                <span>Отменен репетитором</span>
+                <span>{t('tutor_lessons.status_cancelled_tutor')}</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
@@ -409,7 +413,7 @@ export function LessonCard({
                 className="flex items-center gap-2 text-xs text-amber-600"
               >
                 <XCircle className="h-4 w-4" />
-                <span>Отменен учеником</span>
+                <span>{t('tutor_lessons.status_cancelled_student')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -420,7 +424,7 @@ export function LessonCard({
               variant="ghost"
               size="icon-sm"
               onClick={() => onEdit(lesson)}
-              title="Редактировать урок"
+              title={t('tutor_lessons.tooltip_edit')}
               className="text-muted-foreground hover:text-foreground"
             >
               <Edit2 className="h-4 w-4" />
@@ -430,7 +434,7 @@ export function LessonCard({
               variant="ghost"
               size="icon-sm"
               onClick={() => onDelete(lesson, sessionLessons)}
-              title={isGroup ? 'Удалить групповое занятие' : 'Удалить урок'}
+              title={isGroup ? t('tutor_lessons.tooltip_delete_group') : t('tutor_lessons.tooltip_delete')}
               className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
             >
               <Trash2 className="h-4 w-4" />

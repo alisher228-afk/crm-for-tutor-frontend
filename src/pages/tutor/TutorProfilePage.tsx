@@ -23,7 +23,8 @@ import {
 } from 'lucide-react'
 
 export function TutorProfilePage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
   const { data: profile, isLoading, isError, refetch } = useUserProfile()
   const updateProfileMutation = useUpdateProfile()
 
@@ -108,18 +109,11 @@ export function TutorProfilePage() {
   }
 
   const formattedDate = profile.createdAt
-    ? new Date(profile.createdAt).toLocaleDateString(
-        document.documentElement.lang === 'en'
-          ? 'en-US'
-          : document.documentElement.lang === 'kk'
-            ? 'kk-KZ'
-            : 'ru-RU',
-        {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        },
-      )
+    ? new Date(profile.createdAt).toLocaleDateString(dateLocale, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
     : '—'
 
   return (
@@ -202,7 +196,7 @@ export function TutorProfilePage() {
                     <Input
                       id="tutorFirstName"
                       type="text"
-                      placeholder="Иван"
+                      placeholder={t('tutor_students.placeholder_first_name')}
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       disabled={updateProfileMutation.isPending}
@@ -219,7 +213,7 @@ export function TutorProfilePage() {
                     <Input
                       id="tutorLastName"
                       type="text"
-                      placeholder="Иванов"
+                      placeholder={t('tutor_students.placeholder_last_name')}
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       disabled={updateProfileMutation.isPending}

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { HomeworkAttachments } from '@/components/HomeworkAttachments'
 import { useHomework, useUpdateHomeworkStatus } from '@/hooks/useHomework'
+import { useLanguage } from '@/i18n'
 import { toast } from 'sonner'
 import {
   CheckCircle2,
@@ -33,37 +34,13 @@ interface HomeworkDetailsSheetProps {
   onDelete?: (homework: Homework) => void
 }
 
-const statusConfig: Record<
-  string,
-  { label: string; badgeClass: string; icon: typeof CheckCircle2 }
-> = {
-  ASSIGNED: {
-    label: 'Выдано',
-    badgeClass:
-      'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900',
-    icon: Clock,
-  },
-  SUBMITTED: {
-    label: 'Сдано на проверку',
-    badgeClass:
-      'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800 animate-pulse',
-    icon: AlertCircle,
-  },
-  REVIEWED: {
-    label: 'Проверено',
-    badgeClass:
-      'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-    icon: CheckCircle2,
-  },
-}
-
-function formatDeadline(isoStr?: string): { text: string; isPast: boolean } {
-  if (!isoStr) return { text: 'Бессрочно', isPast: false }
+function formatDeadline(isoStr: string | undefined, dateLocale: string, fallback: string): { text: string; isPast: boolean } {
+  if (!isoStr) return { text: fallback, isPast: false }
   const d = new Date(isoStr)
-  if (isNaN(d.getTime())) return { text: 'Бессрочно', isPast: false }
+  if (isNaN(d.getTime())) return { text: fallback, isPast: false }
 
   const isPast = d.getTime() < Date.now()
-  const formatted = d.toLocaleDateString('ru-RU', {
+  const formatted = d.toLocaleDateString(dateLocale, {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -79,12 +56,39 @@ export function HomeworkDetailsSheet({
   onOpenChange,
   onDelete,
 }: HomeworkDetailsSheetProps) {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
   const { data: fetchedHomework } = useHomework(homeworkId)
   const homework = fetchedHomework || initialHomework
 
   const updateStatusMutation = useUpdateHomeworkStatus()
 
   if (!homework) return null
+
+  const statusConfig: Record<
+    string,
+    { label: string; badgeClass: string; icon: typeof CheckCircle2 }
+  > = {
+    ASSIGNED: {
+      label: t('tutor_homework.status_assigned'),
+      badgeClass:
+        'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900',
+      icon: Clock,
+    },
+    SUBMITTED: {
+      label: t('tutor_homework.status_submitted'),
+      badgeClass:
+        'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800 animate-pulse',
+      icon: AlertCircle,
+    },
+    REVIEWED: {
+      label: t('tutor_homework.status_reviewed'),
+      badgeClass:
+        'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
+      icon: CheckCircle2,
+    },
+  }
 
   const currentStatus = statusConfig[homework.status] || {
     label: homework.status,
@@ -94,6 +98,8 @@ export function HomeworkDetailsSheet({
 
   const { text: deadlineText, isPast: isDeadlinePast } = formatDeadline(
     homework.deadline,
+    dateLocale,
+    t('tutor_homework.deadline_none'),
   )
 
   const isSubmitted = homework.status === 'SUBMITTED'
@@ -104,11 +110,11 @@ export function HomeworkDetailsSheet({
         id: homework.id,
         status: 'REVIEWED',
       })
-      toast.success('Задание помечено как проверенное!')
+      toast.success(t('tutor_homework.toast_reviewed'))
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось обновить статус задания',
+        axiosError.response?.data?.message || t('tutor_homework.toast_status_err'),
       )
     }
   }
@@ -129,7 +135,7 @@ export function HomeworkDetailsSheet({
 
                 {isDeadlinePast && homework.status !== 'REVIEWED' && (
                   <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                    Дедлайн просрочен
+                    {t('tutor_homework.badge_overdue')}
                   </Badge>
                 )}
               </div>
@@ -143,7 +149,7 @@ export function HomeworkDetailsSheet({
                   className="text-xs h-7 text-destructive border-destructive/30 hover:bg-destructive/10 gap-1.5 font-medium"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  <span>Удалить задание</span>
+                  <span>{t('tutor_homework.btn_delete_hw')}</span>
                 </Button>
               )}
             </div>
@@ -155,12 +161,12 @@ export function HomeworkDetailsSheet({
             <SheetDescription className="text-xs flex items-center gap-3 text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
-                Дедлайн: {deadlineText}
+                {t('tutor_homework.deadline_prefix', { date: deadlineText })}
               </span>
               {homework.studentName && (
                 <span className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5" />
-                  Ученик: {homework.studentName}
+                  {t('tutor_homework.student_prefix', { name: homework.studentName })}
                 </span>
               )}
             </SheetDescription>
@@ -173,10 +179,10 @@ export function HomeworkDetailsSheet({
             <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/70 dark:bg-amber-950/30 dark:border-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                  Ученик сдал домашнее задание
+                  {t('tutor_homework.banner_submitted_title')}
                 </p>
                 <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-                  Ознакомьтесь с прикрепленными файлами и подтвердите проверку
+                  {t('tutor_homework.banner_submitted_desc')}
                 </p>
               </div>
 
@@ -190,7 +196,7 @@ export function HomeworkDetailsSheet({
                 ) : (
                   <CheckCircle2 className="h-4 w-4" />
                 )}
-                <span>Проверено</span>
+                <span>{t('tutor_homework.btn_mark_reviewed')}</span>
               </Button>
             </div>
           )}
@@ -198,13 +204,13 @@ export function HomeworkDetailsSheet({
           {/* Description Section */}
           <div className="space-y-2">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5" /> Описание задания
+              <FileText className="h-3.5 w-3.5" /> {t('tutor_homework.section_desc')}
             </h4>
             <Card className="border-border">
               <CardContent className="p-4 text-sm whitespace-pre-wrap leading-relaxed">
                 {homework.description || (
                   <span className="text-muted-foreground italic">
-                    Текстовое описание не было добавлено к заданию
+                    {t('tutor_homework.desc_empty')}
                   </span>
                 )}
               </CardContent>
@@ -215,8 +221,7 @@ export function HomeworkDetailsSheet({
           {homework.studentNotes && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <MessageSquare className="h-3.5 w-3.5 text-primary" /> Комментарий
-                ученика к решению
+                <MessageSquare className="h-3.5 w-3.5 text-primary" /> {t('tutor_homework.section_student_comment')}
               </h4>
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm whitespace-pre-wrap leading-relaxed text-foreground">
                 {homework.studentNotes}
@@ -228,7 +233,7 @@ export function HomeworkDetailsSheet({
           {homework.tutorFeedback && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Отзыв преподавателя
+                {t('tutor_homework.section_tutor_feedback')}
               </h4>
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm whitespace-pre-wrap leading-relaxed">
                 {homework.tutorFeedback}
@@ -255,7 +260,7 @@ export function HomeworkDetailsSheet({
               ) : (
                 <CheckCircle2 className="h-4 w-4" />
               )}
-              <span>Отметить как проверенное</span>
+              <span>{t('tutor_homework.btn_mark_reviewed_full')}</span>
             </Button>
           </div>
         )}

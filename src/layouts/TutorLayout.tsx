@@ -116,7 +116,7 @@ export function TutorLayout() {
                 <span className="relative inline-flex h-1.5 w-1.5 bg-red-accent"></span>
               </span>
               <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider">
-                В сети • Преподаватель
+                {t('nav.status_online_tutor')}
               </span>
             </div>
           </div>

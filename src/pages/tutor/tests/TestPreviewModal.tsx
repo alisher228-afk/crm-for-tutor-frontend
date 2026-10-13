@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useLanguage } from '@/i18n'
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,7 @@ export function TestPreviewModal({
   open,
   onOpenChange,
 }: TestPreviewModalProps) {
+  const { t } = useLanguage()
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
@@ -49,7 +51,7 @@ export function TestPreviewModal({
   }, [open, test?.id])
 
   const safeDomain = useMemo(() => {
-    if (!test?.externalUrl) return 'Внешний тест'
+    if (!test?.externalUrl) return t('tutor_tests.default_external_domain')
     try {
       const normalized =
         test.externalUrl.startsWith('http://') || test.externalUrl.startsWith('https://')
@@ -57,9 +59,9 @@ export function TestPreviewModal({
           : `https://${test.externalUrl}`
       return new URL(normalized).hostname.replace(/^www\./, '')
     } catch {
-      return 'Внешний тест'
+      return t('tutor_tests.default_external_domain')
     }
-  }, [test?.externalUrl])
+  }, [test?.externalUrl, t])
 
   const safeExternalUrl = useMemo(() => {
     if (!test?.externalUrl) return ''
@@ -89,7 +91,7 @@ export function TestPreviewModal({
 
       return parsed.map((item, idx) => ({
         id: String(item?.id ?? idx + 1),
-        question: String(item?.question ?? `Вопрос ${idx + 1}`),
+        question: String(item?.question ?? t('tutor_tests.question_heading', { number: idx + 1 })),
         options: Array.isArray(item?.options)
           ? item.options.map((opt: unknown) => String(opt ?? ''))
           : [],
@@ -102,7 +104,7 @@ export function TestPreviewModal({
     } catch {
       return []
     }
-  }, [test?.questionsJson])
+  }, [test?.questionsJson, t])
 
   const score = useMemo(() => {
     if (!isSubmitted) return 0
@@ -128,7 +130,7 @@ export function TestPreviewModal({
   const handleCheckAnswers = () => {
     if (questions.length === 0) return
     if (Object.keys(selectedAnswers).length < questions.length) {
-      toast.info('Ответьте на все вопросы перед проверкой')
+      toast.info(t('tutor_tests.toast_answer_all'))
       return
     }
     setIsSubmitted(true)
@@ -143,7 +145,7 @@ export function TestPreviewModal({
     if (safeExternalUrl) {
       navigator.clipboard.writeText(safeExternalUrl)
       setIsCopied(true)
-      toast.success('Ссылка на тест скопирована в буфер обмена')
+      toast.success(t('tutor_tests.toast_link_copied'))
       setTimeout(() => setIsCopied(false), 2000)
     }
   }
@@ -168,15 +170,15 @@ export function TestPreviewModal({
                     {test.title}
                   </DialogTitle>
                   <Badge variant="secondary" className="text-xs">
-                    {test.type === 'INTERNAL' ? 'Интерактивный' : 'Внешний квиз'}
+                    {test.type === 'INTERNAL' ? t('tutor_tests.badge_interactive') : t('tutor_tests.badge_external')}
                   </Badge>
                 </div>
                 <DialogDescription className="text-xs mt-0.5">
                   {test.topic && <span className="font-medium text-foreground">{test.topic} • </span>}
-                  {test.timeLimitMinutes && `${test.timeLimitMinutes} минут • `}
+                  {test.timeLimitMinutes && `${t('tutor_tests.unit_minutes_full', { count: test.timeLimitMinutes })} • `}
                   {test.type === 'INTERNAL'
-                    ? `${questions.length} вопросов`
-                    : 'Ссылка на сторонний сервис'}
+                    ? t('tutor_tests.q_count_label', { count: questions.length })
+                    : t('tutor_tests.ext_label')}
                 </DialogDescription>
               </div>
             </div>
@@ -184,7 +186,7 @@ export function TestPreviewModal({
             {test.timeLimitMinutes && (
               <Badge variant="outline" className="gap-1 text-xs shrink-0">
                 <Clock className="h-3 w-3" />
-                <span>{test.timeLimitMinutes} мин</span>
+                <span>{t('tutor_tests.unit_min_short', { count: test.timeLimitMinutes })}</span>
               </Badge>
             )}
           </div>
@@ -205,11 +207,9 @@ export function TestPreviewModal({
                 <ExternalLink className="h-7 w-7" />
               </div>
               <div>
-                <h3 className="text-base font-bold">Внешний интерактивный квиз</h3>
+                <h3 className="text-base font-bold">{t('tutor_tests.external_card_title')}</h3>
                 <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-                  Этот тест размещен на платформе{' '}
-                  <span className="font-semibold text-foreground">{safeDomain}</span>.
-                  Вы можете открыть его в новой вкладке или скопировать ссылку для ученика.
+                  {t('tutor_tests.external_card_desc', { domain: safeDomain })}
                 </p>
               </div>
 
@@ -221,12 +221,12 @@ export function TestPreviewModal({
                     if (safeExternalUrl) {
                       window.open(safeExternalUrl, '_blank', 'noopener,noreferrer')
                     } else {
-                      toast.error('Ссылка на внешний тест отсутствует')
+                      toast.error(t('tutor_tests.toast_no_link'))
                     }
                   }}
                 >
                   <ExternalLink className="h-4 w-4" />
-                  <span>Открыть тест на сайте</span>
+                  <span>{t('tutor_tests.btn_open_external')}</span>
                 </Button>
 
                 <Button
@@ -237,7 +237,7 @@ export function TestPreviewModal({
                   disabled={!safeExternalUrl}
                 >
                   {isCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                  <span>{isCopied ? 'Скопировано!' : 'Скопировать ссылку'}</span>
+                  <span>{isCopied ? t('tutor_tests.btn_copied') : t('tutor_tests.btn_copy_link')}</span>
                 </Button>
               </div>
             </div>
@@ -247,12 +247,12 @@ export function TestPreviewModal({
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground mb-3">
                 <AlertCircle className="h-6 w-6" />
               </div>
-              <h3 className="font-semibold text-sm">В тесте пока нет вопросов</h3>
+              <h3 className="font-semibold text-sm">{t('tutor_tests.no_questions_title')}</h3>
               <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
-                Отредактируйте этот тест в списке тестов, чтобы добавить вопросы и варианты ответов.
+                {t('tutor_tests.no_questions_desc')}
               </p>
               <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-                Закрыть
+                {t('tutor_tests.btn_close')}
               </Button>
             </div>
           ) : (
@@ -273,15 +273,15 @@ export function TestPreviewModal({
                     <div className="flex items-center gap-2">
                       <Sparkles className="h-5 w-5 text-primary" />
                       <span className="font-bold text-base">
-                        Результат: {score} из {questions.length} ({percentage}%)
+                        {t('tutor_tests.result_title', { score, total: questions.length, percentage })}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {percentage === 100
-                        ? 'Превосходно! Все ответы верны!'
+                        ? t('tutor_tests.result_perfect')
                         : percentage >= 70
-                          ? 'Хороший результат! Посмотрите пояснения ниже.'
-                          : 'Есть ошибки. Рекомендуется повторить пройденный материал.'}
+                          ? t('tutor_tests.result_good')
+                          : t('tutor_tests.result_retry')}
                     </p>
                   </div>
 
@@ -292,7 +292,7 @@ export function TestPreviewModal({
                     onClick={handleReset}
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
-                    <span>Пройти заново</span>
+                    <span>{t('tutor_tests.btn_retake')}</span>
                   </Button>
                 </div>
               )}
@@ -323,12 +323,12 @@ export function TestPreviewModal({
                           {isCorrect ? (
                             <Badge className="bg-emerald-600 gap-1 text-[11px]">
                               <CheckCircle2 className="h-3.5 w-3.5" />
-                              <span>Верно</span>
+                              <span>{t('tutor_tests.badge_correct')}</span>
                             </Badge>
                           ) : (
                             <Badge variant="destructive" className="gap-1 text-[11px]">
                               <XCircle className="h-3.5 w-3.5" />
-                              <span>Неверно</span>
+                              <span>{t('tutor_tests.badge_incorrect')}</span>
                             </Badge>
                           )}
                         </div>
@@ -374,7 +374,7 @@ export function TestPreviewModal({
                             >
                               {isChosen && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                             </div>
-                            <span className="flex-1">{opt || `Вариант ${optIdx + 1}`}</span>
+                            <span className="flex-1">{opt || t('tutor_tests.placeholder_option', { number: optIdx + 1 })}</span>
                             {isThisCorrect && (
                               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                             )}
@@ -386,7 +386,7 @@ export function TestPreviewModal({
                     {/* Explanation */}
                     {isSubmitted && q.explanation && (
                       <div className="mt-3 p-2.5 rounded-md bg-muted/40 border border-border text-[11px] text-muted-foreground">
-                        <strong className="text-foreground">Пояснение: </strong>
+                        <strong className="text-foreground">{t('tutor_tests.explanation_prefix')} </strong>
                         {q.explanation}
                       </div>
                     )}
@@ -399,7 +399,7 @@ export function TestPreviewModal({
                   className="w-full h-10 font-semibold text-xs"
                   onClick={handleCheckAnswers}
                 >
-                  Проверить ответы
+                  {t('tutor_tests.btn_check_answers')}
                 </Button>
               )}
             </div>

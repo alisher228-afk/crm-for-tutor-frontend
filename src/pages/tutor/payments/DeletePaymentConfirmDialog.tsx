@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useDeletePayment } from '@/hooks/usePayments'
+import { useLanguage } from '@/i18n'
 import { toast } from 'sonner'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import type { Payment } from '@/types'
@@ -21,12 +22,12 @@ interface DeletePaymentConfirmDialogProps {
   studentName?: string
 }
 
-function formatPaymentDate(dateStr?: string): string {
+function formatPaymentDate(dateStr: string | undefined, dateLocale: string): string {
   if (!dateStr) return ''
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     const [year, month, day] = dateStr.split('-').map(Number)
     const d = new Date(year, month - 1, day)
-    return d.toLocaleDateString('ru-RU', {
+    return d.toLocaleDateString(dateLocale, {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -34,7 +35,7 @@ function formatPaymentDate(dateStr?: string): string {
   }
   const d = new Date(dateStr)
   if (isNaN(d.getTime())) return dateStr
-  return d.toLocaleDateString('ru-RU', {
+  return d.toLocaleDateString(dateLocale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -48,6 +49,10 @@ export function DeletePaymentConfirmDialog({
   studentId,
   studentName,
 }: DeletePaymentConfirmDialogProps) {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+  const numLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
   const deleteMutation = useDeletePayment()
 
   if (!payment) return null
@@ -58,18 +63,18 @@ export function DeletePaymentConfirmDialog({
         id: payment.id,
         studentId,
       })
-      toast.success('Запись об оплате успешно удалена')
+      toast.success(t('tutor_payments.toast_deleted'))
       onOpenChange(false)
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось удалить запись об оплате',
+        axiosError.response?.data?.message || t('tutor_payments.toast_delete_err'),
       )
     }
   }
 
-  const formattedAmount = payment.amount.toLocaleString('ru-RU')
-  const formattedDate = formatPaymentDate(payment.paymentDate)
+  const formattedAmount = payment.amount.toLocaleString(numLocale)
+  const formattedDate = formatPaymentDate(payment.paymentDate, dateLocale)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -80,9 +85,9 @@ export function DeletePaymentConfirmDialog({
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle>Удалить запись об оплате?</DialogTitle>
+              <DialogTitle>{t('tutor_payments.modal_delete_title')}</DialogTitle>
               <DialogDescription className="pt-1">
-                Это действие отменит зачисление средств
+                {t('tutor_payments.modal_delete_subtitle')}
               </DialogDescription>
             </div>
           </div>
@@ -90,27 +95,21 @@ export function DeletePaymentConfirmDialog({
 
         <div className="py-2 text-sm text-foreground/80 space-y-2">
           <p>
-            Вы действительно хотите удалить платёж на сумму{' '}
-            <span className="font-semibold text-foreground">
-              {formattedAmount}
-            </span>
+            {t('tutor_payments.confirm_text_part1', { amount: formattedAmount })}
             {formattedDate && (
               <>
-                {' '}
-                от <span className="font-medium text-foreground">{formattedDate}</span>
+                {t('tutor_payments.confirm_text_date', { date: formattedDate })}
               </>
             )}
             {studentName && (
               <>
-                {' '}
-                для ученика{' '}
-                <span className="font-medium text-foreground">{studentName}</span>
+                {t('tutor_payments.confirm_text_student', { name: studentName })}
               </>
             )}
             ?
           </p>
           <p className="text-xs text-muted-foreground bg-muted/40 p-2.5 rounded border border-border">
-            Внимание: удаление платежа повлияет на баланс уроков ученика и общую статистику доходов.
+            {t('tutor_payments.warning_balance')}
           </p>
         </div>
 
@@ -121,7 +120,7 @@ export function DeletePaymentConfirmDialog({
             onClick={() => onOpenChange(false)}
             disabled={deleteMutation.isPending}
           >
-            Отмена
+            {t('tutor_payments.btn_cancel')}
           </Button>
           <Button
             type="button"
@@ -133,7 +132,7 @@ export function DeletePaymentConfirmDialog({
             {deleteMutation.isPending && (
               <Loader2 className="h-4 w-4 animate-spin" />
             )}
-            <span>Удалить оплату</span>
+            <span>{t('tutor_payments.btn_delete_confirm')}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useStudentGroups, useStudents } from '@/hooks/useStudents'
+import { useTranslation } from '@/i18n'
 import { GroupDetailsModal } from './groups/GroupDetailsModal'
 import { CreateGroupDialog } from './groups/CreateGroupDialog'
 import { AddStudentToGroupModal } from './groups/AddStudentToGroupModal'
@@ -30,6 +31,7 @@ import type { StudentGroup, StudentProfile } from '@/types'
 
 
 export function TutorGroupsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
 
@@ -147,15 +149,15 @@ export function TutorGroupsPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Группы</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('tutor_groups.title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Групповые занятия, составы учебных групп и совместное обучение
+            {t('tutor_groups.subtitle')}
           </p>
         </div>
 
         <Button onClick={() => setIsCreateGroupOpen(true)} className="self-start sm:self-auto gap-2">
           <Plus className="h-4 w-4" />
-          <span>Создать группу</span>
+          <span>{t('tutor_students.btn_create_group')}</span>
         </Button>
       </div>
 
@@ -168,7 +170,7 @@ export function TutorGroupsPage() {
           onClick={() => navigate('/tutor/students')}
         >
           <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
-          <span>Индивидуальные ({individualStudents.length})</span>
+          <span>{t('tutor_students.tab_individual', { count: individualStudents.length })}</span>
         </Button>
 
         <Button
@@ -177,7 +179,7 @@ export function TutorGroupsPage() {
           className="h-8 text-xs font-medium flex items-center gap-1.5 shadow-xs"
         >
           <Users className="h-3.5 w-3.5" />
-          <span>Группы ({groups.length})</span>
+          <span>{t('tutor_students.tab_groups', { count: groups.length })}</span>
         </Button>
       </div>
 
@@ -186,7 +188,7 @@ export function TutorGroupsPage() {
         <div className="p-4 rounded-xl border border-border bg-card shadow-xs">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Users className="h-4 w-4 text-primary" />
-            <span>Всего групп</span>
+            <span>{t('tutor_groups.kpi_total_groups')}</span>
           </div>
           <div className="text-2xl font-bold mt-1 text-foreground">{groups.length}</div>
         </div>
@@ -194,7 +196,7 @@ export function TutorGroupsPage() {
         <div className="p-4 rounded-xl border border-border bg-card shadow-xs">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <GraduationCap className="h-4 w-4 text-emerald-600" />
-            <span>Учеников в группах</span>
+            <span>{t('tutor_groups.kpi_students_in_groups')}</span>
           </div>
           <div className="text-2xl font-bold mt-1 text-foreground">{totalGroupStudents}</div>
         </div>
@@ -202,10 +204,10 @@ export function TutorGroupsPage() {
         <div className="p-4 rounded-xl border border-border bg-card shadow-xs">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Sparkles className="h-4 w-4 text-amber-500" />
-            <span>Средний размер группы</span>
+            <span>{t('tutor_groups.kpi_avg_group_size')}</span>
           </div>
           <div className="text-2xl font-bold mt-1 text-foreground">
-            {groups.length > 0 ? (totalGroupStudents / groups.length).toFixed(1) : 0} уч.
+            {groups.length > 0 ? (totalGroupStudents / groups.length).toFixed(1) : 0} {t('tutor_groups.unit_students')}
           </div>
         </div>
       </div>
@@ -215,7 +217,7 @@ export function TutorGroupsPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Поиск по названию группы или ученику..."
+            placeholder={t('tutor_students.search_groups_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 pr-8"
@@ -254,12 +256,12 @@ export function TutorGroupsPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive mb-3">
             <AlertCircle className="h-6 w-6" />
           </div>
-          <h3 className="font-semibold text-base">Ошибка при загрузке групп</h3>
+          <h3 className="font-semibold text-base">{t('tutor_groups.err_load_groups_title')}</h3>
           <p className="text-sm text-muted-foreground mt-1 mb-4">
-            Не удалось получить список групп с сервера.
+            {t('tutor_groups.err_load_groups_desc')}
           </p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Повторить попытку
+            {t('tutor_students.btn_retry')}
           </Button>
         </div>
       ) : filteredGroups.length > 0 ? (
@@ -286,7 +288,7 @@ export function TutorGroupsPage() {
                           {group.name}
                         </CardTitle>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {count} {count === 1 ? 'ученик' : 'учеников'}
+                          {count} {count === 1 ? t('tutor_groups.student_1') : count < 5 ? t('tutor_groups.student_few') : t('tutor_groups.student_many')}
                         </p>
                       </div>
                     </div>
@@ -295,7 +297,7 @@ export function TutorGroupsPage() {
                       variant="secondary"
                       className="bg-primary/5 text-primary border-primary/20 text-xs font-semibold"
                     >
-                      {count} уч.
+                      {count} {t('tutor_groups.unit_students')}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -304,9 +306,9 @@ export function TutorGroupsPage() {
                   {/* Avatars and preview */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Состав группы:</span>
+                      <span>{t('tutor_groups.group_composition')}</span>
                       <span className="text-[11px] font-medium text-primary hover:underline">
-                        Подробнее
+                        {t('tutor_groups.link_details')}
                       </span>
                     </div>
 
@@ -314,7 +316,7 @@ export function TutorGroupsPage() {
                       <div className="flex items-center gap-2">
                         <div className="flex -space-x-2 overflow-hidden py-1">
                           {previewStudents.map((st) => {
-                            const name = st.firstName || st.name || 'У'
+                            const name = st.firstName || st.name || '?'
                             return (
                               <Avatar
                                 key={st.id}
@@ -336,7 +338,7 @@ export function TutorGroupsPage() {
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground italic py-1">
-                        В группе пока нет учеников
+                        {t('tutor_groups.empty_group_students')}
                       </p>
                     )}
 
@@ -348,7 +350,7 @@ export function TutorGroupsPage() {
                             key={st.id}
                             className="inline-block px-1.5 py-0.5 rounded text-[11px] bg-muted/60 text-muted-foreground font-medium truncate max-w-[120px]"
                           >
-                            {st.firstName || st.name || 'Ученик'}
+                            {st.firstName || st.name || t('tutor_students.default_student_name')}
                           </span>
                         ))}
                       </div>
@@ -367,7 +369,7 @@ export function TutorGroupsPage() {
                       handleOpenGroupDetails(group)
                     }}
                   >
-                    <span>Открыть состав группы</span>
+                    <span>{t('tutor_groups.btn_open_group')}</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </CardFooter>
@@ -381,21 +383,21 @@ export function TutorGroupsPage() {
             <Users className="h-6 w-6" />
           </div>
           <h3 className="font-semibold text-base">
-            {search ? 'Ничего не найдено' : 'Группы еще не созданы'}
+            {search ? t('tutor_students.empty_search_title') : t('tutor_groups.empty_groups_title')}
           </h3>
           <p className="text-sm text-muted-foreground max-w-md mt-1 mb-4">
             {search
-              ? `По запросу "${search}" групп не обнаружено. Попробуйте другой запрос.`
-              : 'Создайте первую группу, объединяйте учеников и проводите совместные занятия.'}
+              ? t('tutor_groups.empty_search_desc', { query: search })
+              : t('tutor_groups.empty_groups_desc')}
           </p>
           {search ? (
             <Button variant="outline" size="sm" onClick={() => setSearch('')}>
-              Сбросить поиск
+              {t('tutor_students.btn_reset_search')}
             </Button>
           ) : (
             <Button size="sm" onClick={() => setIsCreateGroupOpen(true)}>
               <Plus className="mr-1.5 h-4 w-4" />
-              Создать первую группу
+              {t('tutor_groups.btn_create_first_group')}
             </Button>
           )}
         </div>

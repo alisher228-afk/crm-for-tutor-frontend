@@ -35,13 +35,14 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import type { Payment, StudentProfile } from '@/types'
+import { useLanguage } from '@/i18n'
 
-function formatPaymentDate(dateStr?: string): string {
+function formatPaymentDate(dateStr?: string, locale = 'ru-RU'): string {
   if (!dateStr) return '—'
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     const [year, month, day] = dateStr.split('-').map(Number)
     const d = new Date(year, month - 1, day)
-    return d.toLocaleDateString('ru-RU', {
+    return d.toLocaleDateString(locale, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -49,7 +50,7 @@ function formatPaymentDate(dateStr?: string): string {
   }
   const d = new Date(dateStr)
   if (isNaN(d.getTime())) return dateStr
-  return d.toLocaleDateString('ru-RU', {
+  return d.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -57,6 +58,10 @@ function formatPaymentDate(dateStr?: string): string {
 }
 
 export function TutorPaymentsPage() {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+  const numLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
   const [activeTab, setActiveTab] = useState<'payments' | 'analytics'>('payments')
 
   // Students list for selector
@@ -82,7 +87,7 @@ export function TutorPaymentsPage() {
     [selectedStudent?.firstName, selectedStudent?.lastName]
       .filter(Boolean)
       .join(' ') ||
-    'Ученик'
+    t('tutor_lessons.default_student')
 
   // Student payments query
   const {
@@ -138,16 +143,16 @@ export function TutorPaymentsPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Финансы и оплаты</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('tutor_payments.title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Учёт поступления средств, баланс занятий учеников и аналитика дохода
+            {t('tutor_payments.subtitle')}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Button onClick={handleOpenCreate} className="gap-2">
             <Plus className="h-4 w-4" />
-            <span>Добавить оплату</span>
+            <span>{t('tutor_payments.btn_add_payment')}</span>
           </Button>
         </div>
       </div>
@@ -161,11 +166,11 @@ export function TutorPaymentsPage() {
         <TabsList className="grid w-full sm:w-[420px] grid-cols-2">
           <TabsTrigger value="payments" className="gap-2">
             <Wallet className="h-4 w-4" />
-            <span>Оплаты учеников</span>
+            <span>{t('tutor_payments.tab_payments')}</span>
           </TabsTrigger>
           <TabsTrigger value="analytics" className="gap-2">
             <TrendingUp className="h-4 w-4" />
-            <span>Аналитика дохода</span>
+            <span>{t('tutor_payments.tab_analytics')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -177,7 +182,7 @@ export function TutorPaymentsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <User className="h-4 w-4 text-primary" />
-                  <span>Ученик:</span>
+                  <span>{t('tutor_payments.label_student')}</span>
                   <span className="font-bold text-primary">
                     {selectedStudentName}
                   </span>
@@ -187,10 +192,12 @@ export function TutorPaymentsPage() {
                       variant="secondary"
                       className="ml-2 font-medium text-xs"
                     >
-                      Баланс:{' '}
-                      {selectedStudent?.lessonBalance ??
-                        selectedStudent?.balance}{' '}
-                      ур.
+                      {t('tutor_payments.badge_balance', {
+                        count:
+                          selectedStudent?.lessonBalance ??
+                          selectedStudent?.balance ??
+                          0,
+                      })}
                     </Badge>
                   )}
                 </div>
@@ -198,7 +205,7 @@ export function TutorPaymentsPage() {
                 <div className="relative w-full sm:w-72">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Поиск ученика..."
+                    placeholder={t('tutor_payments.search_placeholder')}
                     value={studentSearch}
                     onChange={(e) => setStudentSearch(e.target.value)}
                     className="pl-8 h-8 text-xs bg-background"
@@ -217,7 +224,7 @@ export function TutorPaymentsPage() {
                     const name =
                       s.name ||
                       [s.firstName, s.lastName].filter(Boolean).join(' ') ||
-                      'Ученик'
+                      t('tutor_lessons.default_student')
                     const isSelected = String(s.id) === String(currentStudentId)
                     const studentBal = s.lessonBalance ?? s.balance
                     return (
@@ -250,7 +257,7 @@ export function TutorPaymentsPage() {
                                 : 'bg-background text-muted-foreground border'
                             }`}
                           >
-                            {studentBal} ур.
+                            {t('tutor_payments.unit_lessons', { count: studentBal })}
                           </span>
                         )}
                       </button>
@@ -258,7 +265,7 @@ export function TutorPaymentsPage() {
                   })
                 ) : (
                   <p className="text-xs text-muted-foreground py-1">
-                    Ученики не найдены
+                    {t('tutor_payments.students_not_found')}
                   </p>
                 )}
               </div>
@@ -275,10 +282,10 @@ export function TutorPaymentsPage() {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
-                      Всего внесено
+                      {t('tutor_payments.stat_total_income')}
                     </p>
                     <p className="text-lg font-bold text-foreground">
-                      {studentStats.totalAmount.toLocaleString('ru-RU')}
+                      {studentStats.totalAmount.toLocaleString(numLocale)}
                     </p>
                   </div>
                 </CardContent>
@@ -291,10 +298,10 @@ export function TutorPaymentsPage() {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
-                      Оплачено занятий
+                      {t('tutor_payments.stat_lessons_paid')}
                     </p>
                     <p className="text-lg font-bold text-foreground">
-                      {studentStats.totalLessonsPaid} ур.
+                      {t('tutor_payments.unit_lessons', { count: studentStats.totalLessonsPaid })}
                     </p>
                   </div>
                 </CardContent>
@@ -307,15 +314,17 @@ export function TutorPaymentsPage() {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
-                      Текущий баланс
+                      {t('tutor_payments.stat_current_balance')}
                     </p>
                     <p className="text-lg font-bold text-foreground">
                       {(selectedStudent.lessonBalance ??
                         selectedStudent.balance) !== undefined
-                        ? `${
-                            selectedStudent.lessonBalance ??
-                            selectedStudent.balance
-                          } ур.`
+                        ? t('tutor_payments.unit_lessons', {
+                            count:
+                              selectedStudent.lessonBalance ??
+                              selectedStudent.balance ??
+                              0,
+                          })
                         : '—'}
                     </p>
                   </div>
@@ -339,14 +348,14 @@ export function TutorPaymentsPage() {
                   <AlertCircle className="h-8 w-8 text-destructive" />
                   <div className="space-y-1">
                     <p className="font-semibold text-foreground">
-                      Не удалось загрузить историю оплат
+                      {t('tutor_payments.err_load_title')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Проверьте соединение с сервером или повторите попытку позже
+                      {t('tutor_payments.err_load_desc')}
                     </p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => refetchPayments()}>
-                    Повторить попытку
+                    {t('tutor_payments.btn_retry')}
                   </Button>
                 </div>
               ) : payments.length > 0 ? (
@@ -354,12 +363,12 @@ export function TutorPaymentsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/20">
-                        <TableHead className="w-[140px]">Дата</TableHead>
-                        <TableHead className="w-[130px]">Сумма</TableHead>
-                        <TableHead className="w-[110px]">Уроков</TableHead>
-                        <TableHead>Заметка / Комментарий</TableHead>
+                        <TableHead className="w-[140px]">{t('tutor_payments.th_date')}</TableHead>
+                        <TableHead className="w-[130px]">{t('tutor_payments.th_amount')}</TableHead>
+                        <TableHead className="w-[110px]">{t('tutor_payments.th_lessons')}</TableHead>
+                        <TableHead>{t('tutor_payments.th_notes')}</TableHead>
                         <TableHead className="w-[100px] text-right">
-                          Действия
+                          {t('tutor_payments.th_actions')}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -370,14 +379,14 @@ export function TutorPaymentsPage() {
                           <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span>{formatPaymentDate(payment.paymentDate)}</span>
+                              <span>{formatPaymentDate(payment.paymentDate, dateLocale)}</span>
                             </div>
                           </TableCell>
 
                           {/* Amount */}
                           <TableCell className="whitespace-nowrap">
                             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                              +{payment.amount.toLocaleString('ru-RU')}
+                              +{payment.amount.toLocaleString(numLocale)}
                             </span>
                           </TableCell>
 
@@ -385,7 +394,7 @@ export function TutorPaymentsPage() {
                           <TableCell className="whitespace-nowrap text-xs sm:text-sm">
                             {payment.lessonsCount !== undefined ? (
                               <Badge variant="outline" className="font-medium">
-                                {payment.lessonsCount} ур.
+                                {t('tutor_payments.unit_lessons', { count: payment.lessonsCount })}
                               </Badge>
                             ) : (
                               <span className="text-muted-foreground">—</span>
@@ -400,7 +409,7 @@ export function TutorPaymentsPage() {
                               </span>
                             ) : (
                               <span className="text-muted-foreground/60 italic">
-                                Без заметки
+                                {t('tutor_payments.no_note')}
                               </span>
                             )}
                           </TableCell>
@@ -413,7 +422,7 @@ export function TutorPaymentsPage() {
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                 onClick={() => handleOpenEdit(payment)}
-                                title="Редактировать оплату"
+                                title={t('tutor_payments.action_edit')}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
@@ -422,7 +431,7 @@ export function TutorPaymentsPage() {
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                 onClick={() => handleOpenDelete(payment)}
-                                title="Удалить запись"
+                                title={t('tutor_payments.action_delete')}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
@@ -441,11 +450,10 @@ export function TutorPaymentsPage() {
                   </div>
                   <div className="max-w-xs space-y-1">
                     <p className="font-semibold text-foreground">
-                      Платежей пока нет
+                      {t('tutor_payments.empty_payments_title')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Для ученика {selectedStudentName} ещё не было зафиксировано
-                      оплат
+                      {t('tutor_payments.empty_payments_desc', { name: selectedStudentName })}
                     </p>
                   </div>
                   {currentStudentId && (
@@ -455,7 +463,7 @@ export function TutorPaymentsPage() {
                       className="gap-2 mt-2"
                     >
                       <Plus className="h-4 w-4" />
-                      <span>Зафиксировать оплату</span>
+                      <span>{t('tutor_payments.btn_record_payment')}</span>
                     </Button>
                   )}
                 </div>

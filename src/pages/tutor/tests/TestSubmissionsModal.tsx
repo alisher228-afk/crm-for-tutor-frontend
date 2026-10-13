@@ -1,3 +1,4 @@
+import { useLanguage } from '@/i18n'
 import {
   Dialog,
   DialogContent,
@@ -26,35 +27,37 @@ interface TestSubmissionsModalProps {
   onOpenChange: (open: boolean) => void
 }
 
-function formatDuration(seconds?: number): string {
-  if (!seconds || seconds <= 0) return '—'
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  if (mins === 0) return `${secs} сек.`
-  return `${mins} мин. ${secs} сек.`
-}
-
-function formatSubmissionDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr)
-    return d.toLocaleString('ru-RU', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return dateStr
-  }
-}
-
 export function TestSubmissionsModal({
   test,
   open,
   onOpenChange,
 }: TestSubmissionsModalProps) {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
   const { data: submissions = [], isLoading } = useTestSubmissions(test?.id)
+
+  const formatDuration = (seconds?: number): string => {
+    if (!seconds || seconds <= 0) return '—'
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    if (mins === 0) return t('tutor_tests.duration_sec', { sec: secs })
+    return t('tutor_tests.duration_min_sec', { min: mins, sec: secs })
+  }
+
+  const formatSubmissionDate = (dateStr: string): string => {
+    try {
+      const d = new Date(dateStr)
+      return d.toLocaleString(dateLocale, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    } catch {
+      return dateStr
+    }
+  }
 
   const avgPercentage = submissions.length > 0
     ? Math.round(submissions.reduce((acc, s) => acc + s.percentage, 0) / submissions.length)
@@ -68,16 +71,16 @@ export function TestSubmissionsModal({
             <div>
               <DialogTitle className="text-xl font-bold flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                <span>Результаты тестирования</span>
+                <span>{t('tutor_tests.modal_submissions_title')}</span>
               </DialogTitle>
               <DialogDescription className="mt-1 text-xs">
-                {test?.title} • {test?.topic || 'Без темы'}
+                {test?.title} • {test?.topic || t('tutor_tests.no_topic')}
               </DialogDescription>
             </div>
 
             {test && (
               <Badge variant="outline" className="text-xs">
-                {test.type === 'INTERNAL' ? 'Внутренний тест' : 'Внешний квиз'}
+                {test.type === 'INTERNAL' ? t('tutor_tests.badge_internal') : t('tutor_tests.badge_external')}
               </Badge>
             )}
           </div>
@@ -87,16 +90,16 @@ export function TestSubmissionsModal({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-2">
           <div className="p-3 rounded-lg border border-border bg-muted/30 text-center">
             <p className="text-[11px] font-medium text-muted-foreground flex items-center justify-center gap-1">
-              <Users className="h-3 w-3" /> Сдали тест
+              <Users className="h-3 w-3" /> {t('tutor_tests.stat_turned_in')}
             </p>
             <p className="text-xl font-bold text-foreground mt-0.5">
-              {submissions.length} ученик{submissions.length === 1 ? '' : submissions.length < 5 ? 'а' : 'ов'}
+              {t('tutor_tests.submissions_count', { count: submissions.length })}
             </p>
           </div>
 
           <div className="p-3 rounded-lg border border-border bg-muted/30 text-center">
             <p className="text-[11px] font-medium text-muted-foreground flex items-center justify-center gap-1">
-              <Award className="h-3 w-3 text-amber-500" /> Средний балл
+              <Award className="h-3 w-3 text-amber-500" /> {t('tutor_tests.stat_avg_score')}
             </p>
             <p className="text-xl font-bold text-foreground mt-0.5">
               {submissions.length > 0 ? `${avgPercentage}%` : '—'}
@@ -105,10 +108,10 @@ export function TestSubmissionsModal({
 
           <div className="p-3 rounded-lg border border-border bg-muted/30 text-center col-span-2 sm:col-span-1">
             <p className="text-[11px] font-medium text-muted-foreground flex items-center justify-center gap-1">
-              <Clock className="h-3 w-3" /> Лимит времени
+              <Clock className="h-3 w-3" /> {t('tutor_tests.stat_time_limit')}
             </p>
             <p className="text-xl font-bold text-foreground mt-0.5">
-              {test?.timeLimitMinutes ? `${test.timeLimitMinutes} мин.` : 'Без лимита'}
+              {test?.timeLimitMinutes ? t('tutor_tests.unit_minutes_period', { count: test.timeLimitMinutes }) : t('tutor_tests.no_time_limit')}
             </p>
           </div>
         </div>
@@ -126,16 +129,16 @@ export function TestSubmissionsModal({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Ученик</TableHead>
-                    <TableHead className="text-center">Балл</TableHead>
-                    <TableHead className="text-center">Процент</TableHead>
-                    <TableHead>Время</TableHead>
-                    <TableHead className="text-right">Дата сдачи</TableHead>
+                    <TableHead>{t('tutor_tests.th_student')}</TableHead>
+                    <TableHead className="text-center">{t('tutor_tests.th_score')}</TableHead>
+                    <TableHead className="text-center">{t('tutor_tests.th_percentage')}</TableHead>
+                    <TableHead>{t('tutor_tests.th_time')}</TableHead>
+                    <TableHead className="text-right">{t('tutor_tests.th_submitted_date')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {submissions.map((sub) => {
-                    const stInitial = sub.studentName?.charAt(0).toUpperCase() || 'У'
+                    const stInitial = sub.studentName?.charAt(0).toUpperCase() || t('tutor_students.default_student_name').charAt(0).toUpperCase()
                     const isPassedWell = sub.percentage >= 80
                     const isPassedMedium = sub.percentage >= 50 && sub.percentage < 80
 
@@ -192,10 +195,10 @@ export function TestSubmissionsModal({
                 <Users className="h-6 w-6" />
               </div>
               <p className="font-semibold text-sm text-foreground">
-                Пока никто из учеников не сдавал этот тест
+                {t('tutor_tests.empty_submissions_title')}
               </p>
               <p className="text-xs text-muted-foreground max-w-sm">
-                Когда ученики откроют раздел «Тесты и квизы» и сдадут этот тест, результаты и баллы отобразятся здесь.
+                {t('tutor_tests.empty_submissions_desc')}
               </p>
             </div>
           )}

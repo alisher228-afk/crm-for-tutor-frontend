@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useUpdateStudent, studentKeys } from '@/hooks/useStudents'
+import { useTranslation } from '@/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Users, Loader2, Check, UserPlus } from 'lucide-react'
@@ -33,6 +34,7 @@ export function AddStudentToGroupModal({
   onCreateNewStudent,
   onSuccess,
 }: AddStudentToGroupModalProps) {
+  const { t } = useTranslation()
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -53,7 +55,7 @@ export function AddStudentToGroupModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (selectedStudentIds.length === 0) {
-      toast.error('Выберите хотя бы одного ученика для добавления')
+      toast.error(t('tutor_groups.err_select_at_least_one'))
       return
     }
 
@@ -65,7 +67,7 @@ export function AddStudentToGroupModal({
         return updateMutation.mutateAsync({
           id: student.id,
           data: {
-            firstName: student.firstName || student.name?.split(' ')[0] || 'Ученик',
+            firstName: student.firstName || student.name?.split(' ')[0] || t('tutor_students.default_student_name'),
             lastName: student.lastName || student.name?.split(' ').slice(1).join(' ') || undefined,
             phone: student.phone || undefined,
             telegram: student.telegram || undefined,
@@ -81,12 +83,12 @@ export function AddStudentToGroupModal({
       await Promise.all(promises)
       await queryClient.invalidateQueries({ queryKey: studentKeys.all })
 
-      toast.success(`В группу "${groupName}" добавлено учеников: ${selectedStudentIds.length}`)
+      toast.success(t('tutor_groups.toast_added_to_group', { group: groupName, count: selectedStudentIds.length }))
       setSelectedStudentIds([])
       onOpenChange(false)
       onSuccess?.()
     } catch {
-      toast.error('Не удалось добавить учеников в группу')
+      toast.error(t('tutor_groups.toast_add_err'))
     } finally {
       setIsSubmitting(false)
     }
@@ -106,9 +108,9 @@ export function AddStudentToGroupModal({
               <Users className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle>Добавить ученика в группу</DialogTitle>
+              <DialogTitle>{t('tutor_groups.add_modal_title')}</DialogTitle>
               <DialogDescription>
-                Группа: <strong className="text-foreground">{groupName}</strong>
+                {t('tutor_groups.add_modal_target', { name: groupName })}
               </DialogDescription>
             </div>
           </div>
@@ -116,7 +118,7 @@ export function AddStudentToGroupModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold">Выберите из базы:</Label>
+            <Label className="text-xs font-semibold">{t('tutor_groups.add_label_from_db')}</Label>
             <Button
               type="button"
               variant="ghost"
@@ -125,7 +127,7 @@ export function AddStudentToGroupModal({
               onClick={handleCreateNewClick}
             >
               <UserPlus className="h-3.5 w-3.5" />
-              <span>Создать нового ученика</span>
+              <span>{t('tutor_groups.add_btn_create_new')}</span>
             </Button>
           </div>
 
@@ -135,7 +137,7 @@ export function AddStudentToGroupModal({
                 const fullName =
                   student.name ||
                   [student.firstName, student.lastName].filter(Boolean).join(' ') ||
-                  'Ученик'
+                  t('tutor_students.default_student_name')
                 const isChecked = selectedStudentIds.includes(student.id)
                 const currentGrp = student.groupName?.trim()
 
@@ -158,7 +160,7 @@ export function AddStudentToGroupModal({
                       <div className="truncate">
                         <p className="text-xs font-medium text-foreground truncate">{fullName}</p>
                         <p className="text-[11px] text-muted-foreground truncate">
-                          {currentGrp ? `Сейчас в: ${currentGrp}` : 'Индивидуально'}
+                          {currentGrp ? t('tutor_groups.add_status_now_in', { group: currentGrp }) : t('tutor_students.format_individual')}
                           {student.currentLevel ? ` • ${student.currentLevel}` : ''}
                         </p>
                       </div>
@@ -180,7 +182,7 @@ export function AddStudentToGroupModal({
           ) : (
             <div className="text-center py-6 border border-dashed rounded-lg">
               <p className="text-xs text-muted-foreground mb-3">
-                Все ваши ученики уже состоят в этой группе.
+                {t('tutor_groups.add_all_already_in')}
               </p>
               <Button
                 type="button"
@@ -190,7 +192,7 @@ export function AddStudentToGroupModal({
                 onClick={handleCreateNewClick}
               >
                 <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-                Зарегистрировать нового ученика
+                {t('tutor_groups.add_btn_register_new')}
               </Button>
             </div>
           )}
@@ -202,14 +204,14 @@ export function AddStudentToGroupModal({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Отмена
+              {t('tutor_students.btn_cancel')}
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting || selectedStudentIds.length === 0}
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Добавить ({selectedStudentIds.length})
+              {t('tutor_groups.add_btn_submit', { count: selectedStudentIds.length })}
             </Button>
           </DialogFooter>
         </form>

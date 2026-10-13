@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useUpdateStudent, studentKeys } from '@/hooks/useStudents'
+import { useTranslation } from '@/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Users, Loader2, Check } from 'lucide-react'
@@ -30,6 +31,9 @@ export function CreateGroupDialog({
   individualStudents,
   onSuccess,
 }: CreateGroupDialogProps) {
+  const { t, language } = useTranslation()
+  const numLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
   const [groupName, setGroupName] = useState('')
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -55,7 +59,7 @@ export function CreateGroupDialog({
     e.preventDefault()
     const trimmed = groupName.trim()
     if (!trimmed) {
-      toast.error('Введите название группы')
+      toast.error(t('tutor_students.err_group_name_req'))
       return
     }
 
@@ -69,7 +73,7 @@ export function CreateGroupDialog({
           return updateMutation.mutateAsync({
             id: student.id,
             data: {
-              firstName: student.firstName || student.name?.split(' ')[0] || 'Ученик',
+              firstName: student.firstName || student.name?.split(' ')[0] || t('tutor_students.default_student_name'),
               lastName: student.lastName || student.name?.split(' ').slice(1).join(' ') || undefined,
               phone: student.phone || undefined,
               telegram: student.telegram || undefined,
@@ -87,15 +91,15 @@ export function CreateGroupDialog({
       await queryClient.invalidateQueries({ queryKey: studentKeys.all })
       toast.success(
         selectedStudentIds.length > 0
-          ? `Группа "${trimmed}" создана с ${selectedStudentIds.length} учениками`
-          : `Группа "${trimmed}" успешно создана`,
+          ? t('tutor_groups.toast_group_created_with_students', { name: trimmed, count: selectedStudentIds.length })
+          : t('tutor_groups.toast_group_created', { name: trimmed }),
       )
       setGroupName('')
       setSelectedStudentIds([])
       onOpenChange(false)
       onSuccess?.(trimmed)
     } catch (err) {
-      toast.error('Произошла ошибка при создании группы')
+      toast.error(t('tutor_groups.toast_group_create_err'))
     } finally {
       setIsSubmitting(false)
     }
@@ -110,9 +114,9 @@ export function CreateGroupDialog({
               <Users className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle>Создать новую группу</DialogTitle>
+              <DialogTitle>{t('tutor_groups.create_dialog_title')}</DialogTitle>
               <DialogDescription>
-                Объединяйте учеников для совместных занятий и общих ДЗ
+                {t('tutor_groups.create_dialog_desc')}
               </DialogDescription>
             </div>
           </div>
@@ -121,11 +125,11 @@ export function CreateGroupDialog({
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="create-group-name">
-              Название группы <span className="text-destructive">*</span>
+              {t('tutor_groups.create_label_name')} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="create-group-name"
-              placeholder="Например: ЕГЭ 11 класс / Английский B1 / Группа A"
+              placeholder={t('tutor_groups.create_placeholder_name')}
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               disabled={isSubmitting}
@@ -138,7 +142,7 @@ export function CreateGroupDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-semibold">
-                Добавить учеников сразу (необязательно)
+                {t('tutor_groups.create_label_add_students')}
               </Label>
               {individualStudents.length > 0 && (
                 <button
@@ -147,8 +151,8 @@ export function CreateGroupDialog({
                   className="text-xs text-primary hover:underline"
                 >
                   {selectedStudentIds.length === individualStudents.length
-                    ? 'Снять всех'
-                    : 'Выбрать всех'}
+                    ? t('tutor_groups.create_btn_unselect_all')
+                    : t('tutor_groups.create_btn_select_all')}
                 </button>
               )}
             </div>
@@ -159,7 +163,7 @@ export function CreateGroupDialog({
                   const fullName =
                     student.name ||
                     [student.firstName, student.lastName].filter(Boolean).join(' ') ||
-                    'Ученик'
+                    t('tutor_students.default_student_name')
                   const isChecked = selectedStudentIds.includes(student.id)
 
                   return (
@@ -182,7 +186,9 @@ export function CreateGroupDialog({
                           <p className="text-xs font-medium text-foreground">{fullName}</p>
                           <p className="text-[11px] text-muted-foreground">
                             {student.currentLevel ? `${student.currentLevel} • ` : ''}
-                            {student.hourlyRate ? `${student.hourlyRate.toLocaleString('ru-RU')}/ч` : 'Индивидуально'}
+                            {student.hourlyRate
+                              ? t('tutor_students.per_hour', { rate: student.hourlyRate.toLocaleString(numLocale) })
+                              : t('tutor_students.format_individual')}
                           </p>
                         </div>
                       </div>
@@ -202,7 +208,7 @@ export function CreateGroupDialog({
               </div>
             ) : (
               <p className="text-xs text-muted-foreground italic p-3 text-center border border-dashed rounded-lg">
-                Нет доступных индивидуальных учеников. Вы сможете добавить учеников позже.
+                {t('tutor_groups.create_no_individuals')}
               </p>
             )}
           </div>
@@ -214,11 +220,11 @@ export function CreateGroupDialog({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Отмена
+              {t('tutor_students.btn_cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting || !groupName.trim()}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Создать группу
+              {t('tutor_groups.create_btn_submit')}
             </Button>
           </DialogFooter>
         </form>

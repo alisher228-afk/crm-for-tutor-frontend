@@ -17,6 +17,7 @@ import { attachmentsApi } from '@/api/attachments'
 import { materialsApi } from '@/api/materials'
 import { SelectMaterialDialog } from '@/components/SelectMaterialDialog'
 import { toBackendDateTime } from '@/lib/dateUtils'
+import { useLanguage } from '@/i18n'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -61,6 +62,9 @@ export function CreateHomeworkDialog({
   onOpenChange,
   onSuccess,
 }: CreateHomeworkDialogProps) {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
@@ -128,7 +132,7 @@ export function CreateHomeworkDialog({
 
     const trimmedTitle = title.trim()
     if (!trimmedTitle) {
-      toast.error('Введите название домашнего задания')
+      toast.error(t('tutor_homework.err_title_req'))
       return
     }
 
@@ -137,7 +141,7 @@ export function CreateHomeworkDialog({
     try {
       if (isGroup) {
         if (!groupName) {
-          toast.error('Не выбрана группа для задания')
+          toast.error(t('tutor_homework.err_group_req'))
           return
         }
         const createdList = await createGroupMutation.mutateAsync({
@@ -167,10 +171,14 @@ export function CreateHomeworkDialog({
             }
           }
         }
-        toast.success(`Задание "${trimmedTitle}" выдано группе "${groupName}" (${createdList.length} уч.)`)
+        toast.success(t('tutor_homework.toast_assigned_group', {
+          title: trimmedTitle,
+          group: groupName,
+          count: createdList.length,
+        }))
       } else {
         if (!studentId) {
-          toast.error('Не выбран ученик')
+          toast.error(t('tutor_homework.err_student_req'))
           return
         }
         const created = await createMutation.mutateAsync({
@@ -207,10 +215,13 @@ export function CreateHomeworkDialog({
           }
 
           toast.success(
-            `Задание создано! Прикреплено материалов: ${uploadedCount} из ${selectedFiles.length + selectedMaterials.length}`,
+            t('tutor_homework.toast_assigned_indiv_attached', {
+              uploaded: uploadedCount,
+              total: selectedFiles.length + selectedMaterials.length,
+            }),
           )
         } else {
-          toast.success(`Задание "${trimmedTitle}" успешно выдано ученику`)
+          toast.success(t('tutor_homework.toast_assigned_indiv', { title: trimmedTitle }))
         }
       }
 
@@ -221,7 +232,7 @@ export function CreateHomeworkDialog({
       const msg =
         axiosError.response?.data?.message ||
         axiosError.response?.data?.error ||
-        'Не удалось выдать задание'
+        t('tutor_homework.toast_assign_err')
       toast.error(msg)
     } finally {
       setIsUploadingFiles(false)
@@ -240,14 +251,12 @@ export function CreateHomeworkDialog({
             </div>
             <div>
               <DialogTitle>
-                {isGroup ? 'Выдать задание группе' : 'Выдать домашнее задание'}
+                {isGroup ? t('tutor_homework.dialog_title_group') : t('tutor_homework.dialog_title_indiv')}
               </DialogTitle>
               <DialogDescription>
-                {isGroup ? (
-                  <>Для группы <strong className="text-foreground">{groupName}</strong> (будет назначено всем ученикам)</>
-                ) : (
-                  <>Для ученика <strong className="text-foreground">{studentName || 'ученик'}</strong></>
-                )}
+                {isGroup
+                  ? t('tutor_homework.dialog_desc_group', { group: groupName || '' })
+                  : t('tutor_homework.dialog_desc_indiv', { student: studentName || t('tutor_students.default_student_name') })}
               </DialogDescription>
             </div>
           </div>
@@ -257,11 +266,11 @@ export function CreateHomeworkDialog({
           {/* Title */}
           <div className="space-y-1.5">
             <Label htmlFor="title">
-              Название задания <span className="text-destructive">*</span>
+              {t('tutor_homework.label_title_req')}
             </Label>
             <Input
               id="title"
-              placeholder="Напр. Упражнения 1-4 стр. 45, чтение текста"
+              placeholder={t('tutor_homework.placeholder_title')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={isSubmitting}
@@ -275,9 +284,9 @@ export function CreateHomeworkDialog({
               <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-950/20 text-xs text-blue-800 dark:text-blue-300 flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
                 <div>
-                  <p className="font-semibold">У ученика пока нет уроков в расписании</p>
+                  <p className="font-semibold">{t('tutor_homework.notice_no_lessons_title')}</p>
                   <p className="mt-0.5 text-muted-foreground">
-                    Задание будет автоматически привязано к ученику (к занятию в расписании).
+                    {t('tutor_homework.notice_no_lessons_desc')}
                   </p>
                 </div>
               </div>
@@ -285,7 +294,7 @@ export function CreateHomeworkDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="lessonId" className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>Привязать к уроку</span>
+                  <span>{t('tutor_homework.label_link_lesson')}</span>
                 </Label>
 
                 <select
@@ -296,11 +305,11 @@ export function CreateHomeworkDialog({
                   className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors outline-none focus:border-ring focus:ring-1 focus:ring-ring dark:bg-input/30"
                 >
                   <option value="" className="dark:bg-zinc-900">
-                    Автоматически (к последнему уроку или новому)
+                    {t('tutor_homework.opt_auto_lesson')}
                   </option>
                   {studentLessons.map((l) => {
                     const dateFormatted = new Date(l.startTime).toLocaleDateString(
-                      'ru-RU',
+                      dateLocale,
                       {
                         day: 'numeric',
                         month: 'short',
@@ -322,7 +331,7 @@ export function CreateHomeworkDialog({
 
           {/* Deadline */}
           <div className="space-y-1.5">
-            <Label htmlFor="deadline">Срок сдачи (дедлайн)</Label>
+            <Label htmlFor="deadline">{t('tutor_homework.label_deadline')}</Label>
             <Input
               id="deadline"
               type="datetime-local"
@@ -334,10 +343,10 @@ export function CreateHomeworkDialog({
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label htmlFor="description">Описание и инструкции</Label>
+            <Label htmlFor="description">{t('tutor_homework.label_desc')}</Label>
             <Textarea
               id="description"
-              placeholder="Подробные указания к заданию, ссылки на учебник, правила оформления..."
+              placeholder={t('tutor_homework.placeholder_desc')}
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -350,7 +359,7 @@ export function CreateHomeworkDialog({
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5 text-xs font-semibold">
                 <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>Прикрепить материалы / файлы</span>
+                <span>{t('tutor_homework.label_attach')}</span>
                 {(selectedFiles.length > 0 || selectedMaterials.length > 0) && (
                   <span className="text-primary font-normal">
                     ({selectedFiles.length + selectedMaterials.length})
@@ -367,7 +376,7 @@ export function CreateHomeworkDialog({
                 className="h-7 text-xs gap-1.5 text-primary hover:text-primary hover:bg-primary/10 border-primary/30"
               >
                 <FolderKanban className="h-3.5 w-3.5" />
-                <span>Из Базы знаний</span>
+                <span>{t('tutor_homework.btn_from_kb')}</span>
               </Button>
             </div>
 
@@ -382,10 +391,10 @@ export function CreateHomeworkDialog({
               />
               <UploadCloud className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
               <p className="text-xs font-medium text-foreground">
-                Нажмите или перетащите файлы сюда с компьютера
+                {t('tutor_homework.dropzone_title')}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                PDF, Word, фото заданий, сканы
+                {t('tutor_homework.dropzone_hint')}
               </p>
             </div>
 
@@ -393,7 +402,7 @@ export function CreateHomeworkDialog({
             {selectedMaterials.length > 0 && (
               <div className="space-y-1.5 pt-1">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Выбрано из Базы знаний ({selectedMaterials.length})
+                  {t('tutor_homework.kb_selected_title', { count: selectedMaterials.length })}
                 </p>
                 {selectedMaterials.map((mat) => (
                   <div
@@ -412,7 +421,7 @@ export function CreateHomeworkDialog({
                           </span>
                         )}
                         <span className="text-muted-foreground shrink-0 text-[11px]">
-                          ({(((mat.sizeBytes || mat.fileSize || 0)) / 1024).toFixed(1)} КБ)
+                          ({(((mat.sizeBytes || mat.fileSize || 0)) / 1024).toFixed(1)} {t('student_materials.size_kb')})
                         </span>
                       </div>
                     </div>
@@ -435,7 +444,7 @@ export function CreateHomeworkDialog({
             {selectedFiles.length > 0 && (
               <div className="space-y-1.5 pt-1">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Файлы с компьютера ({selectedFiles.length})
+                  {t('tutor_homework.local_files_title', { count: selectedFiles.length })}
                 </p>
                 {selectedFiles.map((file, idx) => (
                   <div
@@ -446,7 +455,7 @@ export function CreateHomeworkDialog({
                       <FileText className="h-4 w-4 text-primary shrink-0" />
                       <span className="truncate font-medium">{file.name}</span>
                       <span className="text-muted-foreground shrink-0 text-[11px]">
-                        ({(file.size / 1024).toFixed(1)} КБ)
+                        ({(file.size / 1024).toFixed(1)} {t('student_materials.size_kb')})
                       </span>
                     </div>
                     <Button
@@ -472,7 +481,7 @@ export function CreateHomeworkDialog({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Отмена
+              {t('tutor_homework.btn_cancel')}
             </Button>
             <Button
               type="submit"
@@ -481,7 +490,7 @@ export function CreateHomeworkDialog({
               {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              {isUploadingFiles ? 'Загрузка файлов...' : 'Выдать задание'}
+              {isUploadingFiles ? t('tutor_homework.btn_uploading') : t('tutor_homework.btn_submit_create')}
             </Button>
           </DialogFooter>
         </form>

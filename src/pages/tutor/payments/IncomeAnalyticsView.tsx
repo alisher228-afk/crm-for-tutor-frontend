@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useIncomeAnalytics } from '@/hooks/usePayments'
+import { useLanguage } from '@/i18n'
 import {
   TrendingUp,
   CreditCard,
@@ -21,22 +22,10 @@ import {
   AlertCircle,
 } from 'lucide-react'
 
-const MONTHS = [
-  { value: 1, label: 'Январь' },
-  { value: 2, label: 'Февраль' },
-  { value: 3, label: 'Март' },
-  { value: 4, label: 'Апрель' },
-  { value: 5, label: 'Май' },
-  { value: 6, label: 'Июнь' },
-  { value: 7, label: 'Июль' },
-  { value: 8, label: 'Август' },
-  { value: 9, label: 'Сентябрь' },
-  { value: 10, label: 'Октябрь' },
-  { value: 11, label: 'Ноябрь' },
-  { value: 12, label: 'Декабрь' },
-]
-
 export function IncomeAnalyticsView() {
+  const { t, language } = useLanguage()
+  const numLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
   const currentDate = new Date()
   const currentYear = currentDate.getFullYear()
   const currentMonth = currentDate.getMonth() + 1
@@ -48,6 +37,21 @@ export function IncomeAnalyticsView() {
     selectedMonth,
     selectedYear,
   )
+
+  const months = [
+    { value: 1, label: t('tutor_payments.month_1') },
+    { value: 2, label: t('tutor_payments.month_2') },
+    { value: 3, label: t('tutor_payments.month_3') },
+    { value: 4, label: t('tutor_payments.month_4') },
+    { value: 5, label: t('tutor_payments.month_5') },
+    { value: 6, label: t('tutor_payments.month_6') },
+    { value: 7, label: t('tutor_payments.month_7') },
+    { value: 8, label: t('tutor_payments.month_8') },
+    { value: 9, label: t('tutor_payments.month_9') },
+    { value: 10, label: t('tutor_payments.month_10') },
+    { value: 11, label: t('tutor_payments.month_11') },
+    { value: 12, label: t('tutor_payments.month_12') },
+  ]
 
   const years = [
     currentYear - 2,
@@ -83,7 +87,7 @@ export function IncomeAnalyticsView() {
     selectedMonth === currentMonth && selectedYear === currentYear
 
   const monthLabel =
-    MONTHS.find((m) => m.value === selectedMonth)?.label || 'Месяц'
+    months.find((m) => m.value === selectedMonth)?.label || t('tutor_payments.month_fallback')
 
   const totalIncome =
     data?.totalIncome ?? (data as unknown as { income?: number })?.income ?? 0
@@ -104,7 +108,7 @@ export function IncomeAnalyticsView() {
               size="icon"
               className="h-9 w-9"
               onClick={handlePrevMonth}
-              title="Предыдущий месяц"
+              title={t('common.back')}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -120,14 +124,14 @@ export function IncomeAnalyticsView() {
                   <SelectValue>
                     {(v) =>
                       v
-                        ? MONTHS.find((m) => String(m.value) === String(v))?.label ||
+                        ? months.find((m) => String(m.value) === String(v))?.label ||
                           v
                         : ''
                     }
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {MONTHS.map((m) => (
+                  {months.map((m) => (
                     <SelectItem key={m.value} value={String(m.value)}>
                       {m.label}
                     </SelectItem>
@@ -142,12 +146,12 @@ export function IncomeAnalyticsView() {
                 }}
               >
                 <SelectTrigger className="w-[105px] h-9">
-                  <SelectValue>{(v) => (v ? `${v} г.` : '')}</SelectValue>
+                  <SelectValue>{(v) => (v ? t('tutor_payments.year_suffix', { year: v }) : '')}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((y) => (
                     <SelectItem key={y} value={String(y)}>
-                      {y} г.
+                      {t('tutor_payments.year_suffix', { year: y })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -159,7 +163,7 @@ export function IncomeAnalyticsView() {
               size="icon"
               className="h-9 w-9"
               onClick={handleNextMonth}
-              title="Следующий месяц"
+              title={t('common.next')}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -167,7 +171,7 @@ export function IncomeAnalyticsView() {
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
             <span className="text-sm font-medium text-muted-foreground">
-              Период:{' '}
+              {t('tutor_payments.period_label')}{' '}
               <span className="text-foreground font-semibold">
                 {monthLabel} {selectedYear}
               </span>
@@ -181,7 +185,7 @@ export function IncomeAnalyticsView() {
                 onClick={handleResetToCurrent}
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                <span>Текущий месяц</span>
+                <span>{t('tutor_payments.btn_current_month')}</span>
               </Button>
             )}
           </div>
@@ -203,14 +207,14 @@ export function IncomeAnalyticsView() {
             <AlertCircle className="h-8 w-8 text-destructive" />
             <div>
               <p className="font-semibold text-foreground">
-                Не удалось загрузить аналитику дохода
+                {t('tutor_payments.err_load_analytics_title')}
               </p>
               <p className="text-sm text-muted-foreground">
-                Проверьте подключение к сети или повторите запрос
+                {t('tutor_payments.err_load_analytics_desc')}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Повторить попытку
+              {t('tutor_payments.btn_retry')}
             </Button>
           </CardContent>
         </Card>
@@ -224,21 +228,21 @@ export function IncomeAnalyticsView() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <TrendingUp className="h-4 w-4 text-foreground" />
-                    Доход за {monthLabel} {selectedYear}
+                    {t('tutor_payments.hero_income_title', { month: monthLabel, year: selectedYear })}
                   </span>
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-medium">
-                    Зафиксировано
+                    {t('tutor_payments.badge_recorded')}
                   </span>
                 </div>
               </CardHeader>
               <CardContent className="pt-2 pb-6">
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl sm:text-5xl font-black tracking-tight text-foreground tabular-nums">
-                    {totalIncome.toLocaleString('ru-RU')}
+                    {totalIncome.toLocaleString(numLocale)}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Фактически поступившие оплаты учеников за выбранный календарный период
+                  {t('tutor_payments.hero_income_desc')}
                 </p>
               </CardContent>
             </Card>
@@ -249,7 +253,7 @@ export function IncomeAnalyticsView() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <Calculator className="h-4 w-4 text-primary" />
-                    Средний платёж
+                    {t('tutor_payments.card_average_title')}
                   </CardTitle>
                 </div>
               </CardHeader>
@@ -257,20 +261,14 @@ export function IncomeAnalyticsView() {
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-2xl sm:text-3xl font-bold text-foreground">
                     {averageCheck !== null
-                      ? averageCheck.toLocaleString('ru-RU')
+                      ? averageCheck.toLocaleString(numLocale)
                       : '—'}
                   </span>
                 </div>
                 <CardDescription className="text-xs mt-2">
                   {paymentsCount && paymentsCount > 0
-                    ? `На основе ${paymentsCount} платеж${
-                        paymentsCount === 1
-                          ? 'а'
-                          : paymentsCount < 5
-                          ? 'ей'
-                          : 'ей'
-                      }`
-                    : 'В этом месяце платежей пока не было'}
+                    ? t('tutor_payments.card_average_desc_count', { count: paymentsCount })
+                    : t('tutor_payments.card_average_desc_empty')}
                 </CardDescription>
               </CardContent>
             </Card>
@@ -282,7 +280,7 @@ export function IncomeAnalyticsView() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-blue-500" />
-                  Количество оплат
+                  {t('tutor_payments.card_payments_count_title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-1">
@@ -290,7 +288,7 @@ export function IncomeAnalyticsView() {
                   {paymentsCount !== undefined ? paymentsCount : '—'}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Всего транзакций от учеников за месяц
+                  {t('tutor_payments.card_payments_count_desc')}
                 </p>
               </CardContent>
             </Card>
@@ -299,7 +297,7 @@ export function IncomeAnalyticsView() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <GraduationCap className="h-4 w-4 text-amber-500" />
-                  Проведено уроков
+                  {t('tutor_payments.card_lessons_count_title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-1">
@@ -307,7 +305,7 @@ export function IncomeAnalyticsView() {
                   {lessonCount !== undefined ? lessonCount : '—'}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Завершённых занятий за выбранный месяц
+                  {t('tutor_payments.card_lessons_count_desc')}
                 </p>
               </CardContent>
             </Card>

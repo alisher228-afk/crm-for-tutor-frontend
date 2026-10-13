@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useArchiveStudent } from '@/hooks/useStudents'
+import { useTranslation } from '@/i18n'
 import { toast } from 'sonner'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import type { StudentProfile } from '@/types'
@@ -26,25 +27,26 @@ export function ArchiveConfirmDialog({
   student,
   onSuccess,
 }: ArchiveConfirmDialogProps) {
+  const { t } = useTranslation()
   const archiveMutation = useArchiveStudent()
 
   const studentName =
     student?.name ||
     [student?.firstName, student?.lastName].filter(Boolean).join(' ') ||
-    'ученика'
+    t('tutor_students.default_student_name')
 
   const handleArchive = async () => {
     if (!student?.id) return
 
     try {
       await archiveMutation.mutateAsync(student.id)
-      toast.success(`Ученик "${studentName}" архивирован`)
+      toast.success(t('tutor_students.toast_archived_success', { name: studentName }))
       onOpenChange(false)
       onSuccess?.()
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось архивировать ученика',
+        axiosError.response?.data?.message || t('tutor_students.toast_archive_err'),
       )
     }
   }
@@ -55,12 +57,10 @@ export function ArchiveConfirmDialog({
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
-            <DialogTitle>Архивировать ученика?</DialogTitle>
+            <DialogTitle>{t('tutor_students.archive_modal_title')}</DialogTitle>
           </div>
           <DialogDescription className="pt-2">
-            Вы уверены, что хотите перевести ученика{' '}
-            <strong className="text-foreground">{studentName}</strong> в архив?
-            Его статус изменится на <span className="font-semibold">ARCHIVED</span>.
+            {t('tutor_students.archive_modal_desc', { name: studentName })}
           </DialogDescription>
         </DialogHeader>
 
@@ -71,7 +71,7 @@ export function ArchiveConfirmDialog({
             onClick={() => onOpenChange(false)}
             disabled={archiveMutation.isPending}
           >
-            Отмена
+            {t('tutor_students.btn_cancel')}
           </Button>
           <Button
             type="button"
@@ -82,7 +82,7 @@ export function ArchiveConfirmDialog({
             {archiveMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Архивировать
+            {t('tutor_students.btn_archive_confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>

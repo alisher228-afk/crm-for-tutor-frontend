@@ -1,4 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react'
+import { useLanguage } from '@/i18n'
 import {
   Dialog,
   DialogContent,
@@ -57,6 +58,7 @@ export function TestFormDialog({
   initialStudentId,
   onSuccess,
 }: TestFormDialogProps) {
+  const { t } = useLanguage()
   const isEditing = Boolean(initialData?.id)
 
   const [type, setType] = useState<TestType>('INTERNAL')
@@ -174,7 +176,7 @@ export function TestFormDialog({
 
   const handleRemoveQuestion = (qIndex: number) => {
     if (questions.length <= 1) {
-      toast.info('В тесте должен быть хотя бы один вопрос')
+      toast.info(t('tutor_tests.toast_min_one_q'))
       return
     }
     setQuestions((prev) => prev.filter((_, idx) => idx !== qIndex))
@@ -202,7 +204,7 @@ export function TestFormDialog({
       prev.map((q, idx) => {
         if (idx !== qIndex) return q
         if (q.options.length >= 6) {
-          toast.info('Максимум 6 вариантов ответа')
+          toast.info(t('tutor_tests.toast_max_options'))
           return q
         }
         return { ...q, options: [...q.options, ''] }
@@ -215,7 +217,7 @@ export function TestFormDialog({
       prev.map((q, idx) => {
         if (idx !== qIndex) return q
         if (q.options.length <= 2) {
-          toast.info('Должно быть минимум 2 варианта ответа')
+          toast.info(t('tutor_tests.toast_min_options'))
           return q
         }
         const newOptions = q.options.filter((_, oIdx) => oIdx !== optIndex)
@@ -247,7 +249,7 @@ export function TestFormDialog({
 
     const trimmedTitle = title.trim()
     if (!trimmedTitle) {
-      toast.error('Укажите название теста')
+      toast.error(t('tutor_tests.err_title_req'))
       return
     }
 
@@ -257,7 +259,7 @@ export function TestFormDialog({
     if (type === 'EXTERNAL') {
       const trimmedUrl = externalUrl.trim()
       if (!trimmedUrl) {
-        toast.error('Укажите ссылку на внешний тест (Quizland, Quizlet и др.)')
+        toast.error(t('tutor_tests.err_url_req'))
         return
       }
       finalExternalUrl = trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')
@@ -270,12 +272,12 @@ export function TestFormDialog({
         const q = questions[i]
         const trimmedQuestion = q.question.trim()
         if (!trimmedQuestion) {
-          toast.error(`Введите текст вопроса №${i + 1}`)
+          toast.error(t('tutor_tests.err_q_text', { number: i + 1 }))
           return
         }
         const filledOptions = q.options.map((o) => o.trim()).filter((o) => o.length > 0)
         if (filledOptions.length < 2) {
-          toast.error(`В вопросе №${i + 1} заполните минимум 2 варианта ответа`)
+          toast.error(t('tutor_tests.err_q_options', { number: i + 1 }))
           return
         }
         let safeCorrectIdx = q.correctOptionIndex
@@ -294,11 +296,11 @@ export function TestFormDialog({
     }
 
     if (targetType === 'GROUP' && !groupName.trim()) {
-      toast.error('Выберите группу для теста')
+      toast.error(t('tutor_tests.err_target_group_req'))
       return
     }
     if (targetType === 'INDIVIDUAL' && !studentId) {
-      toast.error('Выберите ученика для теста')
+      toast.error(t('tutor_tests.err_target_student_req'))
       return
     }
 
@@ -322,12 +324,12 @@ export function TestFormDialog({
           id: initialData.id,
           data: payload,
         })
-        toast.success('Тест успешно обновлен')
+        toast.success(t('tutor_tests.toast_updated'))
         onOpenChange(false)
         onSuccess?.(updated)
       } else {
         const created = await createMutation.mutateAsync(payload)
-        toast.success('Тест успешно создан')
+        toast.success(t('tutor_tests.toast_created'))
         onOpenChange(false)
         onSuccess?.(created)
       }
@@ -336,7 +338,7 @@ export function TestFormDialog({
       const msg =
         axiosError.response?.data?.message ||
         axiosError.response?.data?.error ||
-        'Не удалось сохранить тест'
+        t('tutor_tests.toast_save_err')
       toast.error(msg)
     }
   }
@@ -351,10 +353,10 @@ export function TestFormDialog({
             </div>
             <div>
               <DialogTitle className="text-lg">
-                {isEditing ? 'Редактировать тест' : 'Создать тест или квиз'}
+                {isEditing ? t('tutor_tests.form_title_edit') : t('tutor_tests.form_title_create')}
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Создайте интерактивный тест на сайте или прикрепите ссылку на Quizland / Quizlet
+                {t('tutor_tests.form_desc')}
               </DialogDescription>
             </div>
           </div>
@@ -363,7 +365,7 @@ export function TestFormDialog({
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-3 space-y-4">
           {/* Test Type Selector */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Формат теста</Label>
+            <Label className="text-xs font-semibold">{t('tutor_tests.format_label')}</Label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -385,10 +387,10 @@ export function TestFormDialog({
                 </div>
                 <div>
                   <p className="font-semibold text-xs text-foreground">
-                    Интерактивный на сайте
+                    {t('tutor_tests.format_interactive_title')}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    Конструктор вопросов с автопроверкой
+                    {t('tutor_tests.format_interactive_desc')}
                   </p>
                 </div>
               </button>
@@ -413,10 +415,10 @@ export function TestFormDialog({
                 </div>
                 <div>
                   <p className="font-semibold text-xs text-foreground">
-                    Внешний квиз / ссылка
+                    {t('tutor_tests.format_external_title')}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    Quizland, Quizlet, Kahoot, Forms
+                    {t('tutor_tests.format_external_desc')}
                   </p>
                 </div>
               </button>
@@ -425,7 +427,7 @@ export function TestFormDialog({
 
           {/* Target Audience Selector */}
           <div className="space-y-2 p-3.5 rounded-xl border border-border bg-muted/20">
-            <Label className="text-xs font-semibold">Кому назначен тест</Label>
+            <Label className="text-xs font-semibold">{t('tutor_tests.target_label')}</Label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
@@ -437,7 +439,7 @@ export function TestFormDialog({
                 }`}
               >
                 <Globe className="h-4 w-4 mb-1" />
-                <span className="text-xs">Всем ученикам</span>
+                <span className="text-xs">{t('tutor_tests.target_all_btn')}</span>
               </button>
 
               <button
@@ -450,7 +452,7 @@ export function TestFormDialog({
                 }`}
               >
                 <Users className="h-4 w-4 mb-1" />
-                <span className="text-xs">Группе</span>
+                <span className="text-xs">{t('tutor_tests.target_group_btn')}</span>
               </button>
 
               <button
@@ -463,18 +465,18 @@ export function TestFormDialog({
                 }`}
               >
                 <User className="h-4 w-4 mb-1" />
-                <span className="text-xs">Индивидуально</span>
+                <span className="text-xs">{t('tutor_tests.target_indiv_btn')}</span>
               </button>
             </div>
 
             {targetType === 'GROUP' && (
               <div className="space-y-1.5 pt-1.5">
                 <Label htmlFor="target-group" className="text-xs">
-                  Выберите группу <span className="text-destructive">*</span>
+                  {t('tutor_tests.label_choose_group')}
                 </Label>
                 {groups.length === 0 ? (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    У вас пока нет созданных групп. Создайте группу в разделе «Ученики» или выберите индивидуального ученика.
+                    {t('tutor_tests.no_groups_warning')}
                   </p>
                 ) : (
                   <select
@@ -484,12 +486,15 @@ export function TestFormDialog({
                     className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-hidden focus:ring-1 focus:ring-ring text-foreground"
                     required
                   >
-                    <option value="">-- Выберите учебную группу --</option>
-                    {groups.map((g) => (
-                      <option key={g.name} value={g.name}>
-                        {g.name} ({g.studentCount} {g.studentCount === 1 ? 'ученик' : 'учеников'})
-                      </option>
-                    ))}
+                    <option value="">{t('tutor_tests.select_group_placeholder')}</option>
+                    {groups.map((g) => {
+                      const noun = g.studentCount === 1 ? t('tutor_lessons.student_noun_1') : t('tutor_lessons.student_noun_many')
+                      return (
+                        <option key={g.name} value={g.name}>
+                          {g.name} {t('tutor_tests.group_students_noun', { count: g.studentCount, noun })}
+                        </option>
+                      )
+                    })}
                   </select>
                 )}
               </div>
@@ -498,11 +503,11 @@ export function TestFormDialog({
             {targetType === 'INDIVIDUAL' && (
               <div className="space-y-1.5 pt-1.5">
                 <Label htmlFor="target-student" className="text-xs">
-                  Выберите ученика <span className="text-destructive">*</span>
+                  {t('tutor_tests.label_choose_student')}
                 </Label>
                 {students.length === 0 ? (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    У вас пока нет добавленных учеников.
+                    {t('tutor_tests.no_students_warning')}
                   </p>
                 ) : (
                   <select
@@ -512,10 +517,12 @@ export function TestFormDialog({
                     className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-hidden focus:ring-1 focus:ring-ring text-foreground"
                     required
                   >
-                    <option value="">-- Выберите ученика --</option>
+                    <option value="">{t('tutor_tests.select_student_placeholder')}</option>
                     {students.map((s) => {
                       const fullName = [s.firstName, s.lastName].filter(Boolean).join(' ')
-                      const grp = s.groupName ? ` [Группа: ${s.groupName}]` : ' [Индивидуально]'
+                      const grp = s.groupName
+                        ? ` [${t('tutor_tests.badge_group_prefix', { name: s.groupName })}]`
+                        : ` [${t('tutor_tests.target_individual')}]`
                       return (
                         <option key={s.id} value={s.id}>
                           {fullName}{grp}
@@ -532,11 +539,11 @@ export function TestFormDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="test-title">
-                Название теста <span className="text-destructive">*</span>
+                {t('tutor_tests.label_test_title')}
               </Label>
               <Input
                 id="test-title"
-                placeholder="Например: Past Simple vs Present Perfect"
+                placeholder={t('tutor_tests.placeholder_test_title')}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={isPending}
@@ -545,10 +552,10 @@ export function TestFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="test-topic">Предмет / Тема</Label>
+              <Label htmlFor="test-topic">{t('tutor_tests.label_topic')}</Label>
               <Input
                 id="test-topic"
-                placeholder="Например: Английский язык, B1"
+                placeholder={t('tutor_tests.placeholder_topic')}
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 disabled={isPending}
@@ -558,10 +565,10 @@ export function TestFormDialog({
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label htmlFor="test-desc">Описание / Инструкция</Label>
+            <Label htmlFor="test-desc">{t('tutor_tests.label_desc')}</Label>
             <Input
               id="test-desc"
-              placeholder="Инструкция для ученика перед началом..."
+              placeholder={t('tutor_tests.placeholder_desc')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isPending}
@@ -571,13 +578,13 @@ export function TestFormDialog({
           {/* Time Limit & Deadline */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="test-time">Время на тест (мин)</Label>
+              <Label htmlFor="test-time">{t('tutor_tests.label_time_limit')}</Label>
               <Input
                 id="test-time"
                 type="number"
                 min="1"
                 max="180"
-                placeholder="Напр. 15 (или без лимита)"
+                placeholder={t('tutor_tests.placeholder_time_limit')}
                 value={timeLimitMinutes}
                 onChange={(e) => setTimeLimitMinutes(e.target.value)}
                 disabled={isPending}
@@ -585,7 +592,7 @@ export function TestFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="test-deadline">Срок сдачи (дедлайн)</Label>
+              <Label htmlFor="test-deadline">{t('tutor_tests.label_deadline')}</Label>
               <Input
                 id="test-deadline"
                 type="datetime-local"
@@ -601,13 +608,13 @@ export function TestFormDialog({
             <div className="space-y-3 p-4 rounded-xl border border-border bg-muted/20">
               <div className="space-y-1.5">
                 <Label htmlFor="test-url">
-                  Ссылка на квиз / тест <span className="text-destructive">*</span>
+                  {t('tutor_tests.label_external_url')}
                 </Label>
                 <div className="relative">
                   <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="test-url"
-                    placeholder="https://quizland.io/... или https://quizlet.com/..."
+                    placeholder="https://quizland.io/... / https://quizlet.com/..."
                     value={externalUrl}
                     onChange={(e) => setExternalUrl(e.target.value)}
                     className="pl-9 text-sm"
@@ -620,7 +627,7 @@ export function TestFormDialog({
               {/* Service chips */}
               <div className="space-y-1">
                 <p className="text-[11px] text-muted-foreground font-medium">
-                  Поддерживаемые сервисы (нажмите для примера):
+                  {t('tutor_tests.supported_services_label')}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {PRESET_SERVICES.map((srv) => (
@@ -646,10 +653,10 @@ export function TestFormDialog({
               <div className="flex items-center justify-between border-b border-border pb-2">
                 <div>
                   <h3 className="text-sm font-bold text-foreground">
-                    Вопросы теста ({questions.length})
+                    {t('tutor_tests.questions_builder_title', { count: questions.length })}
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    Отметьте правильный вариант ответа зеленой радиокнопкой
+                    {t('tutor_tests.questions_builder_desc')}
                   </p>
                 </div>
                 <Button
@@ -660,7 +667,7 @@ export function TestFormDialog({
                   className="h-8 gap-1 text-xs"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Добавить вопрос</span>
+                  <span>{t('tutor_tests.btn_add_question')}</span>
                 </Button>
               </div>
 
@@ -672,7 +679,7 @@ export function TestFormDialog({
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-bold text-primary px-2 py-0.5 rounded bg-primary/10">
-                        Вопрос {qIdx + 1}
+                        {t('tutor_tests.question_heading', { number: qIdx + 1 })}
                       </span>
                       {questions.length > 1 && (
                         <Button
@@ -681,7 +688,7 @@ export function TestFormDialog({
                           size="icon"
                           className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           onClick={() => handleRemoveQuestion(qIdx)}
-                          title="Удалить вопрос"
+                          title={t('tutor_tests.action_delete')}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -690,7 +697,7 @@ export function TestFormDialog({
 
                     {/* Question text */}
                     <Input
-                      placeholder={`Введите формулировку вопроса №${qIdx + 1}...`}
+                      placeholder={t('tutor_tests.placeholder_question', { number: qIdx + 1 })}
                       value={q.question}
                       onChange={(e) => handleQuestionTextChange(qIdx, e.target.value)}
                       className="font-medium text-sm"
@@ -700,7 +707,7 @@ export function TestFormDialog({
                     {/* Options list */}
                     <div className="space-y-2 pt-1">
                       <Label className="text-[11px] font-semibold text-muted-foreground">
-                        Варианты ответов:
+                        {t('tutor_tests.options_label')}
                       </Label>
                       {q.options.map((opt, optIdx) => {
                         const isCorrect = q.correctOptionIndex === optIdx
@@ -714,13 +721,13 @@ export function TestFormDialog({
                                   ? 'bg-emerald-600 border-emerald-600 text-white'
                                   : 'border-muted-foreground/40 hover:border-emerald-600'
                               }`}
-                              title={isCorrect ? 'Правильный ответ' : 'Сделать правильным ответом'}
+                              title={isCorrect ? t('tutor_tests.badge_correct') : t('tutor_tests.options_label')}
                             >
                               {isCorrect && <CheckCircle2 className="h-4 w-4" />}
                             </button>
 
                             <Input
-                              placeholder={`Вариант ${optIdx + 1}`}
+                              placeholder={t('tutor_tests.placeholder_option', { number: optIdx + 1 })}
                               value={opt}
                               onChange={(e) =>
                                 handleOptionTextChange(qIdx, optIdx, e.target.value)
@@ -738,7 +745,7 @@ export function TestFormDialog({
                                 type="button"
                                 onClick={() => handleRemoveOption(qIdx, optIdx)}
                                 className="text-muted-foreground hover:text-destructive p-1"
-                                title="Удалить вариант"
+                                title={t('tutor_tests.action_delete')}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -754,7 +761,7 @@ export function TestFormDialog({
                           className="text-xs text-primary hover:underline flex items-center gap-1 pt-1"
                         >
                           <Plus className="h-3 w-3" />
-                          <span>Добавить вариант ответа</span>
+                          <span>{t('tutor_tests.btn_add_option')}</span>
                         </button>
                       )}
                     </div>
@@ -762,7 +769,7 @@ export function TestFormDialog({
                     {/* Explanation */}
                     <div className="pt-1">
                       <Input
-                        placeholder="Пояснение к ответу (необязательно)..."
+                        placeholder={t('tutor_tests.placeholder_explanation')}
                         value={q.explanation || ''}
                         onChange={(e) => handleExplanationChange(qIdx, e.target.value)}
                         className="text-xs h-7 text-muted-foreground"
@@ -779,7 +786,7 @@ export function TestFormDialog({
                 className="w-full gap-2 text-xs py-2 h-9 border-dashed"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Добавить еще один вопрос</span>
+                <span>{t('tutor_tests.btn_add_question')}</span>
               </Button>
             </div>
           )}
@@ -792,11 +799,11 @@ export function TestFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={isPending}
           >
-            Отмена
+            {t('tutor_tests.btn_cancel')}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={isPending || !title.trim()}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? 'Сохранить изменения' : 'Создать тест'}
+            {isEditing ? t('tutor_tests.btn_save_changes') : t('tutor_tests.btn_create_submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { Trash2, Loader2 } from 'lucide-react'
 import type { Lesson } from '@/types'
 import type { AxiosError } from 'axios'
+import { useLanguage } from '@/i18n'
 
 interface DeleteLessonConfirmDialogProps {
   open: boolean
@@ -28,6 +29,7 @@ export function DeleteLessonConfirmDialog({
   sessionLessons,
   onSuccess,
 }: DeleteLessonConfirmDialogProps) {
+  const { t } = useLanguage()
   const deleteMutation = useDeleteLesson()
 
   const handleDelete = async () => {
@@ -36,17 +38,19 @@ export function DeleteLessonConfirmDialog({
     try {
       if (sessionLessons && sessionLessons.length > 1) {
         await Promise.all(sessionLessons.map((l) => deleteMutation.mutateAsync(l.id)))
-        toast.success(`Групповое занятие (${sessionLessons.length} уч.) успешно удалено`)
+        toast.success(
+          t('tutor_lessons.toast_deleted_group', { count: sessionLessons.length }),
+        )
       } else {
         await deleteMutation.mutateAsync(lesson.id)
-        toast.success('Урок успешно удален')
+        toast.success(t('tutor_lessons.toast_deleted_indiv'))
       }
       onOpenChange(false)
       onSuccess?.()
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось удалить урок',
+        axiosError.response?.data?.message || t('tutor_lessons.toast_delete_err'),
       )
     }
   }
@@ -55,8 +59,22 @@ export function DeleteLessonConfirmDialog({
   const studentName =
     lesson?.studentName ||
     [lesson?.studentFirstName, lesson?.studentLastName].filter(Boolean).join(' ') ||
-    'ученика'
-  const lessonTopic = lesson?.topic ? ` по теме "${lesson.topic}"` : ''
+    t('tutor_lessons.default_student')
+
+  const topicClause = lesson?.topic
+    ? t('tutor_lessons.topic_clause', { topic: lesson.topic })
+    : ''
+
+  const countClause =
+    sessionLessons && sessionLessons.length > 0
+      ? ` (${sessionLessons.length} ${
+          sessionLessons.length === 1
+            ? t('tutor_lessons.student_noun_1')
+            : sessionLessons.length < 5
+            ? t('tutor_lessons.student_noun_few')
+            : t('tutor_lessons.student_noun_many')
+        })`
+      : ''
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -65,26 +83,22 @@ export function DeleteLessonConfirmDialog({
           <div className="flex items-center gap-2 text-destructive">
             <Trash2 className="h-5 w-5" />
             <DialogTitle>
-              {isGroup ? 'Удалить групповое занятие?' : 'Удалить занятие?'}
+              {isGroup
+                ? t('tutor_lessons.modal_title_group')
+                : t('tutor_lessons.modal_title_indiv')}
             </DialogTitle>
           </div>
           <DialogDescription className="pt-2">
-            {isGroup ? (
-              <>
-                Вы собираетесь удалить групповой урок для группы{' '}
-                <strong className="text-foreground">{lesson?.groupName}</strong>
-                {sessionLessons && sessionLessons.length > 0 && (
-                  <> ({sessionLessons.length} учеников)</>
-                )}
-                {lessonTopic}. Это занятие будет удалено у всех учеников группы.
-              </>
-            ) : (
-              <>
-                Вы собираетесь удалить урок для{' '}
-                <strong className="text-foreground">{studentName}</strong>
-                {lessonTopic}. Это действие нельзя будет отменить.
-              </>
-            )}
+            {isGroup
+              ? t('tutor_lessons.modal_desc_group', {
+                  group: lesson?.groupName || '',
+                  count: countClause,
+                  topic: topicClause,
+                })
+              : t('tutor_lessons.modal_desc_indiv', {
+                  student: studentName,
+                  topic: topicClause,
+                })}
           </DialogDescription>
         </DialogHeader>
 
@@ -95,7 +109,7 @@ export function DeleteLessonConfirmDialog({
             onClick={() => onOpenChange(false)}
             disabled={deleteMutation.isPending}
           >
-            Отмена
+            {t('tutor_lessons.btn_cancel')}
           </Button>
           <Button
             type="button"
@@ -106,7 +120,7 @@ export function DeleteLessonConfirmDialog({
             {deleteMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Удалить урок
+            {t('tutor_lessons.btn_delete_confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>

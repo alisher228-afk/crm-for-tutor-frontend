@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useLanguage } from '@/i18n'
 import { toast } from 'sonner'
 import {
   FolderKanban,
@@ -48,20 +49,21 @@ import {
 import type { TeachingMaterial } from '@/types'
 import type { AxiosError } from 'axios'
 
-function formatBytes(bytes?: number, decimals = 1): string {
-  if (!bytes || bytes === 0) return '0 Б'
+function formatBytes(bytes?: number, decimals = 1, units?: string[]): string {
+  const sizes = units || ['Б', 'КБ', 'МБ', 'ГБ']
+  if (!bytes || bytes === 0) return `0 ${sizes[0]}`
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Б', 'КБ', 'МБ', 'ГБ']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+  const unit = sizes[i] || sizes[sizes.length - 1]
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${unit}`
 }
 
-function formatDate(isoStr?: string): string {
+function formatDate(isoStr: string | undefined, dateLocale: string): string {
   if (!isoStr) return ''
   const d = new Date(isoStr)
   if (isNaN(d.getTime())) return ''
-  return d.toLocaleDateString('ru-RU', {
+  return d.toLocaleDateString(dateLocale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -94,6 +96,17 @@ function getFileIcon(fileName?: string, contentType?: string) {
 }
 
 export function TutorMaterialsPage() {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+  const sizeUnits = [
+    t('student_materials.size_b'),
+    t('student_materials.size_kb'),
+    t('student_materials.size_mb'),
+    t('student_materials.size_gb'),
+  ]
+  const formatSize = (bytes?: number) => formatBytes(bytes, 1, sizeUnits)
+  const formatItemDate = (isoStr?: string) => formatDate(isoStr, dateLocale)
+
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
 
@@ -191,7 +204,7 @@ export function TutorMaterialsPage() {
   const handleUploadSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!uploadFile) {
-      toast.error('Выберите файл для загрузки')
+      toast.error(t('tutor_materials.err_file_req'))
       return
     }
     const finalTitle = uploadTitle.trim() || uploadFile.name
@@ -204,7 +217,7 @@ export function TutorMaterialsPage() {
         description: uploadDescription.trim() || undefined,
       })
 
-      toast.success(`Материал "${finalTitle}" добавлен в Базу знаний`)
+      toast.success(t('tutor_materials.toast_uploaded', { title: finalTitle }))
       setIsUploadOpen(false)
       // Reset form
       setUploadFile(null)
@@ -216,7 +229,7 @@ export function TutorMaterialsPage() {
       toast.error(
         axiosError.response?.data?.message ||
           axiosError.response?.data?.error ||
-          'Не удалось загрузить материал',
+          t('tutor_materials.toast_upload_err'),
       )
     }
   }
@@ -237,7 +250,7 @@ export function TutorMaterialsPage() {
     if (!activeMaterial) return
     const finalTitle = editTitle.trim()
     if (!finalTitle) {
-      toast.error('Название материала не может быть пустым')
+      toast.error(t('tutor_materials.err_title_req'))
       return
     }
 
@@ -250,7 +263,7 @@ export function TutorMaterialsPage() {
           description: editDescription.trim() || undefined,
         },
       })
-      toast.success('Материал обновлен')
+      toast.success(t('tutor_materials.toast_updated'))
       setIsEditOpen(false)
       setActiveMaterial(null)
     } catch (err) {
@@ -258,7 +271,7 @@ export function TutorMaterialsPage() {
       toast.error(
         axiosError.response?.data?.message ||
           axiosError.response?.data?.error ||
-          'Не удалось обновить материал',
+          t('tutor_materials.toast_update_err'),
       )
     }
   }
@@ -275,7 +288,7 @@ export function TutorMaterialsPage() {
     if (!activeMaterial) return
     try {
       await deleteMutation.mutateAsync(activeMaterial.id)
-      toast.success(`Материал "${activeMaterial.title}" удален`)
+      toast.success(t('tutor_materials.toast_deleted', { title: activeMaterial.title }))
       setIsDeleteOpen(false)
       setActiveMaterial(null)
     } catch (err) {
@@ -283,7 +296,7 @@ export function TutorMaterialsPage() {
       toast.error(
         axiosError.response?.data?.message ||
           axiosError.response?.data?.error ||
-          'Не удалось удалить материал',
+          t('tutor_materials.toast_delete_err'),
       )
     }
   }
@@ -321,7 +334,7 @@ export function TutorMaterialsPage() {
       }))
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || `Не удалось загрузить файл "${m.title}"`,
+        axiosError.response?.data?.message || t('tutor_materials.toast_preview_err', { title: m.title }),
       )
     }
   }
@@ -330,11 +343,11 @@ export function TutorMaterialsPage() {
     setBusyActionId(m.id)
     try {
       await materialsApi.downloadMaterial(m.id, m.originalFileName || m.fileName || `${m.title}.pdf`)
-      toast.success(`Скачивание "${m.title}" начато`)
+      toast.success(t('tutor_materials.toast_download_started', { title: m.title }))
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось скачать файл',
+        axiosError.response?.data?.message || t('tutor_materials.toast_download_err'),
       )
     } finally {
       setBusyActionId(null)
@@ -351,11 +364,11 @@ export function TutorMaterialsPage() {
               <FolderKanban className="h-5 w-5" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              База знаний и материалы
+              {t('tutor_materials.title')}
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Загружайте учебники, таблицы формул и тесты один раз и прикрепляйте к домашним заданиям в один клик.
+            {t('tutor_materials.subtitle')}
           </p>
         </div>
 
@@ -370,7 +383,7 @@ export function TutorMaterialsPage() {
           className="gap-2 shrink-0 shadow-sm"
         >
           <Plus className="h-4 w-4" />
-          <span>Загрузить материал</span>
+          <span>{t('tutor_materials.btn_upload')}</span>
         </Button>
       </div>
 
@@ -382,7 +395,7 @@ export function TutorMaterialsPage() {
               <BookOpen className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Всего материалов</p>
+              <p className="text-xs text-muted-foreground font-medium">{t('tutor_materials.stat_total_materials')}</p>
               <p className="text-lg font-bold text-foreground">{totalFiles}</p>
             </div>
           </CardContent>
@@ -394,7 +407,7 @@ export function TutorMaterialsPage() {
               <Layers className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Категорий / предметов</p>
+              <p className="text-xs text-muted-foreground font-medium">{t('tutor_materials.stat_categories')}</p>
               <p className="text-lg font-bold text-foreground">{categories.length}</p>
             </div>
           </CardContent>
@@ -406,8 +419,8 @@ export function TutorMaterialsPage() {
               <HardDrive className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Общий объем файлов</p>
-              <p className="text-lg font-bold text-foreground">{formatBytes(totalSizeBytes)}</p>
+              <p className="text-xs text-muted-foreground font-medium">{t('tutor_materials.stat_total_size')}</p>
+              <p className="text-lg font-bold text-foreground">{formatSize(totalSizeBytes)}</p>
             </div>
           </CardContent>
         </Card>
@@ -420,7 +433,7 @@ export function TutorMaterialsPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Поиск по названию, описанию или имени файла..."
+              placeholder={t('tutor_materials.search_placeholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -440,7 +453,7 @@ export function TutorMaterialsPage() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           <span className="text-muted-foreground flex items-center gap-1 font-medium mr-1 shrink-0">
             <Filter className="h-3.5 w-3.5" />
-            Категория:
+            {t('tutor_materials.filter_category_label')}
           </span>
           <button
             type="button"
@@ -451,7 +464,7 @@ export function TutorMaterialsPage() {
                 : 'bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground'
             }`}
           >
-            Все ({materials.length})
+            {t('tutor_materials.filter_all', { count: materials.length })}
           </button>
           {categories.map((cat) => (
             <button
@@ -481,7 +494,7 @@ export function TutorMaterialsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {materials.map((m) => {
             const isBusy = busyActionId === m.id
-            const fileName = m.originalFileName || m.fileName || 'файл'
+            const fileName = m.originalFileName || m.fileName || 'file'
 
             return (
               <Card
@@ -497,7 +510,7 @@ export function TutorMaterialsPage() {
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-[10px] text-muted-foreground px-1.5 py-0">
-                        Без категории
+                        {t('tutor_materials.badge_no_category')}
                       </Badge>
                     )}
 
@@ -507,7 +520,7 @@ export function TutorMaterialsPage() {
                         variant="ghost"
                         size="icon-sm"
                         className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        title="Редактировать описание"
+                        title={t('tutor_materials.action_edit')}
                         onClick={() => handleOpenEdit(m)}
                       >
                         <Edit2 className="h-3.5 w-3.5" />
@@ -517,7 +530,7 @@ export function TutorMaterialsPage() {
                         variant="ghost"
                         size="icon-sm"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        title="Удалить из библиотеки"
+                        title={t('tutor_materials.action_delete')}
                         onClick={() => handleOpenDelete(m)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -534,7 +547,7 @@ export function TutorMaterialsPage() {
                       <h3
                         className="font-semibold text-sm text-foreground line-clamp-2 leading-snug cursor-pointer hover:text-primary transition-colors"
                         onClick={() => handleOpenPreview(m)}
-                        title="Нажмите, чтобы просмотреть"
+                        title={t('tutor_materials.action_preview')}
                       >
                         {m.title}
                       </h3>
@@ -553,8 +566,8 @@ export function TutorMaterialsPage() {
 
                   {/* Bottom file metadata */}
                   <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/40">
-                    <span>{formatBytes(m.sizeBytes ?? m.fileSize)}</span>
-                    <span>{formatDate(m.createdAt)}</span>
+                    <span>{formatSize(m.sizeBytes ?? m.fileSize)}</span>
+                    <span>{formatItemDate(m.createdAt)}</span>
                   </div>
 
                   {/* Bottom Action buttons */}
@@ -572,7 +585,7 @@ export function TutorMaterialsPage() {
                       ) : (
                         <ExternalLink className="h-3.5 w-3.5 text-primary" />
                       )}
-                      <span>Открыть</span>
+                      <span>{t('tutor_materials.action_preview')}</span>
                     </Button>
 
                     <Button
@@ -584,7 +597,7 @@ export function TutorMaterialsPage() {
                       disabled={isBusy}
                     >
                       <Download className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>Скачать</span>
+                      <span>{t('tutor_materials.action_download')}</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -601,13 +614,13 @@ export function TutorMaterialsPage() {
           <div>
             <h3 className="text-base font-bold text-foreground">
               {search || selectedCategory !== 'ALL'
-                ? 'Материалы не найдены'
-                : 'Ваша база знаний пуста'}
+                ? t('tutor_materials.empty_search_title')
+                : t('tutor_materials.empty_kb_title')}
             </h3>
             <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
               {search || selectedCategory !== 'ALL'
-                ? 'Попробуйте изменить запрос поиска или сбросить фильтр по категориям.'
-                : 'Загрузите справочники, сборники тестов или конспекты, чтобы быстро прикреплять их ученикам к урокам и ДЗ.'}
+                ? t('tutor_materials.empty_search_desc')
+                : t('tutor_materials.empty_kb_desc')}
             </p>
           </div>
 
@@ -623,11 +636,11 @@ export function TutorMaterialsPage() {
             className="gap-2 text-xs"
           >
             {search || selectedCategory !== 'ALL' ? (
-              'Сбросить фильтры'
+              t('tutor_materials.btn_reset_filters')
             ) : (
               <>
                 <Plus className="h-4 w-4" />
-                <span>Загрузить первый материал</span>
+                <span>{t('tutor_materials.btn_upload_first')}</span>
               </>
             )}
           </Button>
@@ -642,10 +655,10 @@ export function TutorMaterialsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UploadCloud className="h-5 w-5 text-primary" />
-              <span>Загрузка материала в Базу знаний</span>
+              <span>{t('tutor_materials.upload_dialog_title')}</span>
             </DialogTitle>
             <DialogDescription>
-              Файл будет сохранен в вашей библиотеке и доступен для быстрой привязки к любым заданиям.
+              {t('tutor_materials.upload_dialog_desc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -678,16 +691,16 @@ export function TutorMaterialsPage() {
                     {uploadFile.name}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    Размер: {formatBytes(uploadFile.size)} • Нажмите, чтобы выбрать другой
+                    {t('tutor_materials.upload_size_prefix', { size: formatSize(uploadFile.size) })}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-foreground">
-                    Нажмите или перетащите файл сюда
+                    {t('tutor_materials.upload_dropzone_title')}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    PDF, DOCX, изображения, презентации до 50 МБ
+                    {t('tutor_materials.upload_dropzone_hint')}
                   </p>
                 </div>
               )}
@@ -696,11 +709,11 @@ export function TutorMaterialsPage() {
             {/* Title */}
             <div className="space-y-1.5">
               <Label htmlFor="upload-title">
-                Название материала <span className="text-destructive">*</span>
+                {t('tutor_materials.label_material_title')}
               </Label>
               <Input
                 id="upload-title"
-                placeholder="Напр., Сборник задач ОГЭ 2026, Таблица тригонометрии"
+                placeholder={t('tutor_materials.placeholder_material_title')}
                 value={uploadTitle}
                 onChange={(e) => setUploadTitle(e.target.value)}
                 required
@@ -709,11 +722,11 @@ export function TutorMaterialsPage() {
 
             {/* Category */}
             <div className="space-y-1.5">
-              <Label htmlFor="upload-category">Категория / Предмет</Label>
+              <Label htmlFor="upload-category">{t('tutor_materials.label_category')}</Label>
               <div className="relative">
                 <Input
                   id="upload-category"
-                  placeholder="Напр. Математика, Английский, Физика..."
+                  placeholder={t('tutor_materials.placeholder_category')}
                   value={uploadCategory}
                   onChange={(e) => setUploadCategory(e.target.value)}
                   list="category-suggestions"
@@ -725,16 +738,16 @@ export function TutorMaterialsPage() {
                 </datalist>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Выберите существующую категорию или введите новую.
+                {t('tutor_materials.category_hint')}
               </p>
             </div>
 
             {/* Description */}
             <div className="space-y-1.5">
-              <Label htmlFor="upload-desc">Описание или примечание</Label>
+              <Label htmlFor="upload-desc">{t('tutor_materials.label_desc')}</Label>
               <Textarea
                 id="upload-desc"
-                placeholder="Краткое описание, для каких классов или тем подходит..."
+                placeholder={t('tutor_materials.placeholder_desc')}
                 rows={2}
                 value={uploadDescription}
                 onChange={(e) => setUploadDescription(e.target.value)}
@@ -748,13 +761,15 @@ export function TutorMaterialsPage() {
                 onClick={() => setIsUploadOpen(false)}
                 disabled={createMutation.isPending}
               >
-                Отмена
+                {t('tutor_materials.btn_cancel')}
               </Button>
               <Button type="submit" disabled={createMutation.isPending || !uploadFile}>
                 {createMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {createMutation.isPending ? 'Загрузка...' : 'Сохранить в базу'}
+                {createMutation.isPending
+                  ? t('tutor_materials.btn_uploading')
+                  : t('tutor_materials.btn_submit_upload')}
               </Button>
             </DialogFooter>
           </form>
@@ -767,16 +782,16 @@ export function TutorMaterialsPage() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Редактирование материала</DialogTitle>
+            <DialogTitle>{t('tutor_materials.edit_dialog_title')}</DialogTitle>
             <DialogDescription>
-              Измените название, предметную категорию или описание материала.
+              {t('tutor_materials.edit_dialog_desc')}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleEditSubmit} className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="edit-title">
-                Название материала <span className="text-destructive">*</span>
+                {t('tutor_materials.label_material_title')}
               </Label>
               <Input
                 id="edit-title"
@@ -787,7 +802,7 @@ export function TutorMaterialsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="edit-category">Категория / Предмет</Label>
+              <Label htmlFor="edit-category">{t('tutor_materials.label_category')}</Label>
               <Input
                 id="edit-category"
                 value={editCategory}
@@ -802,7 +817,7 @@ export function TutorMaterialsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="edit-desc">Описание</Label>
+              <Label htmlFor="edit-desc">{t('tutor_materials.label_desc')}</Label>
               <Textarea
                 id="edit-desc"
                 rows={3}
@@ -818,13 +833,13 @@ export function TutorMaterialsPage() {
                 onClick={() => setIsEditOpen(false)}
                 disabled={updateMutation.isPending}
               >
-                Отмена
+                {t('tutor_materials.btn_cancel')}
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Сохранить
+                {t('tutor_materials.btn_save_edit')}
               </Button>
             </DialogFooter>
           </form>
@@ -837,10 +852,9 @@ export function TutorMaterialsPage() {
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Удалить материал?</DialogTitle>
+            <DialogTitle>{t('tutor_materials.delete_dialog_title')}</DialogTitle>
             <DialogDescription>
-              Вы уверены, что хотите удалить <strong>«{activeMaterial?.title}»</strong> из Базы знаний?
-              Файлы, которые уже были прикреплены к созданным домашним заданиям, сохранятся у учеников.
+              {t('tutor_materials.delete_dialog_desc', { title: activeMaterial?.title || '' })}
             </DialogDescription>
           </DialogHeader>
 
@@ -851,7 +865,7 @@ export function TutorMaterialsPage() {
               onClick={() => setIsDeleteOpen(false)}
               disabled={deleteMutation.isPending}
             >
-              Отмена
+              {t('tutor_materials.btn_cancel')}
             </Button>
             <Button
               type="button"
@@ -862,7 +876,7 @@ export function TutorMaterialsPage() {
               {deleteMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Удалить
+              {t('tutor_materials.btn_delete_confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

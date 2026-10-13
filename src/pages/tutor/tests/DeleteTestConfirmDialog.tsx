@@ -1,3 +1,4 @@
+import { useLanguage } from '@/i18n'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ export function DeleteTestConfirmDialog({
   onOpenChange,
   onSuccess,
 }: DeleteTestConfirmDialogProps) {
+  const { t } = useLanguage()
   const deleteMutation = useDeleteTest()
 
   if (!test) return null
@@ -32,11 +34,11 @@ export function DeleteTestConfirmDialog({
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(test.id)
-      toast.success(`Тест "${test.title}" успешно удален`)
+      toast.success(t('tutor_tests.toast_deleted', { title: test.title }))
       onOpenChange(false)
       onSuccess?.()
     } catch {
-      toast.error('Не удалось удалить тест')
+      toast.error(t('tutor_tests.toast_delete_err'))
     }
   }
 
@@ -49,9 +51,9 @@ export function DeleteTestConfirmDialog({
               <AlertCircle className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle>Удалить тест?</DialogTitle>
+              <DialogTitle>{t('tutor_tests.modal_delete_title')}</DialogTitle>
               <DialogDescription>
-                Вы уверены, что хотите удалить «{test.title}»? Это действие нельзя отменить.
+                {t('tutor_tests.modal_delete_desc', { title: test.title })}
               </DialogDescription>
             </div>
           </div>
@@ -64,7 +66,7 @@ export function DeleteTestConfirmDialog({
             onClick={() => onOpenChange(false)}
             disabled={deleteMutation.isPending}
           >
-            Отмена
+            {t('tutor_tests.btn_cancel')}
           </Button>
           <Button
             type="button"
@@ -75,7 +77,7 @@ export function DeleteTestConfirmDialog({
             {deleteMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Удалить
+            {t('tutor_tests.btn_delete')}
           </Button>
         </DialogFooter>
       </DialogContent>

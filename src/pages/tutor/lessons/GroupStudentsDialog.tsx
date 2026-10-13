@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Users, Phone, Send, Search, GraduationCap, ChevronRight } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 
 export interface GroupStudentInfo {
   id: string
@@ -31,15 +32,6 @@ interface GroupStudentsDialogProps {
   onSelectStudent?: (studentId: string) => void
 }
 
-function getStudentNoun(count: number): string {
-  const mod10 = count % 10
-  const mod100 = count % 100
-  if (mod100 >= 11 && mod100 <= 19) return 'учеников'
-  if (mod10 === 1) return 'ученик'
-  if (mod10 >= 2 && mod10 <= 4) return 'ученика'
-  return 'учеников'
-}
-
 export function GroupStudentsDialog({
   open,
   onOpenChange,
@@ -47,11 +39,19 @@ export function GroupStudentsDialog({
   students,
   onSelectStudent,
 }: GroupStudentsDialogProps) {
+  const { t } = useLanguage()
   const [search, setSearch] = useState('')
 
   const filteredStudents = students.filter((s) =>
     s.name.toLowerCase().includes(search.trim().toLowerCase())
   )
+
+  const studentNoun =
+    students.length === 1
+      ? t('tutor_lessons.student_noun_1')
+      : students.length < 5
+      ? t('tutor_lessons.student_noun_few')
+      : t('tutor_lessons.student_noun_many')
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -63,11 +63,13 @@ export function GroupStudentsDialog({
             </div>
             <div>
               <DialogTitle className="text-base font-bold">
-                Группа «{groupName}»
+                {t('tutor_lessons.group_prefix', { name: groupName })}
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Список учеников, записанных на это занятие ({students.length}{' '}
-                {getStudentNoun(students.length)})
+                {t('tutor_lessons.modal_subtitle', {
+                  count: students.length,
+                  noun: studentNoun,
+                })}
               </DialogDescription>
             </div>
           </div>
@@ -77,7 +79,7 @@ export function GroupStudentsDialog({
           <div className="relative pt-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Поиск по ученикам группы..."
+              placeholder={t('tutor_lessons.search_placeholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8 h-8 text-xs bg-muted/20"
@@ -88,7 +90,7 @@ export function GroupStudentsDialog({
         <div className="overflow-y-auto max-h-[50vh] space-y-2 pr-1 pt-1">
           {filteredStudents.length > 0 ? (
             filteredStudents.map((st, idx) => {
-              const initial = st.name.charAt(0).toUpperCase() || 'У'
+              const initial = st.name.charAt(0).toUpperCase() || t('tutor_lessons.default_student').charAt(0).toUpperCase()
               const tgClean = st.telegram?.replace(/^@/, '')
 
               return (
@@ -100,7 +102,7 @@ export function GroupStudentsDialog({
                       ? 'cursor-pointer hover:bg-muted/50 hover:border-primary/40 group'
                       : 'hover:bg-muted/30'
                   }`}
-                  title={onSelectStudent && st.id ? 'Нажмите, чтобы открыть информацию об ученике' : undefined}
+                  title={onSelectStudent && st.id ? t('tutor_lessons.student_card_tooltip') : undefined}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Avatar size="sm">
@@ -129,7 +131,7 @@ export function GroupStudentsDialog({
                                   : 'text-muted-foreground'
                             }`}
                           >
-                            Баланс: {st.lessonBalance} ур.
+                            {t('tutor_lessons.balance_label', { balance: st.lessonBalance })}
                           </span>
                         )}
                       </div>
@@ -157,7 +159,7 @@ export function GroupStudentsDialog({
                         <a
                           href={`tel:${st.phone}`}
                           className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors"
-                          title={`Телефон: ${st.phone}`}
+                          title={`Phone: ${st.phone}`}
                         >
                           <Phone className="h-3.5 w-3.5" />
                         </a>
@@ -173,7 +175,7 @@ export function GroupStudentsDialog({
             })
           ) : (
             <p className="text-xs text-muted-foreground text-center py-6">
-              Ученики не найдены
+              {t('tutor_lessons.students_not_found')}
             </p>
           )}
         </div>
@@ -186,7 +188,7 @@ export function GroupStudentsDialog({
             onClick={() => onOpenChange(false)}
             className="w-full text-xs"
           >
-            Закрыть
+            {t('tutor_lessons.btn_close')}
           </Button>
         </DialogFooter>
       </DialogContent>

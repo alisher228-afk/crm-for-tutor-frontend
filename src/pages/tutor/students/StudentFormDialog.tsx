@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useCreateStudent, useUpdateStudent } from '@/hooks/useStudents'
+import { useTranslation } from '@/i18n'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import type { StudentProfile } from '@/types'
@@ -34,7 +35,7 @@ export function StudentFormDialog({
   defaultGroupName,
   onSuccess,
 }: StudentFormDialogProps) {
-
+  const { t } = useTranslation()
   const isEditing = Boolean(initialData?.id)
 
   const [firstName, setFirstName] = useState('')
@@ -94,12 +95,12 @@ export function StudentFormDialog({
 
     const trimmedFirstName = firstName.trim()
     if (!trimmedFirstName) {
-      toast.error('Имя ученика обязательно для заполнения')
+      toast.error(t('tutor_students.err_first_name_req'))
       return
     }
 
     if (studyFormat === 'GROUP' && !groupName.trim()) {
-      toast.error('Укажите название группы для группового формата')
+      toast.error(t('tutor_students.err_group_name_req'))
       return
     }
 
@@ -123,12 +124,12 @@ export function StudentFormDialog({
             status: initialData.status || 'ACTIVE',
           },
         })
-        toast.success('Данные ученика успешно обновлены')
+        toast.success(t('tutor_students.toast_updated'))
         onOpenChange(false)
         onSuccess?.(updated)
       } else {
         const created = await createMutation.mutateAsync(payload)
-        toast.success('Ученик успешно добавлен')
+        toast.success(t('tutor_students.toast_created'))
         onOpenChange(false)
         onSuccess?.(created)
       }
@@ -137,7 +138,7 @@ export function StudentFormDialog({
       const msg =
         axiosError.response?.data?.message ||
         axiosError.response?.data?.error ||
-        (isEditing ? 'Не удалось обновить ученика' : 'Не удалось добавить ученика')
+        (isEditing ? t('tutor_students.toast_update_err') : t('tutor_students.toast_create_err'))
       toast.error(msg)
     }
   }
@@ -147,12 +148,12 @@ export function StudentFormDialog({
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? 'Редактировать ученика' : 'Добавить нового ученика'}
+            {isEditing ? t('tutor_students.form_title_edit') : t('tutor_students.form_title_create')}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? 'Измените контактные данные, уровень или ставку ученика'
-              : 'Заполните основную информацию для создания карточки ученика'}
+              ? t('tutor_students.form_desc_edit')
+              : t('tutor_students.form_desc_create')}
           </DialogDescription>
         </DialogHeader>
 
@@ -160,11 +161,11 @@ export function StudentFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="firstName">
-                Имя <span className="text-destructive">*</span>
+                {t('tutor_students.label_first_name')} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="firstName"
-                placeholder="Иван"
+                placeholder={t('tutor_students.placeholder_first_name')}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 disabled={isPending}
@@ -173,10 +174,10 @@ export function StudentFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="lastName">Фамилия</Label>
+              <Label htmlFor="lastName">{t('tutor_students.label_last_name')}</Label>
               <Input
                 id="lastName"
-                placeholder="Иванов"
+                placeholder={t('tutor_students.placeholder_last_name')}
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 disabled={isPending}
@@ -186,7 +187,7 @@ export function StudentFormDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="phone">Телефон</Label>
+              <Label htmlFor="phone">{t('tutor_students.label_phone')}</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -198,7 +199,7 @@ export function StudentFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="telegram">Telegram</Label>
+              <Label htmlFor="telegram">{t('tutor_students.label_telegram')}</Label>
               <Input
                 id="telegram"
                 placeholder="@username"
@@ -211,10 +212,10 @@ export function StudentFormDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="currentLevel">Уровень подготовки</Label>
+              <Label htmlFor="currentLevel">{t('tutor_students.label_level')}</Label>
               <Input
                 id="currentLevel"
-                placeholder="Напр. B1 / 9 класс"
+                placeholder={t('tutor_students.placeholder_level')}
                 value={currentLevel}
                 onChange={(e) => setCurrentLevel(e.target.value)}
                 disabled={isPending}
@@ -222,7 +223,7 @@ export function StudentFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="hourlyRate">Ставка за урок</Label>
+              <Label htmlFor="hourlyRate">{t('tutor_students.label_hourly_rate')}</Label>
               <Input
                 id="hourlyRate"
                 type="number"
@@ -238,7 +239,7 @@ export function StudentFormDialog({
 
           {/* Format & Group */}
           <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
-            <Label className="text-xs font-semibold">Формат занятий</Label>
+            <Label className="text-xs font-semibold">{t('tutor_students.label_format')}</Label>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
@@ -247,7 +248,7 @@ export function StudentFormDialog({
                 className="w-full text-xs"
                 onClick={() => setStudyFormat('INDIVIDUAL')}
               >
-                Индивидуально
+                {t('tutor_students.format_individual')}
               </Button>
               <Button
                 type="button"
@@ -256,18 +257,18 @@ export function StudentFormDialog({
                 className="w-full text-xs"
                 onClick={() => setStudyFormat('GROUP')}
               >
-                В группе
+                {t('tutor_students.format_group')}
               </Button>
             </div>
 
             {studyFormat === 'GROUP' && (
               <div className="space-y-1.5 pt-1.5">
                 <Label htmlFor="groupName" className="text-xs">
-                  Название группы <span className="text-destructive">*</span>
+                  {t('tutor_students.label_group_name')} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="groupName"
-                  placeholder="Например: Группа A / Английский B1"
+                  placeholder={t('tutor_students.placeholder_group_name')}
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   disabled={isPending}
@@ -278,10 +279,10 @@ export function StudentFormDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Заметки / Цели обучения</Label>
+            <Label htmlFor="notes">{t('tutor_students.label_notes')}</Label>
             <Textarea
               id="notes"
-              placeholder="Дополнительная информация, цели, особенности расписания..."
+              placeholder={t('tutor_students.placeholder_notes')}
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -296,11 +297,11 @@ export function StudentFormDialog({
               onClick={() => onOpenChange(false)}
               disabled={isPending}
             >
-              Отмена
+              {t('tutor_students.btn_cancel')}
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? 'Сохранить изменения' : 'Добавить ученика'}
+              {isEditing ? t('tutor_students.btn_save_changes') : t('tutor_students.btn_add_student')}
             </Button>
           </DialogFooter>
         </form>

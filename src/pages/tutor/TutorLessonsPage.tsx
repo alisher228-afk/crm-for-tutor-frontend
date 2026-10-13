@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { formatDateToLocalIso } from '@/lib/dateUtils'
 import type { Lesson, StudentProfile } from '@/types'
+import { useLanguage } from '@/i18n'
 
 type PeriodMode = 'this_week' | 'next_week' | 'custom'
 
@@ -58,6 +59,9 @@ function formatDateToInput(d: Date): string {
 }
 
 export function TutorLessonsPage() {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+
   const [periodMode, setPeriodMode] = useState<PeriodMode>('this_week')
 
   // Custom date range state
@@ -177,7 +181,7 @@ export function TutorLessonsPage() {
       let title = ''
 
       if (isGroup && gName) {
-        title = `Группа «${gName}»`
+        title = t('tutor_lessons.group_prefix', { name: gName })
 
         // Collect students from session lessons
         const studentMap = new Map<string, LessonCardStudent>()
@@ -190,7 +194,7 @@ export function TutorLessonsPage() {
               : undefined) ||
             l.studentName ||
             [l.studentFirstName, l.studentLastName].filter(Boolean).join(' ') ||
-            'Ученик'
+            t('tutor_lessons.default_student')
 
           studentMap.set(l.studentId, {
             id: l.studentId,
@@ -216,7 +220,7 @@ export function TutorLessonsPage() {
                   ? `${s.firstName} ${s.lastName || ''}`.trim()
                   : undefined) ||
                 s.name ||
-                'Ученик'
+                t('tutor_lessons.default_student')
               studentMap.set(s.id, {
                 id: s.id,
                 name,
@@ -240,7 +244,7 @@ export function TutorLessonsPage() {
             : undefined) ||
           lesson.studentName ||
           [lesson.studentFirstName, lesson.studentLastName].filter(Boolean).join(' ') ||
-          'Индивидуальный ученик'
+          t('tutor_lessons.default_individual_student')
 
         title = name
         sessionStudents = [
@@ -342,7 +346,7 @@ export function TutorLessonsPage() {
     sorted.forEach((session) => {
       const d = new Date(session.startTime)
       const dateKey = isNaN(d.getTime())
-        ? 'Без даты'
+        ? t('tutor_lessons.no_date')
         : formatDateToInput(d)
 
       if (!groups[dateKey]) {
@@ -352,7 +356,7 @@ export function TutorLessonsPage() {
     })
 
     return groups
-  }, [sessions, lessonTypeFilter])
+  }, [sessions, lessonTypeFilter, t])
 
   const sortedDayKeys = useMemo(() => {
     return Object.keys(groupedSessions).sort()
@@ -394,15 +398,15 @@ export function TutorLessonsPage() {
       {/* Top Header & Action */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Расписание уроков</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('tutor_lessons.title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Управляйте графиком занятий, временем и ссылками на онлайн-уроки
+            {t('tutor_lessons.subtitle')}
           </p>
         </div>
 
         <Button onClick={handleCreate} className="self-start sm:self-auto gap-2">
           <CalendarPlus className="h-4 w-4" />
-          <span>Запланировать урок</span>
+          <span>{t('tutor_lessons.btn_schedule')}</span>
         </Button>
       </div>
 
@@ -414,7 +418,7 @@ export function TutorLessonsPage() {
           className="h-8 text-xs font-medium"
           onClick={() => setLessonTypeFilter('ALL')}
         >
-          Все занятия ({sessions.length})
+          {t('tutor_lessons.filter_all', { count: sessions.length })}
         </Button>
         <Button
           variant={lessonTypeFilter === 'INDIVIDUAL' ? 'default' : 'outline'}
@@ -423,7 +427,7 @@ export function TutorLessonsPage() {
           onClick={() => setLessonTypeFilter('INDIVIDUAL')}
         >
           <User className="h-3.5 w-3.5" />
-          <span>Индивидуальные ({individualSessionsCount})</span>
+          <span>{t('tutor_lessons.filter_individual', { count: individualSessionsCount })}</span>
         </Button>
         <Button
           variant={lessonTypeFilter === 'GROUP' ? 'default' : 'outline'}
@@ -432,7 +436,7 @@ export function TutorLessonsPage() {
           onClick={() => setLessonTypeFilter('GROUP')}
         >
           <Users className="h-3.5 w-3.5" />
-          <span>Групповые ({groupSessionsCount})</span>
+          <span>{t('tutor_lessons.filter_group', { count: groupSessionsCount })}</span>
         </Button>
       </div>
 
@@ -446,7 +450,7 @@ export function TutorLessonsPage() {
             onClick={() => setPeriodMode('this_week')}
             className="text-xs"
           >
-            Эта неделя
+            {t('tutor_lessons.period_this_week')}
           </Button>
           <Button
             variant={periodMode === 'next_week' ? 'default' : 'outline'}
@@ -454,7 +458,7 @@ export function TutorLessonsPage() {
             onClick={() => setPeriodMode('next_week')}
             className="text-xs"
           >
-            Следующая неделя
+            {t('tutor_lessons.period_next_week')}
           </Button>
           <Button
             variant={periodMode === 'custom' ? 'default' : 'outline'}
@@ -462,21 +466,21 @@ export function TutorLessonsPage() {
             onClick={() => setPeriodMode('custom')}
             className="text-xs"
           >
-            Выбрать диапазон
+            {t('tutor_lessons.period_custom')}
           </Button>
         </div>
 
         {/* Custom date range inputs */}
         {periodMode === 'custom' && (
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground">С</span>
+            <span className="text-muted-foreground">{t('tutor_lessons.period_from')}</span>
             <Input
               type="date"
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
               className="h-8 text-xs w-36"
             />
-            <span className="text-muted-foreground">По</span>
+            <span className="text-muted-foreground">{t('tutor_lessons.period_to')}</span>
             <Input
               type="date"
               value={customTo}
@@ -489,7 +493,7 @@ export function TutorLessonsPage() {
         {/* Count info */}
         <div className="text-xs text-muted-foreground flex items-center gap-1.5 self-end md:self-auto">
           <Clock className="h-3.5 w-3.5" />
-          <span>Всего занятий за период:</span>
+          <span>{t('tutor_lessons.total_sessions_label')}</span>
           <span className="font-semibold text-foreground">{sessions.length}</span>
         </div>
       </div>
@@ -513,14 +517,14 @@ export function TutorLessonsPage() {
             <AlertCircle className="h-10 w-10 text-destructive" />
             <div>
               <p className="font-semibold text-base text-foreground">
-                Не удалось загрузить расписание
+                {t('tutor_lessons.err_load_title')}
               </p>
               <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                Проверьте подключение к серверу и попробуйте снова.
+                {t('tutor_lessons.err_load_desc')}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Повторить попытку
+              {t('tutor_lessons.btn_retry')}
             </Button>
           </CardContent>
         </Card>
@@ -531,10 +535,10 @@ export function TutorLessonsPage() {
             const isToday = dayKey === todayStr
 
             let dayTitle = dayKey
-            if (dayKey !== 'Без даты') {
+            if (dayKey !== t('tutor_lessons.no_date')) {
               const d = new Date(dayKey + 'T00:00:00')
               if (!isNaN(d.getTime())) {
-                const formatted = d.toLocaleDateString('ru-RU', {
+                const formatted = d.toLocaleDateString(dateLocale, {
                   weekday: 'long',
                   day: 'numeric',
                   month: 'long',
@@ -557,16 +561,16 @@ export function TutorLessonsPage() {
                   {isToday && (
                     <Badge variant="today" className="text-[10px] px-2 py-0.5 font-semibold flex items-center gap-1 border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300">
                       <span className="h-1 w-1 rounded-full bg-red-accent animate-pulse" />
-                      Сегодня
+                      {t('tutor_lessons.badge_today')}
                     </Badge>
                   )}
                   <span className="text-xs text-muted-foreground ml-auto">
                     {daySessions.length}{' '}
                     {daySessions.length === 1
-                      ? 'занятие'
+                      ? t('tutor_lessons.session_1')
                       : daySessions.length < 5
-                      ? 'занятия'
-                      : 'занятий'}
+                      ? t('tutor_lessons.session_few')
+                      : t('tutor_lessons.session_many')}
                   </span>
                 </div>
 
@@ -603,18 +607,18 @@ export function TutorLessonsPage() {
             <div>
               <p className="font-semibold text-base">
                 {lessonTypeFilter === 'INDIVIDUAL'
-                  ? 'Нет индивидуальных уроков за выбранный период'
+                  ? t('tutor_lessons.empty_individual')
                   : lessonTypeFilter === 'GROUP'
-                  ? 'Нет групповых уроков за выбранный период'
-                  : 'Нет уроков за выбранный период'}
+                  ? t('tutor_lessons.empty_group')
+                  : t('tutor_lessons.empty_all')}
               </p>
               <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                Запланируйте первое занятие или выберите другой формат/период.
+                {t('tutor_lessons.empty_desc')}
               </p>
             </div>
             <Button size="sm" onClick={handleCreate}>
               <CalendarPlus className="mr-2 h-4 w-4" />
-              Запланировать занятие
+              {t('tutor_lessons.btn_empty_schedule')}
             </Button>
           </CardContent>
         </Card>

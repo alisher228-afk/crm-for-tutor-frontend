@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useTranslation } from '@/i18n'
 import {
   Users,
   UserPlus,
@@ -57,6 +58,8 @@ export function GroupDetailsModal({
   onAssignHomework,
   onAssignTest,
 }: GroupDetailsModalProps) {
+  const { t, language } = useTranslation()
+  const numLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
   const navigate = useNavigate()
   const students = group?.students || []
 
@@ -105,11 +108,11 @@ export function GroupDetailsModal({
                     {group.name}
                   </DialogTitle>
                   <Badge variant="secondary" className="font-semibold text-xs">
-                    {students.length} {students.length === 1 ? 'ученик' : 'учеников'}
+                    {students.length} {students.length === 1 ? t('tutor_groups.student_1') : students.length < 5 ? t('tutor_groups.student_few') : t('tutor_groups.student_many')}
                   </Badge>
                 </div>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Список студентов группы, расписание и управление составом
+                  {t('tutor_groups.modal_details_subtitle')}
                 </DialogDescription>
               </div>
             </div>
@@ -123,7 +126,7 @@ export function GroupDetailsModal({
                 onClick={handleScheduleLesson}
               >
                 <Calendar className="h-3.5 w-3.5 text-primary" />
-                <span>Занятие</span>
+                <span>{t('tutor_groups.action_lesson')}</span>
               </Button>
 
               <Button
@@ -133,7 +136,7 @@ export function GroupDetailsModal({
                 onClick={handleAssignHomework}
               >
                 <BookPlus className="h-3.5 w-3.5 text-emerald-600" />
-                <span>ДЗ</span>
+                <span>{t('tutor_groups.action_homework')}</span>
               </Button>
 
               <Button
@@ -143,7 +146,7 @@ export function GroupDetailsModal({
                 onClick={handleAssignTest}
               >
                 <BrainCircuit className="h-3.5 w-3.5 text-purple-600" />
-                <span>Тест</span>
+                <span>{t('tutor_groups.action_test')}</span>
               </Button>
 
               <Button
@@ -152,7 +155,7 @@ export function GroupDetailsModal({
                 onClick={() => onAddStudent(group.name)}
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                <span>Добавить в группу</span>
+                <span>{t('tutor_groups.action_add_to_group')}</span>
               </Button>
             </div>
           </div>
@@ -165,12 +168,12 @@ export function GroupDetailsModal({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[220px]">Ученик</TableHead>
-                    <TableHead>Контакты</TableHead>
-                    <TableHead>Уровень</TableHead>
-                    <TableHead>Баланс</TableHead>
-                    <TableHead>Статус</TableHead>
-                    <TableHead className="text-right">Действия</TableHead>
+                    <TableHead className="w-[220px]">{t('tutor_students.th_student')}</TableHead>
+                    <TableHead>{t('tutor_students.th_contacts')}</TableHead>
+                    <TableHead>{t('tutor_students.th_level')}</TableHead>
+                    <TableHead>{t('tutor_students.th_balance')}</TableHead>
+                    <TableHead>{t('tutor_students.th_status')}</TableHead>
+                    <TableHead className="text-right">{t('tutor_students.th_actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -178,8 +181,8 @@ export function GroupDetailsModal({
                     const fullName =
                       student.name ||
                       [student.firstName, student.lastName].filter(Boolean).join(' ') ||
-                      'Без имени'
-                    const initial = fullName.charAt(0).toUpperCase() || 'У'
+                      t('tutor_students.no_name')
+                    const initial = fullName.charAt(0).toUpperCase() || '?'
                     const balance = student.lessonBalance ?? student.balance ?? 0
 
                     return (
@@ -201,7 +204,7 @@ export function GroupDetailsModal({
                               </p>
                               {student.hourlyRate ? (
                                 <p className="text-xs text-muted-foreground">
-                                  {student.hourlyRate.toLocaleString('ru-RU')}/час
+                                  {t('tutor_students.per_hour', { rate: student.hourlyRate.toLocaleString(numLocale) })}
                                 </p>
                               ) : null}
                             </div>
@@ -247,7 +250,7 @@ export function GroupDetailsModal({
                                   : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
                             }`}
                           >
-                            {balance} ур.
+                            {balance} {t('tutor_students.unit_lesson')}
                           </span>
                         </TableCell>
 
@@ -257,7 +260,7 @@ export function GroupDetailsModal({
                             variant={student.status === 'ACTIVE' ? 'default' : 'secondary'}
                             className="text-[11px] py-0"
                           >
-                            {student.status === 'ACTIVE' ? 'Активен' : 'В архиве'}
+                            {student.status === 'ACTIVE' ? t('tutor_students.status_active') : t('tutor_students.status_archived')}
                           </Badge>
                         </TableCell>
 
@@ -269,7 +272,7 @@ export function GroupDetailsModal({
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                              title="Профиль ученика"
+                              title={t('tutor_groups.action_student_profile')}
                               onClick={() => onViewStudent(student)}
                             >
                               <Eye className="h-3.5 w-3.5" />
@@ -280,7 +283,7 @@ export function GroupDetailsModal({
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-primary"
-                              title="Редактировать"
+                              title={t('tutor_students.action_edit')}
                               onClick={() => onEditStudent(student)}
                             >
                               <Edit className="h-3.5 w-3.5" />
@@ -291,7 +294,7 @@ export function GroupDetailsModal({
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                              title="Перенести / Исключить из группы"
+                              title={t('tutor_groups.action_move_exclude')}
                               onClick={() => onMoveStudent(student)}
                             >
                               <ArrowRightLeft className="h-3.5 w-3.5" />
@@ -307,13 +310,13 @@ export function GroupDetailsModal({
           ) : (
             <div className="flex flex-col items-center justify-center p-8 text-center rounded-lg border border-dashed border-border">
               <Users className="h-10 w-10 text-muted-foreground mb-3" />
-              <h3 className="font-semibold text-base">В группе пока нет учеников</h3>
+              <h3 className="font-semibold text-base">{t('tutor_groups.empty_group_students')}</h3>
               <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
-                Добавьте существующих учеников в эту группу или зарегистрируйте нового студента
+                {t('tutor_groups.empty_modal_desc')}
               </p>
               <Button size="sm" onClick={() => onAddStudent(group.name)}>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Добавить ученика
+                {t('tutor_students.btn_add_student')}
               </Button>
             </div>
           )}
