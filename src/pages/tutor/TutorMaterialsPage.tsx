@@ -50,7 +50,7 @@ import type { TeachingMaterial } from '@/types'
 import type { AxiosError } from 'axios'
 
 function formatBytes(bytes?: number, decimals = 1, units?: string[]): string {
-  const sizes = units || ['Б', 'КБ', 'МБ', 'ГБ']
+  const sizes = units || ['B', 'KB', 'MB', 'GB']
   if (!bytes || bytes === 0) return `0 ${sizes[0]}`
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals

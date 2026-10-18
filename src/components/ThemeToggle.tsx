@@ -37,8 +37,8 @@ export function ThemeToggle({ className }: { className?: string }) {
 
   const titleText =
     theme === 'dark'
-      ? t('theme.switch_to_light') || 'Светлая тема'
-      : t('theme.switch_to_dark') || 'Тёмная тема'
+      ? t('theme.switch_to_light') || 'Light theme'
+      : t('theme.switch_to_dark') || 'Dark theme'
 
   return (
     <Button

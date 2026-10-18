@@ -20,7 +20,7 @@ export function LanguageToggle({
   showLabel = true,
   align = 'end',
 }: LanguageToggleProps) {
-  const { language, setLanguage, supportedLanguages, currentLanguageInfo } =
+  const { language, setLanguage, supportedLanguages, currentLanguageInfo, t } =
     useLanguage()
 
   const handleSelect = (code: SupportedLanguage) => {
@@ -37,8 +37,8 @@ export function LanguageToggle({
             className={`h-8 px-2 gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground ${
               className || ''
             }`}
-            title="Сменить язык / Switch language / Тілді өзгерту"
-            aria-label="Сменить язык интерфейса"
+            title="Switch language"
+            aria-label={t('profile.lang_section_title')}
           >
             <Globe className="h-3.5 w-3.5" strokeWidth={1.75} />
             {showLabel && (

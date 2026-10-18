@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { SelectMaterialDialog } from '@/components/SelectMaterialDialog'
 import { useAttachMaterialToHomework } from '@/hooks/useMaterials'
+import { useLanguage } from '@/i18n'
 import type { Attachment, TeachingMaterial } from '@/types'
 import type { AxiosError } from 'axios'
 
@@ -35,20 +36,20 @@ interface HomeworkAttachmentsProps {
   className?: string
 }
 
-function formatBytes(bytes?: number, decimals = 1): string {
-  if (!bytes || bytes === 0) return '0 Б'
+function formatBytes(bytes?: number, decimals = 1, units?: string[]): string {
+  if (!bytes || bytes === 0) return `0 ${units?.[0] || 'B'}`
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Б', 'КБ', 'МБ', 'ГБ']
+  const sizes = units || ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
-function formatDate(isoStr?: string): string {
+function formatDate(isoStr?: string, locale = 'ru-RU'): string {
   if (!isoStr) return ''
   const d = new Date(isoStr)
   if (isNaN(d.getTime())) return ''
-  return d.toLocaleDateString('ru-RU', {
+  return d.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -86,6 +87,9 @@ export function HomeworkAttachments({
   readOnly = false,
   className = '',
 }: HomeworkAttachmentsProps) {
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
+  const sizeUnits = [t('common.size_b'), t('common.size_kb'), t('common.size_mb'), t('common.size_gb')]
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [openingId, setOpeningId] = useState<string | null>(null)
@@ -126,10 +130,13 @@ export function HomeworkAttachments({
     }
     if (successCount > 0) {
       toast.success(
-        `Прикреплено материалов из Базы знаний: ${successCount} из ${materials.length}`,
+        t('attachments.toast_attached_materials', {
+          count: successCount,
+          total: materials.length,
+        }),
       )
     } else {
-      toast.error('Не удалось прикрепить выбранные материалы')
+      toast.error(t('attachments.toast_attach_failed'))
     }
   }
 
@@ -139,13 +146,13 @@ export function HomeworkAttachments({
     // Quick client limit check (50MB)
     const MAX_SIZE_BYTES = 50 * 1024 * 1024
     if (file.size > MAX_SIZE_BYTES) {
-      toast.error('Размер файла превышает 50 МБ')
+      toast.error(t('attachments.toast_file_size_exceeded'))
       return
     }
 
     try {
       await uploadMutation.mutateAsync(file)
-      toast.success(`Файл "${file.name}" успешно прикреплен`)
+      toast.success(t('attachments.toast_file_uploaded', { name: file.name }))
     } catch (err) {
       const axiosError = err as AxiosError<{
         message?: string
@@ -157,7 +164,7 @@ export function HomeworkAttachments({
         axiosError.response?.data?.detail ||
         axiosError.response?.data?.error ||
         axiosError.message ||
-        'Ошибка загрузки файла. Проверьте формат или размер файла.'
+        t('attachments.toast_upload_fallback_error')
       toast.error(backendMessage)
     } finally {
       if (fileInputRef.current) {
@@ -201,7 +208,7 @@ export function HomeworkAttachments({
   }
 
   const handleOpen = async (attachment: Attachment) => {
-    const fileName = attachment.originalFileName || attachment.fileName || attachment.name || 'файл'
+    const fileName = attachment.originalFileName || attachment.fileName || attachment.name || t('attachments.unnamed_file')
     const apiPath = `/api/v1/attachments/${attachment.id}/download`
 
     setOpeningId(attachment.id)
@@ -231,7 +238,7 @@ export function HomeworkAttachments({
       }))
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || `Не удалось открыть файл "${fileName}"`,
+        axiosError.response?.data?.message || t('attachments.toast_open_failed', { name: fileName }),
       )
     } finally {
       setOpeningId(null)
@@ -239,16 +246,16 @@ export function HomeworkAttachments({
   }
 
   const handleDownload = async (attachment: Attachment) => {
-    const fileName = attachment.originalFileName || attachment.fileName || attachment.name || 'attachment'
+    const fileName = attachment.originalFileName || attachment.fileName || attachment.name || t('attachments.unnamed_file')
     setDownloadingId(attachment.id)
 
     try {
       await attachmentsApi.downloadAttachment(attachment.id, fileName)
-      toast.success(`Скачивание "${fileName}" начато`)
+      toast.success(t('attachments.toast_download_started', { name: fileName }))
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось скачать файл',
+        axiosError.response?.data?.message || t('attachments.toast_download_failed'),
       )
     } finally {
       setDownloadingId(null)
@@ -256,16 +263,16 @@ export function HomeworkAttachments({
   }
 
   const handleDelete = async (attachment: Attachment) => {
-    const fileName = attachment.originalFileName || attachment.fileName || attachment.name || 'файл'
+    const fileName = attachment.originalFileName || attachment.fileName || attachment.name || t('attachments.unnamed_file')
     setDeletingId(attachment.id)
 
     try {
       await deleteMutation.mutateAsync(attachment.id)
-      toast.success(`Файл "${fileName}" удален`)
+      toast.success(t('attachments.toast_file_deleted', { name: fileName }))
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string; error?: string }>
       toast.error(
-        axiosError.response?.data?.message || 'Не удалось удалить файл',
+        axiosError.response?.data?.message || t('attachments.toast_delete_failed'),
       )
     } finally {
       setDeletingId(null)
@@ -279,7 +286,7 @@ export function HomeworkAttachments({
         <div className="flex items-center gap-2">
           <Paperclip className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-semibold text-foreground">
-            Вложения и файлы
+            {t('attachments.title')}
           </h4>
           <span className="text-xs text-muted-foreground">
             ({attachments.length})
@@ -301,7 +308,7 @@ export function HomeworkAttachments({
               ) : (
                 <FolderKanban className="h-3.5 w-3.5" />
               )}
-              <span>Из Базы знаний</span>
+              <span>{t('attachments.from_knowledge_base')}</span>
             </Button>
 
             <Button
@@ -317,7 +324,7 @@ export function HomeworkAttachments({
               ) : (
                 <UploadCloud className="h-3.5 w-3.5" />
               )}
-              <span>Загрузить файл</span>
+              <span>{t('attachments.upload_file')}</span>
             </Button>
           </div>
         )}
@@ -349,17 +356,17 @@ export function HomeworkAttachments({
             <div className="flex flex-col items-center justify-center py-2 space-y-2">
               <Loader2 className="h-6 w-6 text-primary animate-spin" />
               <p className="text-xs font-medium text-foreground">
-                Загрузка файла на сервер...
+                {t('attachments.dropzone_uploading')}
               </p>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-1 space-y-1">
               <UploadCloud className="h-6 w-6 text-muted-foreground/80 mb-0.5" />
               <p className="text-xs font-medium text-foreground">
-                Нажмите или перетащите файл сюда
+                {t('attachments.dropzone_title')}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Поддерживаются документы, изображения, PDF и архивы до 50 МБ
+                {t('attachments.dropzone_hint')}
               </p>
             </div>
           )}
@@ -375,7 +382,7 @@ export function HomeworkAttachments({
       ) : attachments.length > 0 ? (
         <div className="space-y-2">
           {attachments.map((att) => {
-            const fileName = att.originalFileName || att.fileName || att.name || 'Безымянный файл'
+            const fileName = att.originalFileName || att.fileName || att.name || t('attachments.unnamed_file')
             const size = att.sizeBytes ?? att.fileSize ?? att.size
             const dateStr = att.uploadedAt || att.createdAt
             const isOpening = openingId === att.id
@@ -391,7 +398,7 @@ export function HomeworkAttachments({
                 <div
                   className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer group/file"
                   onClick={() => handleOpen(att)}
-                  title="Нажмите, чтобы открыть или просмотреть файл"
+                  title={t('attachments.action_preview_title')}
                 >
                   {getFileIcon(fileName, att.contentType)}
                   <div className="min-w-0 flex-1">
@@ -402,9 +409,9 @@ export function HomeworkAttachments({
                       {fileName}
                     </p>
                     <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                      {size !== undefined && <span>{formatBytes(size)}</span>}
+                      {size !== undefined && <span>{formatBytes(size, 1, sizeUnits)}</span>}
                       {size !== undefined && dateStr && <span>•</span>}
-                      {dateStr && <span>{formatDate(dateStr)}</span>}
+                      {dateStr && <span>{formatDate(dateStr, dateLocale)}</span>}
                     </div>
                   </div>
                 </div>
@@ -417,7 +424,7 @@ export function HomeworkAttachments({
                     size="icon-sm"
                     onClick={() => handleOpen(att)}
                     disabled={isOpening || isDownloading || isDeleting}
-                    title="Открыть / Просмотреть в новой вкладке"
+                    title={t('attachments.action_open_tab')}
                     className="text-muted-foreground hover:text-primary hover:bg-primary/10"
                   >
                     {isOpening ? (
@@ -433,7 +440,7 @@ export function HomeworkAttachments({
                     size="icon-sm"
                     onClick={() => handleDownload(att)}
                     disabled={isOpening || isDownloading || isDeleting}
-                    title="Скачать файл"
+                    title={t('attachments.action_download')}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {isDownloading ? (
@@ -450,7 +457,7 @@ export function HomeworkAttachments({
                       size="icon-sm"
                       onClick={() => handleDelete(att)}
                       disabled={isDeleting || isDownloading || isOpening}
-                      title="Удалить файл"
+                      title={t('attachments.action_delete')}
                       className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     >
                       {isDeleting ? (
@@ -469,7 +476,7 @@ export function HomeworkAttachments({
         readOnly && (
           <div className="text-center py-4 text-xs text-muted-foreground flex items-center justify-center gap-1.5">
             <HardDrive className="h-3.5 w-3.5" />
-            <span>К заданию не прикреплено файлов</span>
+            <span>{t('attachments.empty_readonly')}</span>
           </div>
         )
       )}

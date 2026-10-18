@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { renderAsync } from 'docx-preview'
 import { Loader2, AlertCircle } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 
 interface DocxViewerProps {
   blob?: Blob | null
@@ -8,6 +9,7 @@ interface DocxViewerProps {
 }
 
 export function DocxViewer({ blob, blobUrl }: DocxViewerProps) {
+  const { t } = useLanguage()
   const containerRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +31,7 @@ export function DocxViewer({ blob, blobUrl }: DocxViewerProps) {
         }
 
         if (!fileData) {
-          throw new Error('Файл документа не найден')
+          throw new Error(t('file_viewer.docx_not_found'))
         }
 
         if (!isMounted || !containerRef.current) return
@@ -51,7 +53,7 @@ export function DocxViewer({ blob, blobUrl }: DocxViewerProps) {
           setError(
             err instanceof Error
               ? err.message
-              : 'Не удалось отобразить документ Word. Попробуйте скачать файл.',
+              : t('file_viewer.docx_render_error'),
           )
           setLoading(false)
         }
@@ -63,7 +65,7 @@ export function DocxViewer({ blob, blobUrl }: DocxViewerProps) {
     return () => {
       isMounted = false
     }
-  }, [blob, blobUrl])
+  }, [blob, blobUrl, t])
 
   return (
     <div className="w-full h-full flex flex-col relative bg-muted/30 overflow-hidden">
@@ -71,7 +73,7 @@ export function DocxViewer({ blob, blobUrl }: DocxViewerProps) {
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10 gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm font-medium text-muted-foreground">
-            Загрузка документа Word...
+            {t('file_viewer.docx_loading')}
           </p>
         </div>
       )}
@@ -79,7 +81,7 @@ export function DocxViewer({ blob, blobUrl }: DocxViewerProps) {
       {error ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-sm mx-auto">
           <AlertCircle className="h-10 w-10 text-destructive mb-2" />
-          <h4 className="text-base font-semibold">Ошибка предпросмотра</h4>
+          <h4 className="text-base font-semibold">{t('file_viewer.docx_error_title')}</h4>
           <p className="text-xs text-muted-foreground mt-1 mb-4">{error}</p>
         </div>
       ) : (

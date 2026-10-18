@@ -11,7 +11,7 @@ export interface LanguageInfo {
 export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
   {
     code: 'ru',
-    label: 'Русский',
+    label: 'Russian',
     nativeLabel: 'Русский',
     shortLabel: 'RU',
     flag: '🇷🇺',
@@ -25,9 +25,9 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
   },
   {
     code: 'kk',
-    label: 'Казахский',
+    label: 'Kazakh',
     nativeLabel: 'Қазақша',
-    shortLabel: 'ҚАЗ',
+    shortLabel: 'KZ',
     flag: '🇰🇿',
   },
 ]

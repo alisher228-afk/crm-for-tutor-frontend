@@ -36,7 +36,7 @@ interface StudentHomeworkDetailsSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
-function formatDeadline(isoStr?: string, locale = 'ru-RU', noDeadlineText = 'Бессрочно'): { text: string; isPast: boolean } {
+function formatDeadline(isoStr?: string, locale = 'ru-RU', noDeadlineText = '—'): { text: string; isPast: boolean } {
   if (!isoStr) return { text: noDeadlineText, isPast: false }
   const d = new Date(isoStr)
   if (isNaN(d.getTime())) return { text: noDeadlineText, isPast: false }

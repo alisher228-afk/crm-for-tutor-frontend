@@ -46,7 +46,7 @@ const PRESET_SERVICES = [
   { name: 'Quizlet', example: 'https://quizlet.com/...' },
   { name: 'Google Forms', example: 'https://forms.gle/...' },
   { name: 'Kahoot', example: 'https://kahoot.it/challenge/...' },
-  { name: 'Яндекс.Формы', example: 'https://forms.yandex.ru/...' },
+  { name: 'Yandex Forms', example: 'https://forms.yandex.ru/...' },
 ]
 
 export function TestFormDialog({

@@ -24,6 +24,7 @@ import {
   Loader2,
   HardDrive,
 } from 'lucide-react'
+import { useLanguage } from '@/i18n'
 import type { TeachingMaterial } from '@/types'
 
 interface SelectMaterialDialogProps {
@@ -37,11 +38,11 @@ interface SelectMaterialDialogProps {
   isPending?: boolean
 }
 
-function formatBytes(bytes?: number, decimals = 1): string {
-  if (!bytes || bytes === 0) return '0 Б'
+function formatBytes(bytes?: number, decimals = 1, units?: string[]): string {
+  if (!bytes || bytes === 0) return `0 ${units?.[0] || 'B'}`
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Б', 'КБ', 'МБ', 'ГБ']
+  const sizes = units || ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
@@ -76,6 +77,8 @@ export function SelectMaterialDialog({
   multiSelect = true,
   isPending = false,
 }: SelectMaterialDialogProps) {
+  const { t } = useLanguage()
+  const sizeUnits = [t('common.size_b'), t('common.size_kb'), t('common.size_mb'), t('common.size_gb')]
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -127,9 +130,9 @@ export function SelectMaterialDialog({
               <FolderKanban className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle>Выбрать из Базы знаний</DialogTitle>
+              <DialogTitle>{t('select_material.title')}</DialogTitle>
               <DialogDescription>
-                Прикрепите ранее сохранённые учебники, таблицы формул и тесты в 1 клик
+                {t('select_material.subtitle')}
               </DialogDescription>
             </div>
           </div>
@@ -139,7 +142,7 @@ export function SelectMaterialDialog({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Поиск по названию или описанию..."
+                placeholder={t('select_material.search_placeholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 h-9 text-xs sm:text-sm"
@@ -157,7 +160,7 @@ export function SelectMaterialDialog({
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  Все ({categories.length})
+                  {t('select_material.all_categories', { count: categories.length })}
                 </button>
                 {categories.map((cat) => (
                   <button
@@ -217,7 +220,7 @@ export function SelectMaterialDialog({
                         )}
                         {isAlready && (
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                            Уже прикреплен
+                            {t('select_material.already_attached')}
                           </Badge>
                         )}
                       </div>
@@ -231,7 +234,7 @@ export function SelectMaterialDialog({
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
                         <span className="truncate">{m.originalFileName}</span>
                         <span>•</span>
-                        <span>{formatBytes(m.sizeBytes)}</span>
+                        <span>{formatBytes(m.sizeBytes, 1, sizeUnits)}</span>
                       </div>
                     </div>
                   </div>
@@ -253,9 +256,9 @@ export function SelectMaterialDialog({
           ) : (
             <div className="text-center py-12 text-muted-foreground space-y-2">
               <HardDrive className="h-8 w-8 mx-auto opacity-50" />
-              <p className="text-sm font-medium">Материалы не найдены</p>
+              <p className="text-sm font-medium">{t('select_material.empty_title')}</p>
               <p className="text-xs max-w-xs mx-auto">
-                Добавьте учебные пособия, таблицы и файлы в разделе «База знаний»
+                {t('select_material.empty_desc')}
               </p>
             </div>
           )}
@@ -263,7 +266,7 @@ export function SelectMaterialDialog({
 
         <DialogFooter className="p-4 border-t border-border flex items-center justify-between sm:justify-between bg-muted/10">
           <div className="text-xs text-muted-foreground">
-            Выбрано: <strong className="text-foreground">{selectedIds.length}</strong>
+            {t('select_material.selected_count')} <strong className="text-foreground">{selectedIds.length}</strong>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -273,7 +276,7 @@ export function SelectMaterialDialog({
               onClick={() => onOpenChange(false)}
               disabled={isPending}
             >
-              Отмена
+              {t('select_material.cancel')}
             </Button>
             <Button
               type="button"
@@ -282,7 +285,7 @@ export function SelectMaterialDialog({
               disabled={selectedIds.length === 0 || isPending}
             >
               {isPending && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-              Прикрепить ({selectedIds.length})
+              {t('select_material.attach_button', { count: selectedIds.length })}
             </Button>
           </div>
         </DialogFooter>

@@ -27,8 +27,13 @@ import {
 } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { LanguageToggle } from '@/components/LanguageToggle'
+import { useLanguage } from '@/i18n'
 
 export function LandingPage() {
+  const { t, language } = useLanguage()
+  const currencySymbol = language === 'kk' ? '₸' : language === 'en' ? '$' : '₽'
+  const numberLocale = language === 'en' ? 'en-US' : language === 'kk' ? 'kk-KZ' : 'ru-RU'
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Interactive Showcase State
@@ -49,12 +54,12 @@ export function LandingPage() {
     if (!demoLessonCompleted) {
       setDemoLessonCompleted(true)
       setDemoBalance((prev) => Math.max(0, prev - 1))
-      setDemoToast('✅ Урок проведён! С баланса Ани списано 1 занятие.')
+      setDemoToast(t('landing.demo_toast_completed'))
       setTimeout(() => setDemoToast(null), 4000)
     } else {
       setDemoLessonCompleted(false)
       setDemoBalance(4)
-      setDemoToast('🔄 Демо сброшено')
+      setDemoToast(t('landing.demo_toast_reset'))
       setTimeout(() => setDemoToast(null), 2500)
     }
   }
@@ -64,38 +69,38 @@ export function LandingPage() {
   const savedHours = Math.round(calcStudents * 1.3)
 
   const subjects = [
-    '📐 Профильная математика',
-    '🇬🇧 Английский B2/C1',
-    '💻 Python & Веб-разработка',
-    '🧪 Химия и биология',
-    '⚡ Физика ОГЭ / ЕГЭ',
-    '🎨 Графический дизайн',
-    '🇨🇳 Китайский язык',
-    '🎹 Музыка и сольфеджио',
-    '📜 Обществознание и история',
-    '🇩🇪 Немецкий для учёбы',
+    t('landing.subject_math'),
+    t('landing.subject_english'),
+    t('landing.subject_python'),
+    t('landing.subject_chemistry'),
+    t('landing.subject_physics'),
+    t('landing.subject_design'),
+    t('landing.subject_chinese'),
+    t('landing.subject_music'),
+    t('landing.subject_history'),
+    t('landing.subject_german'),
   ]
 
   const faqs = [
     {
-      q: 'Сложно ли перенести учеников из блокнота или Excel?',
-      a: 'Займёт буквально 5 минут. Добавьте имена учеников, их персональные ставки за урок и контактные данные. Всё остальное — расписание и баланс — система начнёт вести сама с первого занятия.',
+      q: t('landing.faq_q1'),
+      a: t('landing.faq_a1'),
     },
     {
-      q: 'Как ученики получают доступ к своему кабинету?',
-      a: 'Вы отправляете ученику персональную инвайт-ссылку. Он регистрируется за 30 секунд и видит только свои занятия, баланс оплаченных уроков и домашние задания. Доступа к чужим данным у него нет.',
+      q: t('landing.faq_q2'),
+      a: t('landing.faq_a2'),
     },
     {
-      q: 'Как работает Telegram-бот для напоминаний?',
-      a: 'Ученик подключает бота в один клик. Бот автоматически отправляет уведомление за 2 часа и за 15 минут до начала урока со ссылкой на звонок. Это снижает забытые занятия и опоздания более чем на 40%.',
+      q: t('landing.faq_q3'),
+      a: t('landing.faq_a3'),
     },
     {
-      q: 'Удобно ли пользоваться сервисом со смартфона?',
-      a: 'Да! Studly CRM полностью адаптирован под мобильные экраны. Вы можете быстро отметить проведённый урок, записать оплату или перенести занятие прямо с телефона между встречами.',
+      q: t('landing.faq_q4'),
+      a: t('landing.faq_a4'),
     },
     {
-      q: 'Сколько стоит сервис и есть ли пробный период?',
-      a: 'Базовый функционал доступен бесплатно сразу после регистрации. Никаких скрытых платежей и привязки банковской карты для старта не требуется.',
+      q: t('landing.faq_q5'),
+      a: t('landing.faq_a5'),
     },
   ]
 
@@ -112,21 +117,22 @@ export function LandingPage() {
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">
-              Возможности
+              {t('landing.nav_features')}
             </a>
             <a href="#interactive-demo" className="hover:text-foreground transition-colors">
-              Демо-песочница
+              {t('landing.nav_demo')}
             </a>
             <a href="#calculator" className="hover:text-foreground transition-colors">
-              Калькулятор
+              {t('landing.nav_calculator')}
             </a>
             <a href="#faq" className="hover:text-foreground transition-colors">
-              Вопросы
+              {t('landing.nav_faq')}
             </a>
           </nav>
 
-          {/* Desktop Auth Buttons & ThemeToggle */}
+          {/* Desktop Auth Buttons, LanguageToggle & ThemeToggle */}
           <div className="hidden md:flex items-center gap-3">
+            <LanguageToggle />
             <ThemeToggle />
             <Link
               to="/login"
@@ -135,7 +141,7 @@ export function LandingPage() {
                 'text-sm font-medium rounded-xl hover:bg-muted/80'
               )}
             >
-              Войти
+              {t('landing.nav_login')}
             </Link>
             <Link
               to="/register"
@@ -144,19 +150,20 @@ export function LandingPage() {
                 'text-sm font-medium rounded-xl px-4 bg-foreground text-background hover:bg-foreground/90 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]'
               )}
             >
-              Попробовать бесплатно
+              {t('landing.nav_try_free')}
             </Link>
           </div>
 
-          {/* Mobile Menu & ThemeToggle */}
+          {/* Mobile Menu & LanguageToggle / ThemeToggle */}
           <div className="flex md:hidden items-center gap-2">
+            <LanguageToggle />
             <ThemeToggle />
             <Button
               variant="outline"
               size="icon"
               className="rounded-xl h-9 w-9 border-border"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Меню"
+              aria-label={t('landing.nav_menu_aria')}
             >
               {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
@@ -172,28 +179,28 @@ export function LandingPage() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-muted-foreground hover:text-foreground py-1"
               >
-                Возможности
+                {t('landing.nav_features')}
               </a>
               <a
                 href="#interactive-demo"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-muted-foreground hover:text-foreground py-1"
               >
-                Демо-песочница
+                {t('landing.nav_demo')}
               </a>
               <a
                 href="#calculator"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-muted-foreground hover:text-foreground py-1"
               >
-                Калькулятор
+                {t('landing.nav_calculator')}
               </a>
               <a
                 href="#faq"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-muted-foreground hover:text-foreground py-1"
               >
-                Частые вопросы
+                {t('landing.nav_faq')}
               </a>
             </div>
             <div className="flex flex-col gap-2 pt-3 border-t border-border">
@@ -202,7 +209,7 @@ export function LandingPage() {
                 className={cn(buttonVariants({ variant: 'outline' }), 'w-full rounded-xl text-sm font-medium')}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Войти
+                {t('landing.nav_login')}
               </Link>
               <Link
                 to="/register"
@@ -212,7 +219,7 @@ export function LandingPage() {
                 )}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Попробовать бесплатно
+                {t('landing.nav_try_free')}
               </Link>
             </div>
           </div>
@@ -235,7 +242,7 @@ export function LandingPage() {
                 <span>@StudlyBot</span>
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               </div>
-              <div className="text-muted-foreground text-[11px] truncate">Урок через 2 часа с Аней 🔔</div>
+              <div className="text-muted-foreground text-[11px] truncate">{t('landing.hero_notification_lesson')}</div>
             </div>
           </div>
 
@@ -246,9 +253,9 @@ export function LandingPage() {
             </div>
             <div>
               <div className="font-semibold text-emerald-600 dark:text-emerald-400">
-                +8 уроков оплачено (14 400 ₽)
+                {t('landing.hero_notification_payment')}
               </div>
-              <div className="text-muted-foreground text-[11px]">Баланс обновлён автоматически</div>
+              <div className="text-muted-foreground text-[11px]">{t('landing.hero_notification_balance')}</div>
             </div>
           </div>
 
@@ -256,19 +263,19 @@ export function LandingPage() {
             {/* Friendly Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card shadow-xs text-foreground text-xs font-medium">
               <span className="flex h-2 w-2 rounded-full bg-[#E11D48] animate-pulse" />
-              <span>Studly CRM — умный сервис для репетиторов</span>
+              <span>{t('landing.hero_badge_service')}</span>
               <span className="hidden sm:inline text-muted-foreground">•</span>
-              <span className="hidden sm:inline text-muted-foreground">Без душных таблиц</span>
+              <span className="hidden sm:inline text-muted-foreground">{t('landing.hero_badge_tables')}</span>
             </div>
 
             {/* Main Punchy Headline */}
             <div className="max-w-4xl mx-auto space-y-4">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-foreground leading-[1.14]">
-                Веди уроки в кайф, <br />
-                <span className="text-muted-foreground">а не в блокноте и чатах.</span>
+                {t('landing.hero_title_part1')} <br />
+                <span className="text-muted-foreground">{t('landing.hero_title_part2')}</span>
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal">
-                Интерактивное расписание, автоматический баланс занятий, домашки и Telegram-бот, который сам напишет ученику перед созвоном. Всё под рукой с телефона и ноутбука.
+                {t('landing.hero_subtitle')}
               </p>
             </div>
 
@@ -281,7 +288,7 @@ export function LandingPage() {
                   'w-full sm:w-auto rounded-xl font-medium text-sm h-12 px-7 bg-foreground text-background hover:bg-foreground/90 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]'
                 )}
               >
-                Попробовать бесплатно <ArrowRight className="ml-2 h-4 w-4" />
+                {t('landing.hero_cta_free')} <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <a
                 href="#interactive-demo"
@@ -290,7 +297,7 @@ export function LandingPage() {
                   'w-full sm:w-auto rounded-xl font-medium text-sm h-12 px-6 border-border hover:bg-muted/80'
                 )}
               >
-                Попробовать демо ниже ↓
+                {t('landing.hero_cta_demo')}
               </a>
             </div>
 
@@ -300,7 +307,7 @@ export function LandingPage() {
                 to="/register/student"
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
               >
-                <span>Вы ученик? Регистрация по инвайт-коду преподавателя</span>
+                <span>{t('landing.hero_student_invite_prompt')}</span>
                 <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
@@ -311,25 +318,25 @@ export function LandingPage() {
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                 </span>
-                <span>Старт за 1 минуту</span>
+                <span>{t('landing.hero_badge_fast_start')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <Bot className="h-3.5 w-3.5" />
                 </span>
-                <span>Telegram-бот в комплекте</span>
+                <span>{t('landing.hero_badge_telegram')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <Smartphone className="h-3.5 w-3.5" />
                 </span>
-                <span>Удобно с любого устройства</span>
+                <span>{t('landing.hero_badge_any_device')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400">
                   <ShieldCheck className="h-3.5 w-3.5" />
                 </span>
-                <span>Без привязки карты</span>
+                <span>{t('landing.hero_badge_no_card')}</span>
               </div>
             </div>
           </div>
@@ -355,13 +362,13 @@ export function LandingPage() {
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border border-border bg-card text-[#E11D48]">
                 <Sparkles className="h-3 w-3" />
-                <span>Интерактивная песочница</span>
+                <span>{t('landing.demo_section_badge')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                Попробуйте интерфейс прямо сейчас
+                {t('landing.demo_section_title')}
               </h2>
               <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
-                Переключайте вкладки и нажимайте кнопки, чтобы увидеть, как Studly автоматизирует рутину.
+                {t('landing.demo_section_subtitle')}
               </p>
             </div>
 
@@ -392,7 +399,7 @@ export function LandingPage() {
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    📅 Расписание
+                    {t('landing.demo_tab_schedule')}
                   </button>
                   <button
                     onClick={() => setActiveTab('balance')}
@@ -403,7 +410,7 @@ export function LandingPage() {
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    💰 Баланс оплат
+                    {t('landing.demo_tab_balance')}
                   </button>
                   <button
                     onClick={() => setActiveTab('bot')}
@@ -414,7 +421,7 @@ export function LandingPage() {
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    🤖 Telegram-бот
+                    {t('landing.demo_tab_bot')}
                   </button>
                   <button
                     onClick={() => setActiveTab('homework')}
@@ -425,7 +432,7 @@ export function LandingPage() {
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    📝 Домашки
+                    {t('landing.demo_tab_homework')}
                   </button>
                 </div>
               </div>
@@ -434,7 +441,7 @@ export function LandingPage() {
               {demoToast && (
                 <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center justify-between animate-fadeIn">
                   <span>{demoToast}</span>
-                  <span className="text-[11px] opacity-75">Автоматический расчёт</span>
+                  <span className="text-[11px] opacity-75">{t('landing.demo_auto_calc_badge')}</span>
                 </div>
               )}
 
@@ -443,9 +450,9 @@ export function LandingPage() {
                 <div className="p-4 sm:p-6 bg-background space-y-5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border/60">
                     <div>
-                      <h3 className="text-base font-bold">Расписание занятий на сегодня</h3>
+                      <h3 className="text-base font-bold">{t('landing.demo_schedule_title')}</h3>
                       <p className="text-xs text-muted-foreground">
-                        Нажмите кнопку справа на карточке, чтобы смоделировать проведение урока
+                        {t('landing.demo_schedule_subtitle')}
                       </p>
                     </div>
                     <Button
@@ -455,7 +462,7 @@ export function LandingPage() {
                       className="rounded-xl text-xs h-8 gap-1.5 self-start sm:self-center"
                     >
                       <RotateCcw className="h-3 w-3" />
-                      {demoLessonCompleted ? 'Сбросить демо' : 'Провести урок Ани'}
+                      {demoLessonCompleted ? t('landing.demo_btn_reset') : t('landing.demo_btn_conduct_anna')}
                     </Button>
                   </div>
 
@@ -471,27 +478,29 @@ export function LandingPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-14 text-center shrink-0">
                         <div className="text-base font-bold font-mono">15:00</div>
-                        <div className="text-[11px] text-muted-foreground">60 мин</div>
+                        <div className="text-[11px] text-muted-foreground">{t('landing.demo_duration_60')}</div>
                       </div>
                       <div className="h-8 w-px bg-border shrink-0" />
                       <div>
                         <div className="text-sm font-semibold flex items-center gap-2">
-                          <span>Анна Смирнова</span>
+                          <span>{t('landing.demo_anna_name')}</span>
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                            Английский B2
+                            {t('landing.demo_anna_subject')}
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          Баланс:{' '}
+                          {t('landing.demo_balance_label')}{' '}
                           <span
                             className={cn(
                               'font-bold transition-all',
                               demoLessonCompleted ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'
                             )}
                           >
-                            {demoBalance} {demoBalance === 1 ? 'урок' : 'урока'}
+                            {demoBalance === 1
+                              ? t('landing.demo_balance_lessons_1', { count: demoBalance })
+                              : t('landing.demo_balance_lessons_few', { count: demoBalance })}
                           </span>
-                          {demoLessonCompleted && ' (было 4, 1 списался)'}
+                          {demoLessonCompleted && ` ${t('landing.demo_balance_deducted_note')}`}
                         </div>
                       </div>
                     </div>
@@ -499,7 +508,7 @@ export function LandingPage() {
                       {demoLessonCompleted ? (
                         <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5">
                           <Check className="h-3.5 w-3.5" />
-                          <span>Проведён • Списано</span>
+                          <span>{t('landing.demo_status_conducted')}</span>
                         </span>
                       ) : (
                         <Button
@@ -508,7 +517,7 @@ export function LandingPage() {
                           className="rounded-xl text-xs h-8 px-3 bg-foreground text-background hover:bg-foreground/90 gap-1.5"
                         >
                           <Check className="h-3 w-3" />
-                          <span>Отметить проведённым</span>
+                          <span>{t('landing.demo_btn_mark_conducted')}</span>
                         </Button>
                       )}
                       <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground border border-border px-2 py-1 rounded-lg bg-background">
@@ -523,25 +532,25 @@ export function LandingPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-14 text-center shrink-0">
                         <div className="text-base font-bold font-mono">16:30</div>
-                        <div className="text-[11px] text-muted-foreground">60 мин</div>
+                        <div className="text-[11px] text-muted-foreground">{t('landing.demo_duration_60')}</div>
                       </div>
                       <div className="h-8 w-px bg-border shrink-0" />
                       <div>
                         <div className="text-sm font-semibold flex items-center gap-2">
-                          <span>Группа «ОГЭ Математика»</span>
+                          <span>{t('landing.demo_group_name')}</span>
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                            4 ученика
+                            {t('landing.demo_group_students_count')}
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          Геометрия • Бот отправил ссылку за 2 часа
+                          {t('landing.demo_group_desc')}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 self-start sm:self-center">
                       <span className="text-xs font-medium text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center gap-1.5">
                         <Bot className="h-3 w-3" />
-                        <span>Ученики подтвердили</span>
+                        <span>{t('landing.demo_students_confirmed')}</span>
                       </span>
                     </div>
                   </div>
@@ -553,20 +562,20 @@ export function LandingPage() {
                 <div className="p-4 sm:p-6 bg-background space-y-4">
                   <div className="flex items-center justify-between pb-2 border-b border-border/60">
                     <div>
-                      <h3 className="text-base font-bold">Балансы учеников и абонементы</h3>
-                      <p className="text-xs text-muted-foreground">Всегда видно, кому пора пополнить абонемент</p>
+                      <h3 className="text-base font-bold">{t('landing.demo_balance_tab_title')}</h3>
+                      <p className="text-xs text-muted-foreground">{t('landing.demo_balance_tab_subtitle')}</p>
                     </div>
                     <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                      Общий доход: 184 000 ₽
+                      {t('landing.demo_total_income_label')}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold">Анна Смирнова</span>
+                        <span className="text-sm font-bold">{t('landing.demo_anna_name')}</span>
                         <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 font-mono">
-                          {demoBalance} из 8 уроков
+                          {t('landing.demo_anna_balance', { count: demoBalance })}
                         </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
@@ -576,54 +585,54 @@ export function LandingPage() {
                         />
                       </div>
                       <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                        <span>Английский B2 • 1 800 ₽/урок</span>
-                        <span className="text-foreground font-medium">Оплачено</span>
+                        <span>{t('landing.demo_anna_price')}</span>
+                        <span className="text-foreground font-medium">{t('landing.demo_paid_badge')}</span>
                       </div>
                     </div>
 
                     <div className="p-3.5 rounded-xl border border-[#E11D48]/30 bg-[#E11D48]/5 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold">Максим Волков</span>
-                        <span className="text-xs font-bold text-[#E11D48] font-mono">1 из 8 уроков</span>
+                        <span className="text-sm font-bold">{t('landing.demo_maxim_name')}</span>
+                        <span className="text-xs font-bold text-[#E11D48] font-mono">{t('landing.demo_maxim_balance')}</span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-[#E11D48] h-2 rounded-full" style={{ width: '12.5%' }} />
                       </div>
                       <div className="text-[11px] text-[#E11D48] flex items-center justify-between font-medium">
-                        <span>Физика ЕГЭ • Заканчивается абонемент</span>
-                        <span className="underline cursor-pointer">Выставить счёт</span>
+                        <span>{t('landing.demo_maxim_desc')}</span>
+                        <span className="underline cursor-pointer">{t('landing.demo_btn_send_invoice')}</span>
                       </div>
                     </div>
 
                     <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold">Егор Михайлов</span>
+                        <span className="text-sm font-bold">{t('landing.demo_egor_name')}</span>
                         <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 font-mono">
-                          6 из 8 уроков
+                          {t('landing.demo_egor_balance')}
                         </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '75%' }} />
                       </div>
                       <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                        <span>Python Junior • 2 200 ₽/урок</span>
-                        <span className="text-foreground font-medium">Оплачено</span>
+                        <span>{t('landing.demo_egor_desc')}</span>
+                        <span className="text-foreground font-medium">{t('landing.demo_paid_badge')}</span>
                       </div>
                     </div>
 
                     <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold">Полина Зайцева</span>
+                        <span className="text-sm font-bold">{t('landing.demo_polina_name')}</span>
                         <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 font-mono">
-                          8 из 8 уроков
+                          {t('landing.demo_polina_balance')}
                         </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '100%' }} />
                       </div>
                       <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                        <span>Подготовка к ОГЭ • 1 600 ₽/урок</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">Новый пакет</span>
+                        <span>{t('landing.demo_polina_desc')}</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t('landing.demo_new_package_badge')}</span>
                       </div>
                     </div>
                   </div>
@@ -634,16 +643,16 @@ export function LandingPage() {
               {activeTab === 'bot' && (
                 <div className="p-4 sm:p-6 bg-background space-y-4">
                   <div className="pb-2 border-b border-border/60">
-                    <h3 className="text-base font-bold">Автоматические диалоги в Telegram</h3>
+                    <h3 className="text-base font-bold">{t('landing.demo_bot_tab_title')}</h3>
                     <p className="text-xs text-muted-foreground">
-                      Бот сам пишет ученикам от имени сервиса и напоминает о ссылке на созвон
+                      {t('landing.demo_bot_tab_subtitle')}
                     </p>
                   </div>
 
                   <div className="max-w-md mx-auto bg-card rounded-2xl border border-border p-4 space-y-3 shadow-xs">
                     <div className="flex items-center gap-2 pb-2 border-b border-border text-xs font-medium text-muted-foreground">
                       <Bot className="h-4 w-4 text-blue-500" />
-                      <span>Диалог с учеником (Аня Смирнова)</span>
+                      <span>{t('landing.demo_bot_chat_title')}</span>
                     </div>
 
                     <div className="space-y-2.5 text-xs">
@@ -654,22 +663,22 @@ export function LandingPage() {
                           <span className="text-[10px] text-muted-foreground font-normal">13:00</span>
                         </div>
                         <p className="text-muted-foreground">
-                          👋 Привет, Аня! Сегодня в 15:00 у вас занятие по Английскому языку.
+                          {t('landing.demo_bot_msg_greeting')}
                         </p>
-                        <p className="text-primary font-medium underline">Ссылка на Zoom: meet.google.com/abc</p>
+                        <p className="text-primary font-medium underline">{t('landing.demo_bot_msg_link')}</p>
                       </div>
 
                       {/* Student confirmation button */}
                       <div className="flex justify-end">
                         <div className="bg-foreground text-background px-3 py-1.5 rounded-xl rounded-tr-xs text-xs font-medium">
-                          ✓ Да, буду на занятии!
+                          {t('landing.demo_bot_btn_confirm')}
                         </div>
                       </div>
 
                       {/* Bot answer */}
                       <div className="bg-muted/70 p-3 rounded-xl rounded-tl-xs max-w-[85%] space-y-1">
                         <p className="text-muted-foreground">
-                          Отлично! Преподаватель уже предупреждён. До встречи на уроке ✨
+                          {t('landing.demo_bot_reply')}
                         </p>
                       </div>
                     </div>
@@ -682,11 +691,11 @@ export function LandingPage() {
                 <div className="p-4 sm:p-6 bg-background space-y-4">
                   <div className="flex items-center justify-between pb-2 border-b border-border/60">
                     <div>
-                      <h3 className="text-base font-bold">Домашние задания и файлы</h3>
-                      <p className="text-xs text-muted-foreground">Никаких потерянных фото тетрадей в переписках</p>
+                      <h3 className="text-base font-bold">{t('landing.demo_hw_tab_title')}</h3>
+                      <p className="text-xs text-muted-foreground">{t('landing.demo_hw_tab_subtitle')}</p>
                     </div>
                     <span className="text-xs font-medium text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
-                      2 на проверке
+                      {t('landing.demo_hw_review_count')}
                     </span>
                   </div>
 
@@ -694,33 +703,33 @@ export function LandingPage() {
                     <div className="p-3.5 rounded-xl border border-border bg-card flex items-center justify-between gap-3">
                       <div className="space-y-1">
                         <div className="text-sm font-semibold flex items-center gap-2">
-                          <span>ДЗ №14: Past Perfect & Conditionals</span>
+                          <span>{t('landing.demo_hw_1_title')}</span>
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                            Сдано на проверку
+                            {t('landing.demo_hw_1_status')}
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Ученик: Анна Смирнова • Файл: <span className="underline">essay_smirnova.docx</span>
+                          {t('landing.demo_hw_1_meta', { file: 'essay_smirnova.docx' })}
                         </div>
                       </div>
                       <Button size="sm" variant="outline" className="rounded-xl text-xs h-8">
-                        Проверить
+                        {t('landing.demo_hw_1_btn_check')}
                       </Button>
                     </div>
 
                     <div className="p-3.5 rounded-xl border border-border bg-card flex items-center justify-between gap-3">
                       <div className="space-y-1">
                         <div className="text-sm font-semibold flex items-center gap-2">
-                          <span>Тригонометрия (профиль, задания 1-5)</span>
+                          <span>{t('landing.demo_hw_2_title')}</span>
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            Проверено (5/5)
+                            {t('landing.demo_hw_2_status')}
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Ученик: Максим Волков • Комментарий: «Отличный ход решения!»
+                          {t('landing.demo_hw_2_meta')}
                         </div>
                       </div>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Зачтено</span>
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{t('landing.demo_hw_2_accepted')}</span>
                     </div>
                   </div>
                 </div>
@@ -735,13 +744,13 @@ export function LandingPage() {
             <div className="text-center space-y-3 max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border border-border bg-card text-[#E11D48]">
                 <Zap className="h-3 w-3" />
-                <span>Возможности Studly CRM</span>
+                <span>{t('landing.features_badge')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                Всё, чтобы вести практику без головной боли
+                {t('landing.features_title')}
               </h2>
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Инструменты, созданные специально под ежедневную рутину репетитора. Никакого перегруженного функционала для корпораций — только то, что реально нужно каждый день.
+                {t('landing.features_subtitle')}
               </p>
             </div>
 
@@ -751,9 +760,9 @@ export function LandingPage() {
                 <div className="h-10 w-10 rounded-xl bg-foreground/5 text-foreground flex items-center justify-center">
                   <CalendarDays className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-bold">Умное расписание</h3>
+                <h3 className="text-lg font-bold">{t('landing.feat_schedule_title')}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Наглядная сетка по дням недели. Система сама следит, чтобы уроки не накладывались друг на друга, и сохраняет ссылки на созвоны в один клик.
+                  {t('landing.feat_schedule_desc')}
                 </p>
               </div>
 
@@ -762,9 +771,9 @@ export function LandingPage() {
                 <div className="h-10 w-10 rounded-xl bg-foreground/5 text-foreground flex items-center justify-center">
                   <WalletCards className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-bold">Баланс уроков и оплаты</h3>
+                <h3 className="text-lg font-bold">{t('landing.feat_balance_title')}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Провели урок — баланс ученика списывается автоматически. Всегда видно, кто оплатил абонемент, а у кого уроки подходят к концу.
+                  {t('landing.feat_balance_desc')}
                 </p>
               </div>
 
@@ -773,9 +782,9 @@ export function LandingPage() {
                 <div className="h-10 w-10 rounded-xl bg-foreground/5 text-foreground flex items-center justify-center">
                   <Users className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-bold">Карточки учеников и групп</h3>
+                <h3 className="text-lg font-bold">{t('landing.feat_students_title')}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Вся информация в одном месте: индивидуальные ставки за урок, предмет, контакты родителей, история оплат и персональные заметки.
+                  {t('landing.feat_students_desc')}
                 </p>
               </div>
 
@@ -784,9 +793,9 @@ export function LandingPage() {
                 <div className="h-10 w-10 rounded-xl bg-foreground/5 text-[#E11D48] flex items-center justify-center">
                   <Bot className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-bold">Telegram-бот напоминаний</h3>
+                <h3 className="text-lg font-bold">{t('landing.feat_bot_title')}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Бот автоматически напоминает ученикам о предстоящем уроке за 2 часа. Больше никаких созвонов «ты где?» и забытых занятий.
+                  {t('landing.feat_bot_desc')}
                 </p>
               </div>
 
@@ -795,9 +804,9 @@ export function LandingPage() {
                 <div className="h-10 w-10 rounded-xl bg-foreground/5 text-foreground flex items-center justify-center">
                   <FileText className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-bold">Домашки и файлы</h3>
+                <h3 className="text-lg font-bold">{t('landing.feat_homework_title')}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Прикрепляйте материалы и ставьте дедлайны прямо в карточке урока. Ученик сдаёт решение в платформу, а вы проверяете без потери файлов в мессенджерах.
+                  {t('landing.feat_homework_desc')}
                 </p>
               </div>
 
@@ -806,9 +815,9 @@ export function LandingPage() {
                 <div className="h-10 w-10 rounded-xl bg-foreground/5 text-amber-500 flex items-center justify-center">
                   <Sparkles className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-bold">Личный кабинет ученика</h3>
+                <h3 className="text-lg font-bold">{t('landing.feat_cabinet_title')}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Отправьте ученику инвайт-ссылку: он заходит в свой чистый кабинет, видит расписание, остаток оплаченных занятий и свои домашние задания.
+                  {t('landing.feat_cabinet_desc')}
                 </p>
               </div>
             </div>
@@ -821,13 +830,13 @@ export function LandingPage() {
             <div className="text-center space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border border-border bg-card text-emerald-600 dark:text-emerald-400">
                 <TrendingUp className="h-3.5 w-3.5" />
-                <span>Интерактивный калькулятор</span>
+                <span>{t('landing.calc_badge')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                Посчитайте выгоду от порядка в расписании
+                {t('landing.calc_title')}
               </h2>
               <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
-                Узнайте, сколько времени и денег освободится, если перестать тратить часы на рутину и переписки.
+                {t('landing.calc_subtitle')}
               </p>
             </div>
 
@@ -837,8 +846,10 @@ export function LandingPage() {
                 {/* Students Control */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm font-medium">
-                    <span>Количество учеников:</span>
-                    <span className="font-bold text-base text-foreground font-mono">{calcStudents} чел.</span>
+                    <span>{t('landing.calc_students_label')}</span>
+                    <span className="font-bold text-base text-foreground font-mono">
+                      {t('landing.calc_students_unit', { count: calcStudents })}
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -850,17 +861,19 @@ export function LandingPage() {
                     className="w-full accent-foreground cursor-pointer"
                   />
                   <div className="flex justify-between text-[11px] text-muted-foreground">
-                    <span>3 ученика</span>
-                    <span>20 учеников</span>
-                    <span>40 учеников</span>
+                    <span>{t('landing.calc_students_3')}</span>
+                    <span>{t('landing.calc_students_20')}</span>
+                    <span>{t('landing.calc_students_40')}</span>
                   </div>
                 </div>
 
                 {/* Price Control */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm font-medium">
-                    <span>Стоимость одного урока:</span>
-                    <span className="font-bold text-base text-foreground font-mono">{calcPrice.toLocaleString('ru-RU')} ₽</span>
+                    <span>{t('landing.calc_price_label')}</span>
+                    <span className="font-bold text-base text-foreground font-mono">
+                      {calcPrice.toLocaleString(numberLocale)} {currencySymbol}
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -872,17 +885,19 @@ export function LandingPage() {
                     className="w-full accent-foreground cursor-pointer"
                   />
                   <div className="flex justify-between text-[11px] text-muted-foreground">
-                    <span>800 ₽</span>
-                    <span>2 500 ₽</span>
-                    <span>5 000 ₽</span>
+                    <span>{`800 ${currencySymbol}`}</span>
+                    <span>{`2 500 ${currencySymbol}`}</span>
+                    <span>{`5 000 ${currencySymbol}`}</span>
                   </div>
                 </div>
 
                 {/* Lessons per week */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm font-medium">
-                    <span>Уроков в неделю на ученика:</span>
-                    <span className="font-bold text-base text-foreground font-mono">{calcLessonsPerWeek} ур./нед.</span>
+                    <span>{t('landing.calc_lessons_week_label')}</span>
+                    <span className="font-bold text-base text-foreground font-mono">
+                      {t('landing.calc_lessons_week_unit', { count: calcLessonsPerWeek })}
+                    </span>
                   </div>
                   <div className="flex gap-2">
                     {[1, 2, 3].map((num) => (
@@ -896,7 +911,9 @@ export function LandingPage() {
                             : 'border-border text-muted-foreground hover:text-foreground'
                         )}
                       >
-                        {num} {num === 1 ? 'урок' : 'урока'}
+                        {num === 1
+                          ? t('landing.calc_lessons_count_1', { count: num })
+                          : t('landing.calc_lessons_count_few', { count: num })}
                       </button>
                     ))}
                   </div>
@@ -907,10 +924,13 @@ export function LandingPage() {
               <div className="p-6 rounded-2xl border border-border bg-muted/30 space-y-5 text-center sm:text-left">
                 <div className="space-y-1">
                   <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                    Ваш расчётный доход
+                    {t('landing.calc_income_title')}
                   </div>
                   <div className="text-3xl sm:text-4xl font-extrabold text-foreground font-mono tracking-tight">
-                    {monthlyIncome.toLocaleString('ru-RU')} ₽ <span className="text-sm font-normal text-muted-foreground">/ мес</span>
+                    {monthlyIncome.toLocaleString(numberLocale)} {currencySymbol}{' '}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {t('landing.calc_income_unit')}
+                    </span>
                   </div>
                 </div>
 
@@ -918,23 +938,29 @@ export function LandingPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5 text-blue-500" />
-                      Сэкономлено на рутине:
+                      {t('landing.calc_time_saved_label')}
                     </span>
-                    <span className="font-bold text-foreground font-mono">~{savedHours} часов / месяц</span>
+                    <span className="font-bold text-foreground font-mono">
+                      {t('landing.calc_time_saved_value', { hours: savedHours })}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground flex items-center gap-1.5">
                       <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                      Забытых или утерянных оплат:
+                      {t('landing.calc_lost_payments_label')}
                     </span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">0 ₽</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                      {t('landing.calc_lost_payments_value')}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground flex items-center gap-1.5">
                       <Bot className="h-3.5 w-3.5 text-[#E11D48]" />
-                      Напоминаний ученикам:
+                      {t('landing.calc_reminders_label')}
                     </span>
-                    <span className="font-bold text-foreground font-mono">100% автоматически</span>
+                    <span className="font-bold text-foreground font-mono">
+                      {t('landing.calc_reminders_value')}
+                    </span>
                   </div>
                 </div>
 
@@ -946,7 +972,7 @@ export function LandingPage() {
                       'w-full rounded-xl text-xs font-semibold h-11 bg-foreground text-background hover:bg-foreground/90'
                     )}
                   >
-                    Попробовать со своими учениками →
+                    {t('landing.calc_cta_button')}
                   </Link>
                 </div>
               </div>
@@ -959,10 +985,10 @@ export function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             <div className="text-center space-y-3 max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border border-border bg-card text-[#E11D48]">
-                <span>Реальная разница</span>
+                <span>{t('landing.comp_badge')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                Как меняется жизнь после перехода в Studly
+                {t('landing.comp_title')}
               </h2>
             </div>
 
@@ -970,24 +996,24 @@ export function LandingPage() {
               {/* Left: The Old Way (Chaos) */}
               <div className="p-6 sm:p-8 rounded-2xl border border-destructive/30 bg-destructive/5 space-y-4">
                 <h4 className="text-base font-bold text-destructive flex items-center gap-2">
-                  <span>🤦‍♂️ Как обычно бывает (блокнот и чаты)</span>
+                  <span>{t('landing.comp_old_title')}</span>
                 </h4>
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2.5">
                     <span className="text-destructive font-bold">✕</span>
-                    <span>Родители пишут: «А сколько занятий у нас осталось? Мы точно не платили?» Приходится искать выписки в банке.</span>
+                    <span>{t('landing.comp_old_1')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-destructive font-bold">✕</span>
-                    <span>Ученик забыл про созвон или вспомнил за 5 минут, когда вы уже ждёте его в Zoom.</span>
+                    <span>{t('landing.comp_old_2')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-destructive font-bold">✕</span>
-                    <span>Домашки разбросаны по 5 мессенджерам, фото тетрадей теряются в галерее.</span>
+                    <span>{t('landing.comp_old_3')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-destructive font-bold">✕</span>
-                    <span>Страх случайно поставить двух учеников на одно и то же время в пятницу вечером.</span>
+                    <span>{t('landing.comp_old_4')}</span>
                   </li>
                 </ul>
               </div>
@@ -995,24 +1021,24 @@ export function LandingPage() {
               {/* Right: The Studly Way (Smooth) */}
               <div className="p-6 sm:p-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 space-y-4">
                 <h4 className="text-base font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                  <span>🚀 Со Studly CRM (всё по полочкам)</span>
+                  <span>{t('landing.comp_new_title')}</span>
                 </h4>
                 <ul className="space-y-3 text-sm text-foreground/90">
                   <li className="flex items-start gap-2.5">
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span>Ученик сам заходит в кабинет и видит точный баланс: «Осталось 3 урока». Вопросов ноль.</span>
+                    <span>{t('landing.comp_new_1')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span>Telegram-бот заранее отправляет ученику ссылку на урок. Посещаемость растёт, вы спокойны.</span>
+                    <span>{t('landing.comp_new_2')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span>Все файлы и ответы прикреплены прямо к уроку. Ничего не теряется в переписках.</span>
+                    <span>{t('landing.comp_new_3')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span>Сетка занятий мгновенно предупредит о наложении и покажет свободные окна.</span>
+                    <span>{t('landing.comp_new_4')}</span>
                   </li>
                 </ul>
               </div>
@@ -1026,10 +1052,10 @@ export function LandingPage() {
             <div className="text-center space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border border-border bg-card text-muted-foreground">
                 <MessageSquare className="h-3 w-3" />
-                <span>Ответы на вопросы</span>
+                <span>{t('landing.faq_badge')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                Часто задаваемые вопросы
+                {t('landing.faq_title')}
               </h2>
             </div>
 
@@ -1071,13 +1097,13 @@ export function LandingPage() {
             <div className="rounded-3xl border border-border bg-card p-8 sm:p-14 text-center space-y-6 shadow-sm relative overflow-hidden">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border border-border bg-muted/60 text-foreground">
                 <Sparkles className="h-3 w-3 text-[#E11D48]" />
-                <span>Начните работать комфортно уже сегодня</span>
+                <span>{t('landing.cta_badge')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                Наведите идеальный порядок в репетиторской практике
+                {t('landing.cta_title')}
               </h2>
               <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-                Создайте кабинет репетитора за 1 минуту. Оцените, насколько проще становится работать, когда всё организовано в одной системе.
+                {t('landing.cta_subtitle')}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                 <Link
@@ -1087,7 +1113,7 @@ export function LandingPage() {
                     'rounded-xl text-sm font-medium h-12 px-8 bg-foreground text-background hover:bg-foreground/90 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]'
                   )}
                 >
-                  Создать кабинет бесплатно →
+                  {t('landing.cta_button')}
                 </Link>
                 <Link
                   to="/login"
@@ -1096,7 +1122,7 @@ export function LandingPage() {
                     'rounded-xl text-sm font-medium h-12 px-6 border-border hover:bg-muted/80'
                   )}
                 >
-                  Уже есть аккаунт? Войти
+                  {t('landing.cta_already_have_account')}
                 </Link>
               </div>
               <div className="pt-2">
@@ -1104,7 +1130,7 @@ export function LandingPage() {
                   to="/register/student"
                   className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
                 >
-                  <span>Вы ученик? Регистрация по инвайт-коду преподавателя</span>
+                  <span>{t('landing.cta_student_invite')}</span>
                   <ChevronRight className="h-3 w-3" />
                 </Link>
               </div>
@@ -1121,16 +1147,16 @@ export function LandingPage() {
           </Link>
 
           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground font-medium">
-            <a href="#features" className="hover:text-foreground transition-colors">Возможности</a>
-            <a href="#interactive-demo" className="hover:text-foreground transition-colors">Демо-песочница</a>
-            <a href="#calculator" className="hover:text-foreground transition-colors">Калькулятор</a>
-            <a href="#faq" className="hover:text-foreground transition-colors">Вопросы</a>
-            <Link to="/login" className="hover:text-foreground transition-colors">Войти</Link>
-            <Link to="/register" className="hover:text-foreground transition-colors">Регистрация</Link>
+            <a href="#features" className="hover:text-foreground transition-colors">{t('landing.footer_features')}</a>
+            <a href="#interactive-demo" className="hover:text-foreground transition-colors">{t('landing.footer_demo')}</a>
+            <a href="#calculator" className="hover:text-foreground transition-colors">{t('landing.footer_calculator')}</a>
+            <a href="#faq" className="hover:text-foreground transition-colors">{t('landing.footer_faq')}</a>
+            <Link to="/login" className="hover:text-foreground transition-colors">{t('landing.footer_login')}</Link>
+            <Link to="/register" className="hover:text-foreground transition-colors">{t('landing.footer_register')}</Link>
           </div>
 
           <div className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Studly CRM. Для тех, кто учит и учится.
+            {t('landing.footer_copyright', { year: new Date().getFullYear().toString() })}
           </div>
         </div>
       </footer>

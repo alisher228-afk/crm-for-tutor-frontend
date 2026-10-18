@@ -27,7 +27,7 @@ import {
 import { useLanguage } from '@/i18n'
 import type { TeachingMaterial } from '@/types'
 
-function formatBytes(bytes?: number, decimals = 1, units = ['Б', 'КБ', 'МБ', 'ГБ']): string {
+function formatBytes(bytes?: number, decimals = 1, units = ['B', 'KB', 'MB', 'GB']): string {
   if (!bytes || bytes === 0) return `0 ${units[0]}`
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals

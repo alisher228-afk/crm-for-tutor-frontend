@@ -21,6 +21,7 @@ import {
 import { getDirectFileUrl, isTelegramWebApp } from '@/lib/fileUtils'
 import { PdfViewer } from '@/components/PdfViewer'
 import { DocxViewer } from '@/components/DocxViewer'
+import { useLanguage } from '@/i18n'
 
 interface FileViewerDialogProps {
   open: boolean
@@ -45,7 +46,8 @@ export function FileViewerDialog({
   isLoading = false,
   onDownload,
 }: FileViewerDialogProps) {
-  const displayFileName = fileName || title || 'Файл'
+  const { t } = useLanguage()
+  const displayFileName = fileName || title || t('file_viewer.file_default_name')
   const isTg = isTelegramWebApp()
 
   const cleanFileName = (displayFileName || '').trim()
@@ -161,10 +163,10 @@ export function FileViewerDialog({
                 size="sm"
                 className="h-8 text-xs gap-1 hidden sm:flex"
                 onClick={handleOpenExternal}
-                title="Открыть в браузере"
+                title={t('file_viewer.open_in_browser')}
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                <span>Браузер</span>
+                <span>{t('file_viewer.browser')}</span>
               </Button>
             )}
 
@@ -176,7 +178,7 @@ export function FileViewerDialog({
                 onClick={onDownload}
               >
                 <Download className="h-3.5 w-3.5" />
-                <span className="hidden xs:inline">Скачать</span>
+                <span className="hidden xs:inline">{t('file_viewer.download')}</span>
               </Button>
             )}
           </div>
@@ -187,16 +189,16 @@ export function FileViewerDialog({
           {isLoading ? (
             <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground p-6">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm font-medium">Загрузка файла...</p>
+              <p className="text-sm font-medium">{t('file_viewer.loading_file')}</p>
             </div>
           ) : !blobUrl ? (
             <div className="flex flex-col items-center justify-center gap-3 p-6 text-center max-w-sm">
               <FileQuestion className="h-10 w-10 text-muted-foreground" />
-              <p className="text-sm font-semibold">Не удалось загрузить файл</p>
+              <p className="text-sm font-semibold">{t('file_viewer.failed_to_load')}</p>
               {onDownload && (
                 <Button size="sm" onClick={onDownload} className="gap-1.5 mt-2">
                   <Download className="h-4 w-4" />
-                  Скачать на устройство
+                  {t('file_viewer.download_to_device')}
                 </Button>
               )}
             </div>
@@ -214,7 +216,7 @@ export function FileViewerDialog({
             <DocxViewer blobUrl={blobUrl} />
           ) : isAudio ? (
             <div className="p-8 text-center space-y-4">
-              <p className="text-sm text-muted-foreground">Аудиозапись</p>
+              <p className="text-sm text-muted-foreground">{t('file_viewer.audio_recording')}</p>
               <audio controls src={blobUrl} className="w-full max-w-md mx-auto" />
             </div>
           ) : isVideo ? (
@@ -224,7 +226,7 @@ export function FileViewerDialog({
           ) : isOfficeDoc && googleViewerUrl ? (
             <div className="w-full h-full flex flex-col relative bg-card">
               <div className="bg-muted/40 border-b border-border px-3 py-1.5 flex items-center justify-between text-xs text-muted-foreground shrink-0">
-                <span className="truncate">Онлайн-просмотр документа ({displayFileName})</span>
+                <span className="truncate">{t('file_viewer.online_preview', { fileName: displayFileName })}</span>
                 <div className="flex items-center gap-2 shrink-0">
                   <Button
                     variant="ghost"
@@ -232,7 +234,7 @@ export function FileViewerDialog({
                     className="h-6 text-[11px]"
                     onClick={handleOpenExternal}
                   >
-                    В браузере
+                    {t('file_viewer.in_browser')}
                   </Button>
                 </div>
               </div>
@@ -245,7 +247,7 @@ export function FileViewerDialog({
           ) : isText ? (
             <div className="w-full h-full flex flex-col bg-card">
               <div className="bg-muted/40 border-b border-border px-3 py-1.5 flex items-center justify-between text-xs text-muted-foreground shrink-0">
-                <span>Текстовый документ ({displayFileName})</span>
+                <span>{t('file_viewer.text_document', { fileName: displayFileName })}</span>
                 {textContent && (
                   <Button
                     variant="ghost"
@@ -258,7 +260,7 @@ export function FileViewerDialog({
                     }}
                   >
                     {isCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    <span>{isCopied ? 'Скопировано' : 'Копировать'}</span>
+                    <span>{isCopied ? t('file_viewer.copied') : t('file_viewer.copy')}</span>
                   </Button>
                 )}
               </div>
@@ -268,7 +270,7 @@ export function FileViewerDialog({
                 </div>
               ) : (
                 <pre className="flex-1 p-4 overflow-auto font-mono text-xs text-foreground whitespace-pre-wrap select-text leading-relaxed">
-                  {textContent || 'Файл пуст'}
+                  {textContent || t('file_viewer.file_empty')}
                 </pre>
               )}
             </div>
@@ -280,20 +282,20 @@ export function FileViewerDialog({
               <div>
                 <h4 className="text-base font-semibold">{displayFileName}</h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Прямой предпросмотр этого типа файла недоступен в приложении. Вы можете открыть его в браузере или скачать на устройство.
+                  {t('file_viewer.unsupported_preview_desc')}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 justify-center">
                 {apiPath && (
                   <Button variant="outline" size="sm" onClick={handleOpenExternal} className="gap-1.5">
                     <ExternalLink className="h-4 w-4" />
-                    Открыть в браузере
+                    {t('file_viewer.open_in_browser')}
                   </Button>
                 )}
                 {onDownload && (
                   <Button size="sm" onClick={onDownload} className="gap-1.5">
                     <Download className="h-4 w-4" />
-                    Скачать файл
+                    {t('file_viewer.download_file')}
                   </Button>
                 )}
               </div>

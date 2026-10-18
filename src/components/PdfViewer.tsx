@@ -3,6 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { Loader2, ZoomIn, ZoomOut, RotateCcw, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/i18n'
 
 // Set worker source for pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker
@@ -14,6 +15,7 @@ interface PdfViewerProps {
 }
 
 export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
+  const { t } = useLanguage()
   const containerRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +42,7 @@ export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
         }
 
         if (!arrayBuffer) {
-          throw new Error('Файл PDF не найден')
+          throw new Error(t('file_viewer.pdf_not_found'))
         }
 
         if (!isMounted) return
@@ -60,7 +62,7 @@ export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
       } catch (err) {
         console.error('Failed to load PDF:', err)
         if (isMounted) {
-          setError('Не удалось загрузить PDF документ.')
+          setError(t('file_viewer.pdf_load_error'))
           setLoading(false)
         }
       }
@@ -71,7 +73,7 @@ export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
     return () => {
       isMounted = false
     }
-  }, [blob, blobUrl])
+  }, [blob, blobUrl, t])
 
   // Render pages when doc or scale changes
   useEffect(() => {
@@ -142,7 +144,7 @@ export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
       {/* Zoom / Page controls bar */}
       <div className="bg-card/90 backdrop-blur border-b border-border px-3 py-1.5 flex items-center justify-between text-xs text-muted-foreground shrink-0 z-20">
         <div className="flex items-center gap-2">
-          <span>{numPages > 0 ? `Всего страниц: ${numPages}` : 'PDF Документ'}</span>
+          <span>{numPages > 0 ? t('file_viewer.pdf_pages_total', { count: numPages }) : t('file_viewer.pdf_document')}</span>
         </div>
 
         <div className="flex items-center gap-1">
@@ -151,7 +153,7 @@ export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
             size="icon-xs"
             className="h-7 w-7"
             onClick={handleZoomOut}
-            title="Уменьшить"
+            title={t('file_viewer.zoom_out')}
             disabled={scale <= 0.6}
           >
             <ZoomOut className="h-3.5 w-3.5" />
@@ -164,7 +166,7 @@ export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
             size="icon-xs"
             className="h-7 w-7"
             onClick={handleZoomIn}
-            title="Увеличить"
+            title={t('file_viewer.zoom_in')}
             disabled={scale >= 3.0}
           >
             <ZoomIn className="h-3.5 w-3.5" />
@@ -174,7 +176,7 @@ export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
             size="icon-xs"
             className="h-7 w-7"
             onClick={handleResetZoom}
-            title="По умолчанию"
+            title={t('file_viewer.zoom_reset')}
           >
             <RotateCcw className="h-3 w-3" />
           </Button>
@@ -186,7 +188,7 @@ export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10 gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm font-medium text-muted-foreground">
-            Загрузка и рендеринг PDF...
+            {t('file_viewer.pdf_loading')}
           </p>
         </div>
       )}
@@ -195,7 +197,7 @@ export function PdfViewer({ blob, blobUrl }: PdfViewerProps) {
       {error ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-sm mx-auto">
           <AlertCircle className="h-10 w-10 text-destructive mb-2" />
-          <h4 className="text-base font-semibold">Не удалось отобразить PDF</h4>
+          <h4 className="text-base font-semibold">{t('file_viewer.pdf_error_title')}</h4>
           <p className="text-xs text-muted-foreground mt-1 mb-4">{error}</p>
         </div>
       ) : (

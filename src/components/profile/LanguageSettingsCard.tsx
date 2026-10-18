@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
-import { useLanguage } from '@/i18n'
+import { useLanguage, translations } from '@/i18n'
 import { toast } from 'sonner'
 import { Languages } from 'lucide-react'
 import type { SupportedLanguage } from '@/i18n/types'
@@ -10,13 +10,7 @@ export function LanguageSettingsCard() {
   const handleSelectLanguage = (code: SupportedLanguage) => {
     if (code === language) return
     setLanguage(code)
-    const toastMsg =
-      code === 'ru'
-        ? 'Язык интерфейса изменён на Русский'
-        : code === 'en'
-          ? 'Interface language set to English'
-          : 'Интерфейс тілі Қазақшаға ауыстырылды'
-    toast.success(toastMsg)
+    toast.success(translations[code].language.changed_toast)
   }
 
   return (

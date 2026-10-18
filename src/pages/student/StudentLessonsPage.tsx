@@ -103,7 +103,7 @@ export function StudentLessonsPage() {
 
     sorted.forEach((lesson) => {
       const d = new Date(lesson.startTime)
-      const dateKey = isNaN(d.getTime()) ? 'Без даты' : formatDateToInput(d)
+      const dateKey = isNaN(d.getTime()) ? 'no_date' : formatDateToInput(d)
 
       if (!groups[dateKey]) {
         groups[dateKey] = []
@@ -253,7 +253,7 @@ export function StudentLessonsPage() {
             const isToday = dayKey === todayStr
 
             let dayTitle = dayKey
-            if (dayKey !== 'Без даты') {
+            if (dayKey !== 'no_date') {
               const [y, m, d] = dayKey.split('-').map(Number)
               const dateObj = new Date(y, m - 1, d)
               dayTitle = dateObj.toLocaleDateString(dateLocale, {

@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithTelegram = async (linkCode?: string): Promise<AuthResponse> => {
     const tg = window.Telegram?.WebApp
     if (!tg?.initData) {
-      throw new Error('Данные Telegram WebApp не найдены')
+      throw new Error('Telegram WebApp initData not found')
     }
     const res = await authApi.loginWithTelegramWebApp({
       initData: tg.initData,
