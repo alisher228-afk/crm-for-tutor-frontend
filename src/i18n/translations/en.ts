@@ -574,6 +574,8 @@ export const en: typeof ru = {
     label_level: 'Proficiency level',
     placeholder_level: 'e.g. B1 / Grade 9',
     label_hourly_rate: 'Hourly rate',
+    label_lesson_balance: 'Lesson balance (lessons)',
+    recalculated_balance_hint: 'Balance synchronized with new rate: {oldBal} lessons ➔ {newBal} lessons',
     label_format: 'Learning format',
     format_individual: 'Individual',
     format_group: 'In group',

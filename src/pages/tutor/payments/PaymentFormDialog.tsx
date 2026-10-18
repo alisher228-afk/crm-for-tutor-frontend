@@ -213,14 +213,38 @@ export function PaymentFormDialog({
 
   const handleQuickAmount = (value: number) => {
     setAmount(String(value))
-    // If student has hourly rate, auto calculate lessons count if reasonable
-    if (targetStudent?.hourlyRate && targetStudent.hourlyRate > 0) {
-      const count = Math.round(value / targetStudent.hourlyRate)
+    // Auto-calculate lessons count from hourly rate
+    if (targetStudent?.hourlyRate && Number(targetStudent.hourlyRate) > 0) {
+      const count = Math.round(value / Number(targetStudent.hourlyRate))
       if (count > 0) {
         setLessonsCount(String(count))
       }
     }
   }
+
+  // Auto-recalculate lessons count when amount is typed manually
+  const handleAmountChange = (value: string) => {
+    setAmount(value)
+    const numVal = Number(value)
+    if (
+      numVal > 0 &&
+      targetStudent?.hourlyRate &&
+      Number(targetStudent.hourlyRate) > 0
+    ) {
+      const count = Math.round(numVal / Number(targetStudent.hourlyRate))
+      if (count > 0) {
+        setLessonsCount(String(count))
+      }
+    }
+  }
+
+  // Derived: what the current price per lesson implies
+  const numAmount = Number(amount)
+  const numLessonsInput = Number(lessonsCount)
+  const impliedPricePerLesson =
+    numAmount > 0 && numLessonsInput > 0
+      ? Math.round(numAmount / numLessonsInput)
+      : null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -324,7 +348,7 @@ export function PaymentFormDialog({
                 step="any"
                 placeholder={t('tutor_payments.placeholder_amount')}
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => handleAmountChange(e.target.value)}
                 required
                 className="text-base font-semibold"
               />
@@ -368,9 +392,27 @@ export function PaymentFormDialog({
                 value={lessonsCount}
                 onChange={(e) => setLessonsCount(e.target.value)}
               />
-              <p className="text-[11px] text-muted-foreground">
-                {t('tutor_payments.lessons_count_hint')}
-              </p>
+              {/* Dynamic hint: show implied price per lesson */}
+              {impliedPricePerLesson !== null ? (
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <span>≈ {impliedPricePerLesson.toLocaleString(numLocale)} ₸/ур</span>
+                  {targetStudent?.hourlyRate && Number(targetStudent.hourlyRate) > 0 && (
+                    <span className={
+                      Math.abs(impliedPricePerLesson - Number(targetStudent.hourlyRate)) > 1
+                        ? 'text-amber-600 dark:text-amber-400 font-medium'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    }>
+                      {Math.abs(impliedPricePerLesson - Number(targetStudent.hourlyRate)) > 1
+                        ? `(ставка: ${Number(targetStudent.hourlyRate).toLocaleString(numLocale)} ₸)`
+                        : '✓'}
+                    </span>
+                  )}
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  {t('tutor_payments.lessons_count_hint')}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">

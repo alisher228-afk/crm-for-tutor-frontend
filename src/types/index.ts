@@ -99,6 +99,7 @@ export interface StudentUpdateRequest {
   telegram?: string
   currentLevel?: string
   hourlyRate?: number
+  lessonBalance?: number
   groupName?: string
   notes?: string
   status?: StudentStatus

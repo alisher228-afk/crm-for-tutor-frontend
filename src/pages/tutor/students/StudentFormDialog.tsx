@@ -44,6 +44,8 @@ export function StudentFormDialog({
   const [telegram, setTelegram] = useState('')
   const [currentLevel, setCurrentLevel] = useState('')
   const [hourlyRate, setHourlyRate] = useState<string>('')
+  const [lessonBalance, setLessonBalance] = useState<string>('')
+  const [recalculatedHint, setRecalculatedHint] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
   const [studyFormat, setStudyFormat] = useState<'INDIVIDUAL' | 'GROUP'>('INDIVIDUAL')
   const [groupName, setGroupName] = useState('')
@@ -67,6 +69,14 @@ export function StudentFormDialog({
         setHourlyRate(
           initialData.hourlyRate !== undefined ? String(initialData.hourlyRate) : '',
         )
+        setLessonBalance(
+          initialData.lessonBalance !== undefined
+            ? String(initialData.lessonBalance)
+            : initialData.balance !== undefined
+              ? String(initialData.balance)
+              : '',
+        )
+        setRecalculatedHint(null)
         setNotes(initialData.notes || '')
         if (initialData.groupName && initialData.groupName.trim()) {
           setStudyFormat('GROUP')
@@ -82,6 +92,8 @@ export function StudentFormDialog({
         setTelegram('')
         setCurrentLevel('')
         setHourlyRate('')
+        setLessonBalance('')
+        setRecalculatedHint(null)
         setNotes('')
         setStudyFormat(defaultFormat || (defaultGroupName ? 'GROUP' : 'INDIVIDUAL'))
         setGroupName(defaultGroupName || '')
@@ -89,6 +101,31 @@ export function StudentFormDialog({
     }
   }, [open, initialData, defaultFormat, defaultGroupName])
 
+  const handleHourlyRateChange = (newVal: string) => {
+    setHourlyRate(newVal)
+    const newRateNum = Number(newVal)
+    const oldRateNum = Number(initialData?.hourlyRate || 0)
+    const curBal = initialData?.lessonBalance ?? initialData?.balance ?? 0
+
+    if (
+      isEditing &&
+      curBal !== 0 &&
+      newRateNum > 0 &&
+      oldRateNum > 0 &&
+      oldRateNum !== newRateNum
+    ) {
+      const newBal = Math.round((curBal * oldRateNum) / newRateNum)
+      setLessonBalance(String(newBal))
+      setRecalculatedHint(
+        t('tutor_students.recalculated_balance_hint', {
+          oldBal: curBal,
+          newBal,
+        }) || `Баланс синхронизирован по новой ставке: ${curBal} ур. ➔ ${newBal} ур.`,
+      )
+    } else {
+      setRecalculatedHint(null)
+    }
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -111,6 +148,7 @@ export function StudentFormDialog({
       telegram: telegram.trim() || undefined,
       currentLevel: currentLevel.trim() || undefined,
       hourlyRate: hourlyRate ? Number(hourlyRate) : undefined,
+      lessonBalance: lessonBalance !== '' ? Number(lessonBalance) : undefined,
       groupName: studyFormat === 'GROUP' && groupName.trim() ? groupName.trim() : '',
       notes: notes.trim() || undefined,
     }
@@ -231,11 +269,43 @@ export function StudentFormDialog({
                 step="any"
                 placeholder="1500"
                 value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
+                onChange={(e) => handleHourlyRateChange(e.target.value)}
                 disabled={isPending}
               />
             </div>
           </div>
+
+          {isEditing && (
+            <div className="space-y-1.5 rounded-lg border border-border bg-muted/10 p-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="lessonBalance" className="text-xs font-semibold">
+                  {t('tutor_students.label_lesson_balance')}
+                </Label>
+                {initialData?.lessonBalance !== undefined && (
+                  <span className="text-[11px] text-muted-foreground">
+                    Текущий: {initialData.lessonBalance} ур.
+                  </span>
+                )}
+              </div>
+              <Input
+                id="lessonBalance"
+                type="number"
+                step="1"
+                placeholder="0"
+                value={lessonBalance}
+                onChange={(e) => {
+                  setLessonBalance(e.target.value)
+                  setRecalculatedHint(null)
+                }}
+                disabled={isPending}
+              />
+              {recalculatedHint && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 mt-1">
+                  <span>⚡</span> {recalculatedHint}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Format & Group */}
           <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">

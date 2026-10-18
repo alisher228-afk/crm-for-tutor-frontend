@@ -572,6 +572,8 @@ export const ru = {
     label_level: 'Уровень подготовки',
     placeholder_level: 'Напр. B1 / 9 класс',
     label_hourly_rate: 'Ставка за урок',
+    label_lesson_balance: 'Баланс уроков (ур.)',
+    recalculated_balance_hint: 'Баланс синхронизирован по новой ставке: {oldBal} ур. ➔ {newBal} ур.',
     label_format: 'Формат занятий',
     format_individual: 'Индивидуально',
     format_group: 'В группе',

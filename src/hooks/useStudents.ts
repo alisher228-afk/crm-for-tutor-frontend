@@ -63,6 +63,8 @@ export function useUpdateStudent() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: studentKeys.all })
       queryClient.invalidateQueries({ queryKey: studentKeys.detail(id) })
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
+      queryClient.invalidateQueries({ queryKey: ['me'] })
     },
   })
 }

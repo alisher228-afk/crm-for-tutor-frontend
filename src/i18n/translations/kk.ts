@@ -574,6 +574,8 @@ export const kk: typeof ru = {
     label_level: 'Дайындық деңгейі',
     placeholder_level: 'Мыс. B1 / 9-сынып',
     label_hourly_rate: 'Сабақ бағамы',
+    label_lesson_balance: 'Сабақ балансы (саб.)',
+    recalculated_balance_hint: 'Баланс жаңа мөлшерлеме бойынша қайта есептелді: {oldBal} саб. ➔ {newBal} саб.',
     label_format: 'Сабақ форматы',
     format_individual: 'Жеке',
     format_group: 'Топта',
