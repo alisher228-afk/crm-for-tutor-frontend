@@ -24,6 +24,7 @@ import {
   MessageSquare,
   Check,
   RotateCcw,
+  Crown,
 } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -49,6 +50,11 @@ export function LandingPage() {
 
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+
+  // Pricing billing toggle
+  const [billingYearly, setBillingYearly] = useState(false)
+  const proMonthlyPrice = 3490
+  const proYearlyPrice = 2900
 
   const handleCompleteLessonDemo = () => {
     if (!demoLessonCompleted) {
@@ -128,6 +134,9 @@ export function LandingPage() {
             <a href="#faq" className="hover:text-foreground transition-colors">
               {t('landing.nav_faq')}
             </a>
+            <a href="#pricing" className="hover:text-foreground transition-colors">
+              {t('landing.pricing_nav')}
+            </a>
           </nav>
 
           {/* Desktop Auth Buttons, LanguageToggle & ThemeToggle */}
@@ -201,6 +210,13 @@ export function LandingPage() {
                 className="text-muted-foreground hover:text-foreground py-1"
               >
                 {t('landing.nav_faq')}
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-muted-foreground hover:text-foreground py-1"
+              >
+                {t('landing.pricing_nav')}
               </a>
             </div>
             <div className="flex flex-col gap-2 pt-3 border-t border-border">
@@ -1091,6 +1107,179 @@ export function LandingPage() {
           </div>
         </section>
 
+        {/* 8.5 Pricing Section */}
+        <section id="pricing" className="py-20 border-b border-border/60">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+            {/* Header */}
+            <div className="text-center space-y-3 max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border border-border bg-card text-amber-600 dark:text-amber-400">
+                <Crown className="h-3 w-3" />
+                <span>{t('landing.pricing_badge')}</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                {t('landing.pricing_title')}
+              </h2>
+              <p className="text-muted-foreground text-sm sm:text-base">
+                {t('landing.pricing_subtitle')}
+              </p>
+            </div>
+
+            {/* Billing Toggle */}
+            <div className="flex items-center justify-center gap-3">
+              <span
+                className={cn(
+                  'text-sm font-medium transition-colors',
+                  !billingYearly ? 'text-foreground' : 'text-muted-foreground'
+                )}
+              >
+                {t('landing.pricing_monthly')}
+              </span>
+              <button
+                onClick={() => setBillingYearly(!billingYearly)}
+                className={cn(
+                  'relative w-12 h-6 rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2',
+                  billingYearly ? 'bg-foreground border-foreground' : 'bg-muted border-border'
+                )}
+                aria-label="Toggle billing period"
+              >
+                <span
+                  className={cn(
+                    'absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm transition-transform duration-200',
+                    billingYearly ? 'translate-x-6' : 'translate-x-0'
+                  )}
+                />
+              </button>
+              <span
+                className={cn(
+                  'text-sm font-medium transition-colors flex items-center gap-2',
+                  billingYearly ? 'text-foreground' : 'text-muted-foreground'
+                )}
+              >
+                {t('landing.pricing_yearly')}
+                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  {t('landing.pricing_yearly_badge')}
+                </span>
+              </span>
+            </div>
+
+            {/* Pricing Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+
+              {/* START Card */}
+              <div className="rounded-2xl border border-border bg-card p-7 space-y-6 shadow-xs hover:shadow-md transition-shadow">
+                <div className="space-y-1.5">
+                  <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    {t('landing.pricing_start_name')}
+                  </div>
+                  <div className="flex items-end gap-1.5">
+                    <span className="text-4xl font-extrabold tracking-tight">0 ₸</span>
+                    <span className="text-sm text-muted-foreground pb-1">
+                      / {t('landing.pricing_free_forever')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t('landing.pricing_start_desc')}
+                  </p>
+                </div>
+
+                <Link
+                  to="/register"
+                  className={cn(
+                    buttonVariants({ variant: 'outline', size: 'default' }),
+                    'w-full rounded-xl text-sm font-semibold h-11 border-border hover:bg-muted/80'
+                  )}
+                >
+                  {t('landing.pricing_start_cta')}
+                </Link>
+
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  {(
+                    [
+                      'pricing_start_f1',
+                      'pricing_start_f2',
+                      'pricing_start_f3',
+                      'pricing_start_f4',
+                      'pricing_start_f5',
+                    ] as const
+                  ).map((key) => (
+                    <li key={key} className="flex items-start gap-2.5">
+                      <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <span>{t(`landing.${key}`)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* PRO Card */}
+              <div className="rounded-2xl border-2 border-foreground bg-card p-7 space-y-6 shadow-lg relative">
+                {/* Popular badge */}
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-foreground text-background shadow-sm">
+                    <Crown className="h-3 w-3" />
+                    {t('landing.pricing_pro_popular')}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  <div className="text-sm font-semibold text-foreground uppercase tracking-wider flex items-center gap-2">
+                    {t('landing.pricing_pro_name')}
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 normal-case tracking-normal">
+                      ⭐
+                    </span>
+                  </div>
+                  <div className="flex items-end gap-1.5">
+                    <span className="text-4xl font-extrabold tracking-tight font-mono">
+                      {(billingYearly ? proYearlyPrice : proMonthlyPrice).toLocaleString(numberLocale)} ₸
+                    </span>
+                    <span className="text-sm text-muted-foreground pb-1">
+                      {billingYearly
+                        ? t('landing.pricing_per_month_yearly')
+                        : t('landing.pricing_per_month')}
+                    </span>
+                  </div>
+                  {billingYearly && (
+                    <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {t('landing.pricing_pro_yearly_hint')}
+                    </div>
+                  )}
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t('landing.pricing_pro_desc')}
+                  </p>
+                </div>
+
+                <Link
+                  to="/register"
+                  className={cn(
+                    buttonVariants({ size: 'default' }),
+                    'w-full rounded-xl text-sm font-semibold h-11 bg-foreground text-background hover:bg-foreground/90 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]'
+                  )}
+                >
+                  {t('landing.pricing_pro_cta')}
+                </Link>
+
+                <ul className="space-y-3 text-sm">
+                  {(
+                    [
+                      'pricing_pro_f1',
+                      'pricing_pro_f2',
+                      'pricing_pro_f3',
+                      'pricing_pro_f4',
+                      'pricing_pro_f5',
+                      'pricing_pro_f6',
+                    ] as const
+                  ).map((key) => (
+                    <li key={key} className="flex items-start gap-2.5">
+                      <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <span className="text-foreground/85">{t(`landing.${key}`)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* 9. Final Call To Action Banner */}
         <section className="py-20">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1151,6 +1340,7 @@ export function LandingPage() {
             <a href="#interactive-demo" className="hover:text-foreground transition-colors">{t('landing.footer_demo')}</a>
             <a href="#calculator" className="hover:text-foreground transition-colors">{t('landing.footer_calculator')}</a>
             <a href="#faq" className="hover:text-foreground transition-colors">{t('landing.footer_faq')}</a>
+            <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.pricing_nav')}</a>
             <Link to="/login" className="hover:text-foreground transition-colors">{t('landing.footer_login')}</Link>
             <Link to="/register" className="hover:text-foreground transition-colors">{t('landing.footer_register')}</Link>
           </div>
