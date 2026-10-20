@@ -67,12 +67,12 @@ export function StudentFormDialog({
         setTelegram(initialData.telegram || '')
         setCurrentLevel(initialData.currentLevel || '')
         setHourlyRate(
-          initialData.hourlyRate !== undefined ? String(initialData.hourlyRate) : '',
+          initialData.hourlyRate != null ? String(initialData.hourlyRate) : '',
         )
         setLessonBalance(
-          initialData.lessonBalance !== undefined
+          initialData.lessonBalance != null
             ? String(initialData.lessonBalance)
-            : initialData.balance !== undefined
+            : initialData.balance != null
               ? String(initialData.balance)
               : '',
         )
